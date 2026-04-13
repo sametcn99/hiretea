@@ -1,0 +1,197 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  RECRUITER
+  CANDIDATE
+}
+
+enum CandidateCaseStatus {
+  DRAFT
+  PROVISIONING
+  READY
+  IN_PROGRESS
+  REVIEWING
+  COMPLETED
+  ARCHIVED
+}
+
+enum CandidateCaseDecision {
+  ADVANCE
+  HOLD
+  REJECT
+}
+
+model User {
+  id            String          @id @default(cuid())
+  name          String?
+  email         String?         @unique
+  emailVerified DateTime?
+  image         String?
+  role          UserRole        @default(CANDIDATE)
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  giteaIdentity GiteaIdentity?
+  caseTemplates CaseTemplate[]  @relation("CaseTemplateCreator")
+  candidateCases CandidateCase[] @relation("CandidateAssignments")
+  createdCases  CandidateCase[] @relation("CaseAssignmentCreator")
+  evaluations   EvaluationNote[] @relation("EvaluationAuthor")
+  auditLogs     AuditLog[]      @relation("AuditActor")
+}
+
+model GiteaIdentity {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  giteaUserId Int     @unique
+  login      String   @unique
+  email      String?
+  avatarUrl  String?
+  profileUrl String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model WorkspaceSettings {
+  id                   String   @id @default(cuid())
+  companyName          String
+  defaultBranch        String   @default("main")
+  manualInviteMode     Boolean  @default(true)
+  giteaBaseUrl         String
+  giteaOrganization    String
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model CaseTemplate {
+  id                    String          @id @default(cuid())
+  slug                  String          @unique
+  name                  String
+  summary               String
+  repositoryName        String
+  repositoryDescription String?
+  defaultBranch         String          @default("main")
+  createdById           String
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  createdBy             User            @relation("CaseTemplateCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  candidateCases        CandidateCase[]
+}
+
+model CandidateCase {
+  id                  String              @id @default(cuid())
+  caseTemplateId      String
+  candidateId         String
+  createdById         String
+  status              CandidateCaseStatus @default(DRAFT)
+  decision            CandidateCaseDecision?
+  workingRepository   String?
+  branchName          String?
+  workingRepositoryUrl String?
+  dueAt               DateTime?
+  startedAt           DateTime?
+  submittedAt         DateTime?
+  reviewedAt          DateTime?
+  lastSyncedAt        DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  caseTemplate        CaseTemplate        @relation(fields: [caseTemplateId], references: [id], onDelete: Restrict)
+  candidate           User                @relation("CandidateAssignments", fields: [candidateId], references: [id], onDelete: Restrict)
+  createdBy           User                @relation("CaseAssignmentCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  accessGrants        CandidateAccessGrant[]
+  evaluationNotes     EvaluationNote[]
+}
+
+model CandidateAccessGrant {
+  id                 String        @id @default(cuid())
+  candidateCaseId    String
+  repositoryName     String
+  permissionKey      String
+  canRead            Boolean       @default(true)
+  canWrite           Boolean       @default(false)
+  canOpenIssues      Boolean       @default(false)
+  canOpenPullRequests Boolean      @default(false)
+  grantedAt          DateTime      @default(now())
+  revokedAt          DateTime?
+  candidateCase      CandidateCase @relation(fields: [candidateCaseId], references: [id], onDelete: Cascade)
+}
+
+model EvaluationNote {
+  id              String        @id @default(cuid())
+  candidateCaseId String
+  authorId        String
+  score           Int?
+  summary         String
+  note            String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  candidateCase   CandidateCase @relation(fields: [candidateCaseId], references: [id], onDelete: Cascade)
+  author          User          @relation("EvaluationAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  actorId      String?
+  action       String
+  resourceType String
+  resourceId   String?
+  detail       Json?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+  actor        User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+}
+
+model WebhookDelivery {
+  id             String   @id @default(cuid())
+  deliveryId     String?  @unique
+  eventName      String
+  payload        Json
+  statusCode     Int?
+  errorMessage   String?
+  processedAt    DateTime?
+  createdAt      DateTime @default(now())
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([sessionToken])
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}

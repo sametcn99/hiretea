@@ -1,0 +1,114 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      target: production
+    command: ["/bin/sh", "/app/scripts/docker/start-app.sh", "start"]
+    depends_on:
+      db:
+        condition: service_healthy
+      gitea:
+        condition: service_started
+      gitea-init:
+        condition: service_started
+    environment:
+      hiretea_APP_HOST: 0.0.0.0
+      hiretea_APP_PORT: "3000"
+      hiretea_RUNTIME_ENV_FILE: /runtime/gitea/hiretea.generated.env
+    ports:
+      - "${APP_HTTP_PORT:-3000}:3000"
+    volumes:
+      - gitea-config:/runtime/gitea:ro
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      HT_DB_NAME: ${HT_DB_NAME:-hiretea}
+      HT_DB_USER: ${HT_DB_USER:-hiretea}
+      HT_DB_PASSWORD: ${HT_DB_PASSWORD:-hiretea}
+      GITEA_DB_NAME: ${GITEA_DB_NAME:-gitea}
+      GITEA_DB_USER: ${GITEA_DB_USER:-gitea}
+      GITEA_DB_PASSWORD: ${GITEA_DB_PASSWORD:-gitea}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+
+  gitea:
+    image: docker.gitea.com/gitea:1.25.5-rootless
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      GITEA__database__DB_TYPE: postgres
+      GITEA__database__HOST: db:5432
+      GITEA__database__NAME: ${GITEA_DB_NAME:-gitea}
+      GITEA__database__USER: ${GITEA_DB_USER:-gitea}
+      GITEA__database__PASSWD: ${GITEA_DB_PASSWORD:-gitea}
+      GITEA__database__AUTO_MIGRATION: "true"
+      GITEA__oauth2__ENABLED: "true"
+      GITEA__security__INSTALL_LOCK: "true"
+      GITEA__security__INTERNAL_TOKEN: ${GITEA_INTERNAL_TOKEN:-hiretea-dev-internal-token-change-me}
+      GITEA__server__DOMAIN: ${GITEA_DOMAIN:-localhost}
+      GITEA__server__ROOT_URL: ${GITEA_PUBLIC_URL:-http://localhost:3001}
+      GITEA__server__HTTP_PORT: "3000"
+      GITEA__server__SSH_DOMAIN: ${GITEA_DOMAIN:-localhost}
+      GITEA__server__SSH_PORT: "${GITEA_SSH_PORT:-2221}"
+      GITEA__server__SSH_LISTEN_PORT: "2222"
+      GITEA__server__START_SSH_SERVER: "true"
+      GITEA__server__OFFLINE_MODE: "true"
+      GITEA__service__DISABLE_REGISTRATION: "true"
+      GITEA__service__REGISTER_EMAIL_CONFIRM: "false"
+      GITEA__service__ENABLE_NOTIFY_MAIL: "false"
+      GITEA__webhook__ALLOWED_HOST_LIST: private,loopback
+      SECRET_KEY: ${GITEA_SECRET_KEY:-hiretea-dev-secret-key-change-me}
+    ports:
+      - "${GITEA_HTTP_PORT:-3001}:3000"
+      - "${GITEA_SSH_PORT:-2221}:2222"
+    volumes:
+      - gitea-data:/var/lib/gitea
+      - gitea-config:/etc/gitea
+
+  gitea-init:
+    build:
+      context: .
+      dockerfile: docker/gitea-init/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+      gitea:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://${HT_DB_USER:-hiretea}:${HT_DB_PASSWORD:-hiretea}@db:5432/${HT_DB_NAME:-hiretea}?schema=public
+      GITEA_ADMIN_EMAIL: ${GITEA_ADMIN_EMAIL:-admin@hiretea.local}
+      GITEA_ADMIN_PASSWORD: ${GITEA_ADMIN_PASSWORD:-}
+      GITEA_ADMIN_USERNAME: ${GITEA_ADMIN_USERNAME:-hiretea-admin}
+      GITEA_INTERNAL_URL: http://gitea:3000
+      GITEA_ORGANIZATION_NAME: ${GITEA_ORGANIZATION_NAME:-hiretea}
+      GITEA_PUBLIC_URL: ${GITEA_PUBLIC_URL:-http://localhost:3001}
+      GITEA_RUNTIME_ENV_FILE: /etc/gitea/hiretea.generated.env
+      hiretea_ADMIN_NAME: ${hiretea_ADMIN_NAME:-Hiretea Admin}
+      hiretea_COMPANY_NAME: ${hiretea_COMPANY_NAME:-Hiretea Workspace}
+      hiretea_DEFAULT_BRANCH: ${hiretea_DEFAULT_BRANCH:-main}
+      hiretea_MANUAL_INVITE_MODE: ${hiretea_MANUAL_INVITE_MODE:-true}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+    restart: "no"
+    volumes:
+      - gitea-config:/etc/gitea
+      - gitea-data:/var/lib/gitea
+
+volumes:
+  postgres-data:
+  gitea-data:
+  gitea-config:

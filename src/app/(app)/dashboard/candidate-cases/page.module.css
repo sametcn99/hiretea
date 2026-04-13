@@ -1,0 +1,91 @@
+.grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 400px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.formCard,
+.tableCard {
+  min-height: 100%;
+}
+
+.formCard {
+  position: sticky;
+  top: 28px;
+}
+
+.form {
+  display: grid;
+  gap: 16px;
+}
+
+.errorText {
+  margin: 0;
+  color: var(--ht-danger);
+  font-size: 0.9rem;
+}
+
+.message {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--ht-border);
+  background: rgb(255 255 255 / 2%);
+}
+
+.messageError {
+  border-color: rgb(255 123 114 / 28%);
+}
+
+.messageSuccess {
+  border-color: rgb(89 194 139 / 28%);
+}
+
+.summary {
+  margin: 0;
+  color: var(--ht-muted);
+  line-height: 1.6;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 14px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.metaText {
+  display: block;
+  margin-top: 4px;
+  color: var(--ht-muted);
+  font-size: 0.9rem;
+}
+
+.statusStack {
+  display: grid;
+  gap: 8px;
+}
+
+.emptyState {
+  margin: 0;
+  color: var(--ht-muted);
+}
+
+.link {
+  color: var(--ht-accent);
+}
+
+@media (max-width: 1080px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .formCard {
+    position: static;
+  }
+}
