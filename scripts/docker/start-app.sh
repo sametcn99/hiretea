@@ -7,12 +7,29 @@ RUNTIME_ENV_FILE="${hiretea_RUNTIME_ENV_FILE:-/runtime/gitea/hiretea.generated.e
 WAIT_INTERVAL="${hiretea_RUNTIME_WAIT_INTERVAL:-2}"
 WAIT_RETRIES="${hiretea_RUNTIME_WAIT_RETRIES:-120}"
 
-if [ ! -f "$RUNTIME_ENV_FILE" ]; then
+runtime_env_is_valid() {
+  [ -f "$RUNTIME_ENV_FILE" ] &&
+    env -i /bin/sh -ec '
+      . "$1"
+
+      case "${DATABASE_URL:-}" in
+        postgres://*|postgresql://*) ;;
+        *) exit 1 ;;
+      esac
+
+      case "${NEXTAUTH_URL:-}" in
+        http://*|https://*) ;;
+        *) exit 1 ;;
+      esac
+    ' sh "$RUNTIME_ENV_FILE" >/dev/null 2>&1
+}
+
+if ! runtime_env_is_valid; then
   echo "Waiting for generated runtime env at $RUNTIME_ENV_FILE..."
 fi
 
 attempt=0
-while [ ! -f "$RUNTIME_ENV_FILE" ]; do
+while ! runtime_env_is_valid; do
   attempt=$((attempt + 1))
 
   if [ "$attempt" -ge "$WAIT_RETRIES" ]; then
@@ -38,7 +55,7 @@ case "$APP_MODE" in
     exec bun run dev --hostname "${hiretea_APP_HOST:-0.0.0.0}" --port "${hiretea_APP_PORT:-3000}"
     ;;
   start|prod|production)
-    exec bun run start --hostname "${hiretea_APP_HOST:-0.0.0.0}" --port "${hiretea_APP_PORT:-3000}"
+    PORT="${hiretea_APP_PORT:-3000}" HOSTNAME="${hiretea_APP_HOST:-0.0.0.0}" exec bun ./server.js
     ;;
   *)
     exec "$@"

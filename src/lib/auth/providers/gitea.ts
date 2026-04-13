@@ -12,10 +12,15 @@ type GiteaProviderOptions = {
   clientId: string;
   clientSecret: string;
   issuer: string;
+  internalBaseUrl?: string;
 };
 
 export function createGiteaProvider(options: GiteaProviderOptions) {
   const issuer = options.issuer.replace(/\/$/, "");
+  const internalBaseUrl = (options.internalBaseUrl ?? options.issuer).replace(
+    /\/$/,
+    "",
+  );
 
   return {
     id: "gitea",
@@ -30,8 +35,8 @@ export function createGiteaProvider(options: GiteaProviderOptions) {
         scope: "read:user user:email",
       },
     },
-    token: `${issuer}/login/oauth/access_token`,
-    userinfo: `${issuer}/login/oauth/userinfo`,
+    token: `${internalBaseUrl}/login/oauth/access_token`,
+    userinfo: `${internalBaseUrl}/login/oauth/userinfo`,
     profile(profile: GiteaProfile) {
       return {
         id: String(profile.id),

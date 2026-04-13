@@ -4,7 +4,7 @@ Hiretea is a self-hosted technical hiring workspace that now ships with its own 
 
 ## One-Command Stack
 
-1. Copy the optional override file.
+1. Optionally copy the override file.
 
 ```bash
 cp .env.example .env
@@ -48,7 +48,7 @@ The compose stack writes the generated runtime contract into the shared Gitea co
 docker compose exec app /bin/sh -lc '. /runtime/gitea/hiretea.generated.env && env | grep -E "^(AUTH_GITEA_|GITEA_ADMIN_|NEXTAUTH_SECRET|GITEA_WEBHOOK_SECRET|hiretea_)"'
 ```
 
-That is the place to read the generated Gitea admin password if you did not pin `GITEA_ADMIN_PASSWORD` in `.env`.
+If `GITEA_ADMIN_PASSWORD`, `NEXTAUTH_SECRET`, or `GITEA_WEBHOOK_SECRET` are set in `.env`, the stack now reapplies those exact values on every startup. If they are left unset, the runtime env file is the place to inspect the generated values.
 
 ## Optional Overrides
 

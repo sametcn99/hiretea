@@ -1,4 +1,4 @@
-FROM oven/bun:1.2.13-alpine AS base
+FROM oven/bun:latest AS base
 WORKDIR /app
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
@@ -12,11 +12,12 @@ FROM base AS builder
 COPY . .
 RUN bun run db:generate && bun run build
 
-FROM oven/bun:1.2.13-alpine AS production
+FROM oven/bun:latest AS production
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/.next/standalone/server.js ./server.js
 COPY --from=builder /app/bun.lock ./bun.lock
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/public ./public

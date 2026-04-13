@@ -1,5 +1,6 @@
 import type { Route } from "next";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { SetupForm } from "@/app/(public)/setup/components/setup-form";
 import styles from "@/app/(public)/setup/page.module.css";
 import { AppLogo } from "@/components/ui/app-logo";
@@ -14,6 +15,8 @@ import {
 } from "@/lib/env";
 
 export default async function SetupPage() {
+  await connection();
+
   const bootstrapStatus = await getBootstrapStatus();
 
   if (!bootstrapStatus.requiresSetup) {

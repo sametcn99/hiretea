@@ -23,6 +23,7 @@ const providers = (() => {
       clientId,
       clientSecret,
       issuer,
+      internalBaseUrl: env.GITEA_ADMIN_BASE_URL ?? issuer,
     }),
   ];
 })();

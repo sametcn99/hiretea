@@ -22,6 +22,21 @@ NEXTAUTH_URL="${NEXTAUTH_URL:-http://localhost:3000}"
 AUTH_GITEA_ID="${AUTH_GITEA_ID:-}"
 AUTH_GITEA_SECRET="${AUTH_GITEA_SECRET:-}"
 
+CONFIG_DATABASE_URL="$DATABASE_URL"
+CONFIG_GITEA_ADMIN_EMAIL="$GITEA_ADMIN_EMAIL"
+CONFIG_GITEA_ADMIN_NAME="$GITEA_ADMIN_NAME"
+CONFIG_GITEA_ADMIN_PASSWORD="$GITEA_ADMIN_PASSWORD"
+CONFIG_GITEA_ADMIN_USERNAME="$GITEA_ADMIN_USERNAME"
+CONFIG_GITEA_INTERNAL_URL="$GITEA_INTERNAL_URL"
+CONFIG_GITEA_ORGANIZATION_NAME="$GITEA_ORGANIZATION_NAME"
+CONFIG_GITEA_PUBLIC_URL="$GITEA_PUBLIC_URL"
+CONFIG_GITEA_WEBHOOK_SECRET="$GITEA_WEBHOOK_SECRET"
+CONFIG_hiretea_COMPANY_NAME="$hiretea_COMPANY_NAME"
+CONFIG_hiretea_DEFAULT_BRANCH="$hiretea_DEFAULT_BRANCH"
+CONFIG_hiretea_MANUAL_INVITE_MODE="$hiretea_MANUAL_INVITE_MODE"
+CONFIG_NEXTAUTH_SECRET="$NEXTAUTH_SECRET"
+CONFIG_NEXTAUTH_URL="$NEXTAUTH_URL"
+
 gitea_cmd() {
   gitea --config "$APP_INI" "$@"
 }
@@ -30,11 +45,69 @@ random_hex() {
   od -An -tx1 -N32 /dev/urandom | tr -d ' \n'
 }
 
+quote_env_value() {
+  jq -rn --arg value "${1:-}" '$value | @sh'
+}
+
+write_env_line() {
+  local key="$1"
+  local value="${2:-}"
+
+  printf '%s=%s\n' "$key" "$(quote_env_value "$value")"
+}
+
+runtime_env_is_valid() {
+  [ -f "$GITEA_RUNTIME_ENV_FILE" ] &&
+    env -i /bin/sh -ec '
+      . "$1"
+
+      case "${DATABASE_URL:-}" in
+        postgres://*|postgresql://*) ;;
+        *) exit 1 ;;
+      esac
+
+      case "${NEXTAUTH_URL:-}" in
+        http://*|https://*) ;;
+        *) exit 1 ;;
+      esac
+    ' sh "$GITEA_RUNTIME_ENV_FILE" >/dev/null 2>&1
+}
+
 load_existing_runtime_env() {
   if [ -f "$GITEA_RUNTIME_ENV_FILE" ]; then
+    if ! runtime_env_is_valid; then
+      echo "Discarding invalid runtime env at $GITEA_RUNTIME_ENV_FILE."
+      rm -f "$GITEA_RUNTIME_ENV_FILE"
+      return
+    fi
+
     set -a
     . "$GITEA_RUNTIME_ENV_FILE"
     set +a
+
+    DATABASE_URL="$CONFIG_DATABASE_URL"
+    GITEA_ADMIN_EMAIL="$CONFIG_GITEA_ADMIN_EMAIL"
+    GITEA_ADMIN_NAME="$CONFIG_GITEA_ADMIN_NAME"
+    GITEA_ADMIN_USERNAME="$CONFIG_GITEA_ADMIN_USERNAME"
+    GITEA_INTERNAL_URL="$CONFIG_GITEA_INTERNAL_URL"
+    GITEA_ORGANIZATION_NAME="$CONFIG_GITEA_ORGANIZATION_NAME"
+    GITEA_PUBLIC_URL="$CONFIG_GITEA_PUBLIC_URL"
+    hiretea_COMPANY_NAME="$CONFIG_hiretea_COMPANY_NAME"
+    hiretea_DEFAULT_BRANCH="$CONFIG_hiretea_DEFAULT_BRANCH"
+    hiretea_MANUAL_INVITE_MODE="$CONFIG_hiretea_MANUAL_INVITE_MODE"
+    NEXTAUTH_URL="$CONFIG_NEXTAUTH_URL"
+
+    if [ -n "$CONFIG_GITEA_ADMIN_PASSWORD" ]; then
+      GITEA_ADMIN_PASSWORD="$CONFIG_GITEA_ADMIN_PASSWORD"
+    fi
+
+    if [ -n "$CONFIG_GITEA_WEBHOOK_SECRET" ]; then
+      GITEA_WEBHOOK_SECRET="$CONFIG_GITEA_WEBHOOK_SECRET"
+    fi
+
+    if [ -n "$CONFIG_NEXTAUTH_SECRET" ]; then
+      NEXTAUTH_SECRET="$CONFIG_NEXTAUTH_SECRET"
+    fi
   fi
 }
 
@@ -71,6 +144,15 @@ wait_for_http() {
 ensure_admin_user() {
   if gitea_cmd admin user list | awk 'NR > 1 { print $2 }' | grep -Fxq "$GITEA_ADMIN_USERNAME"; then
     echo "Reusing existing Gitea admin user $GITEA_ADMIN_USERNAME."
+
+    if [ -n "$GITEA_ADMIN_PASSWORD" ]; then
+      echo "Applying configured password for Gitea admin user $GITEA_ADMIN_USERNAME."
+      gitea_cmd admin user change-password \
+        --username "$GITEA_ADMIN_USERNAME" \
+        --password "$GITEA_ADMIN_PASSWORD" \
+        --must-change-password=false >/dev/null
+    fi
+
     return 0
   fi
 
@@ -170,25 +252,25 @@ write_runtime_env() {
 
   tmp_file="$(mktemp "${GITEA_RUNTIME_ENV_FILE}.XXXXXX")"
 
-  cat > "$tmp_file" <<EOF
-DATABASE_URL=$DATABASE_URL
-NEXTAUTH_URL=$NEXTAUTH_URL
-NEXTAUTH_SECRET=$NEXTAUTH_SECRET
-AUTH_GITEA_ID=$AUTH_GITEA_ID
-AUTH_GITEA_SECRET=$AUTH_GITEA_SECRET
-AUTH_GITEA_ISSUER=$GITEA_PUBLIC_URL
-GITEA_ADMIN_BASE_URL=$GITEA_INTERNAL_URL
-GITEA_ADMIN_TOKEN=$GITEA_ADMIN_TOKEN
-GITEA_ADMIN_USERNAME=$GITEA_ADMIN_USERNAME
-GITEA_ADMIN_PASSWORD=$GITEA_ADMIN_PASSWORD
-GITEA_ORGANIZATION_NAME=$GITEA_ORGANIZATION_NAME
-GITEA_WEBHOOK_SECRET=$GITEA_WEBHOOK_SECRET
-hiretea_ADMIN_EMAIL=$GITEA_ADMIN_EMAIL
-hiretea_ADMIN_NAME=$GITEA_ADMIN_NAME
-hiretea_COMPANY_NAME=$hiretea_COMPANY_NAME
-hiretea_DEFAULT_BRANCH=$hiretea_DEFAULT_BRANCH
-hiretea_MANUAL_INVITE_MODE=$hiretea_MANUAL_INVITE_MODE
-EOF
+  {
+    write_env_line "DATABASE_URL" "$DATABASE_URL"
+    write_env_line "NEXTAUTH_URL" "$NEXTAUTH_URL"
+    write_env_line "NEXTAUTH_SECRET" "$NEXTAUTH_SECRET"
+    write_env_line "AUTH_GITEA_ID" "$AUTH_GITEA_ID"
+    write_env_line "AUTH_GITEA_SECRET" "$AUTH_GITEA_SECRET"
+    write_env_line "AUTH_GITEA_ISSUER" "$GITEA_PUBLIC_URL"
+    write_env_line "GITEA_ADMIN_BASE_URL" "$GITEA_INTERNAL_URL"
+    write_env_line "GITEA_ADMIN_TOKEN" "$GITEA_ADMIN_TOKEN"
+    write_env_line "GITEA_ADMIN_USERNAME" "$GITEA_ADMIN_USERNAME"
+    write_env_line "GITEA_ADMIN_PASSWORD" "$GITEA_ADMIN_PASSWORD"
+    write_env_line "GITEA_ORGANIZATION_NAME" "$GITEA_ORGANIZATION_NAME"
+    write_env_line "GITEA_WEBHOOK_SECRET" "$GITEA_WEBHOOK_SECRET"
+    write_env_line "hiretea_ADMIN_EMAIL" "$GITEA_ADMIN_EMAIL"
+    write_env_line "hiretea_ADMIN_NAME" "$GITEA_ADMIN_NAME"
+    write_env_line "hiretea_COMPANY_NAME" "$hiretea_COMPANY_NAME"
+    write_env_line "hiretea_DEFAULT_BRANCH" "$hiretea_DEFAULT_BRANCH"
+    write_env_line "hiretea_MANUAL_INVITE_MODE" "$hiretea_MANUAL_INVITE_MODE"
+  } > "$tmp_file"
 
   mv "$tmp_file" "$GITEA_RUNTIME_ENV_FILE"
   chmod 600 "$GITEA_RUNTIME_ENV_FILE"
