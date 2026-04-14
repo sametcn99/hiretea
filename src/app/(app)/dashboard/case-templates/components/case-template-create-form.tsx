@@ -19,6 +19,15 @@ const initialCreateCaseTemplateState: CreateCaseTemplateActionState = {
   status: "idle",
 };
 
+const initialFormValues = {
+  name: "",
+  slug: "",
+  summary: "",
+  repositoryName: "",
+  repositoryDescription: "",
+  defaultBranch: "main",
+};
+
 function SubmitButton() {
   const { pending } = useFormStatus();
 
@@ -40,16 +49,16 @@ export function CaseTemplateCreateForm() {
     createCaseTemplateAction,
     initialCreateCaseTemplateState,
   );
-  const [formKey, setFormKey] = useState(0);
+  const [formValues, setFormValues] = useState(initialFormValues);
 
   useEffect(() => {
     if (state.status === "success") {
-      setFormKey((k) => k + 1);
+      setFormValues(initialFormValues);
     }
   }, [state.status]);
 
   return (
-    <form action={formAction} key={formKey}>
+    <form action={formAction}>
       <Flex direction="column" gap="3">
         <Flex direction="column" gap="1">
           <Text as="label" size="2" weight="medium" htmlFor="name">
@@ -60,6 +69,13 @@ export function CaseTemplateCreateForm() {
             name="name"
             placeholder="Backend API challenge"
             type="text"
+            value={formValues.name}
+            onChange={(event) =>
+              setFormValues((current) => ({
+                ...current,
+                name: event.target.value,
+              }))
+            }
             color={state.fieldErrors?.name ? "red" : undefined}
           />
           {state.fieldErrors?.name?.map((error) => (
@@ -78,6 +94,13 @@ export function CaseTemplateCreateForm() {
             name="slug"
             placeholder="backend-api-challenge"
             type="text"
+            value={formValues.slug}
+            onChange={(event) =>
+              setFormValues((current) => ({
+                ...current,
+                slug: event.target.value,
+              }))
+            }
             color={state.fieldErrors?.slug ? "red" : undefined}
           />
           {state.fieldErrors?.slug?.map((error) => (
@@ -96,6 +119,13 @@ export function CaseTemplateCreateForm() {
             name="summary"
             placeholder="A concise description of the challenge, expected output, and review focus."
             rows={4}
+            value={formValues.summary}
+            onChange={(event) =>
+              setFormValues((current) => ({
+                ...current,
+                summary: event.target.value,
+              }))
+            }
             color={state.fieldErrors?.summary ? "red" : undefined}
           />
           {state.fieldErrors?.summary?.map((error) => (
@@ -114,6 +144,13 @@ export function CaseTemplateCreateForm() {
             name="repositoryName"
             placeholder="backend-api-challenge"
             type="text"
+            value={formValues.repositoryName}
+            onChange={(event) =>
+              setFormValues((current) => ({
+                ...current,
+                repositoryName: event.target.value,
+              }))
+            }
             color={state.fieldErrors?.repositoryName ? "red" : undefined}
           />
           {state.fieldErrors?.repositoryName?.map((error) => (
@@ -137,6 +174,13 @@ export function CaseTemplateCreateForm() {
             name="repositoryDescription"
             placeholder="Optional short description that will be stored in Gitea."
             rows={3}
+            value={formValues.repositoryDescription}
+            onChange={(event) =>
+              setFormValues((current) => ({
+                ...current,
+                repositoryDescription: event.target.value,
+              }))
+            }
           />
           {state.fieldErrors?.repositoryDescription?.map((error) => (
             <Text size="1" color="red" key={error}>
@@ -154,6 +198,13 @@ export function CaseTemplateCreateForm() {
             name="defaultBranch"
             placeholder="main"
             type="text"
+            value={formValues.defaultBranch}
+            onChange={(event) =>
+              setFormValues((current) => ({
+                ...current,
+                defaultBranch: event.target.value,
+              }))
+            }
             color={state.fieldErrors?.defaultBranch ? "red" : undefined}
           />
           {state.fieldErrors?.defaultBranch?.map((error) => (
