@@ -7,10 +7,7 @@ import {
   type BootstrapSetupInput,
   bootstrapSetupSchema,
 } from "@/lib/bootstrap/schemas";
-import {
-  getDeploymentGiteaMode,
-  hasConfigEncryptionKey,
-} from "@/lib/env";
+import { getDeploymentGiteaMode, hasConfigEncryptionKey } from "@/lib/env";
 import { validateGiteaWorkspaceSettings } from "@/lib/gitea/validation";
 
 type SetupField = keyof BootstrapSetupInput;

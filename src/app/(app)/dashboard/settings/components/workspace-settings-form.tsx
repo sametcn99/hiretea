@@ -253,7 +253,9 @@ export function WorkspaceSettingsForm({
                     : "Paste the shared webhook secret"
                 }
                 type="password"
-                color={state.fieldErrors?.giteaWebhookSecret ? "red" : undefined}
+                color={
+                  state.fieldErrors?.giteaWebhookSecret ? "red" : undefined
+                }
               />
               {state.fieldErrors?.giteaWebhookSecret?.map((error) => (
                 <Text size="1" color="red" key={error}>
@@ -285,7 +287,7 @@ export function WorkspaceSettingsForm({
           <Callout.Text>
             {settings.giteaMode === "external"
               ? "External Gitea credentials are stored encrypted at rest. Leave the password fields empty to keep the current encrypted values."
-              : "Bundled mode continues to keep OAuth and admin connection values in the generated runtime environment."} {" "}
+              : "Bundled mode continues to keep OAuth and admin connection values in the generated runtime environment."}{" "}
             {settings.manualInviteMode
               ? "Automatic delivery is not available yet."
               : "Saving these settings will restore the manual handoff mode."}

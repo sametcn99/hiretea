@@ -33,13 +33,13 @@ export default async function SetupPage() {
     companyName: env.hiretea_COMPANY_NAME ?? "Hiretea Workspace",
     giteaBaseUrl:
       deploymentMode === "bundled"
-        ? env.AUTH_GITEA_ISSUER ?? env.GITEA_ADMIN_BASE_URL ?? ""
+        ? (env.AUTH_GITEA_ISSUER ?? env.GITEA_ADMIN_BASE_URL ?? "")
         : "",
     giteaAdminBaseUrl:
-      deploymentMode === "bundled" ? env.GITEA_ADMIN_BASE_URL ?? "" : "",
+      deploymentMode === "bundled" ? (env.GITEA_ADMIN_BASE_URL ?? "") : "",
     giteaOrganization: env.GITEA_ORGANIZATION_NAME ?? "",
     giteaAuthClientId:
-      deploymentMode === "bundled" ? env.AUTH_GITEA_ID ?? "" : "",
+      deploymentMode === "bundled" ? (env.AUTH_GITEA_ID ?? "") : "",
     defaultBranch: env.hiretea_DEFAULT_BRANCH ?? "main",
   };
 
@@ -84,7 +84,11 @@ export default async function SetupPage() {
                 <Flex justify="between" align="center" gap="3">
                   <Text size="2">Deployment mode</Text>
                   <StatusBadge
-                    label={deploymentMode === "external" ? "External Gitea" : "Bundled Gitea"}
+                    label={
+                      deploymentMode === "external"
+                        ? "External Gitea"
+                        : "Bundled Gitea"
+                    }
                     tone="info"
                   />
                 </Flex>
@@ -147,7 +151,9 @@ export default async function SetupPage() {
                   <Text size="2">Webhook runtime</Text>
                   <StatusBadge
                     label={runtimeReadiness.webhookReady ? "Ready" : "Missing"}
-                    tone={runtimeReadiness.webhookReady ? "positive" : "warning"}
+                    tone={
+                      runtimeReadiness.webhookReady ? "positive" : "warning"
+                    }
                   />
                 </Flex>
                 <Flex justify="between" align="center" gap="3">

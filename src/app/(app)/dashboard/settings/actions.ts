@@ -87,7 +87,8 @@ export async function updateWorkspaceSettingsAction(
     if (
       parsedInput.data.giteaMode === "external" &&
       currentSettings.giteaAuthClientId &&
-      parsedInput.data.giteaAuthClientId !== currentSettings.giteaAuthClientId &&
+      parsedInput.data.giteaAuthClientId !==
+        currentSettings.giteaAuthClientId &&
       !parsedInput.data.giteaAuthClientSecret
     ) {
       throw new Error(

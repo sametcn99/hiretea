@@ -1,8 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { AlertDialog, Button, DropdownMenu, Flex, IconButton } from "@radix-ui/themes";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
+import {
+  AlertDialog,
+  Button,
+  DropdownMenu,
+  Flex,
+  IconButton,
+} from "@radix-ui/themes";
+import { useState } from "react";
 import { deleteCaseAction, revokeAccessAction } from "../actions";
 
 type CandidateCaseActionsProps = {
@@ -10,7 +16,10 @@ type CandidateCaseActionsProps = {
   repositoryName: string;
 };
 
-export function CandidateCaseActions({ caseId, repositoryName }: CandidateCaseActionsProps) {
+export function CandidateCaseActions({
+  caseId,
+  repositoryName,
+}: CandidateCaseActionsProps) {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [isRevokeAlertOpen, setIsRevokeAlertOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -60,12 +69,16 @@ export function CandidateCaseActions({ caseId, repositoryName }: CandidateCaseAc
       </DropdownMenu.Root>
 
       {/* Revoke Access Alert */}
-      <AlertDialog.Root open={isRevokeAlertOpen} onOpenChange={setIsRevokeAlertOpen}>
+      <AlertDialog.Root
+        open={isRevokeAlertOpen}
+        onOpenChange={setIsRevokeAlertOpen}
+      >
         <AlertDialog.Content maxWidth="450px">
           <AlertDialog.Title>Revoke Access</AlertDialog.Title>
           <AlertDialog.Description size="2">
             Are you sure you want to revoke the candidate's access to{" "}
-            <strong>{repositoryName}</strong>? They will no longer be able to push code or view the repository.
+            <strong>{repositoryName}</strong>? They will no longer be able to
+            push code or view the repository.
           </AlertDialog.Description>
 
           <Flex gap="3" mt="4" justify="end">
@@ -75,7 +88,12 @@ export function CandidateCaseActions({ caseId, repositoryName }: CandidateCaseAc
               </Button>
             </AlertDialog.Cancel>
             <AlertDialog.Action>
-              <Button variant="solid" color="red" onClick={handleRevoke} loading={isLoading}>
+              <Button
+                variant="solid"
+                color="red"
+                onClick={handleRevoke}
+                loading={isLoading}
+              >
                 Revoke Access
               </Button>
             </AlertDialog.Action>
@@ -84,13 +102,16 @@ export function CandidateCaseActions({ caseId, repositoryName }: CandidateCaseAc
       </AlertDialog.Root>
 
       {/* Delete Case Alert */}
-      <AlertDialog.Root open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+      <AlertDialog.Root
+        open={isDeleteAlertOpen}
+        onOpenChange={setIsDeleteAlertOpen}
+      >
         <AlertDialog.Content maxWidth="450px">
           <AlertDialog.Title>Delete Candidate Case</AlertDialog.Title>
           <AlertDialog.Description size="2">
-            Are you sure you want to delete <strong>{repositoryName}</strong>? This action
-            cannot be undone. It will delete the repository from Gitea and wipe all
-            evaluation notes from the system.
+            Are you sure you want to delete <strong>{repositoryName}</strong>?
+            This action cannot be undone. It will delete the repository from
+            Gitea and wipe all evaluation notes from the system.
           </AlertDialog.Description>
 
           <Flex gap="3" mt="4" justify="end">
@@ -100,7 +121,12 @@ export function CandidateCaseActions({ caseId, repositoryName }: CandidateCaseAc
               </Button>
             </AlertDialog.Cancel>
             <AlertDialog.Action>
-              <Button variant="solid" color="red" onClick={handleDelete} loading={isLoading}>
+              <Button
+                variant="solid"
+                color="red"
+                onClick={handleDelete}
+                loading={isLoading}
+              >
                 Delete Case
               </Button>
             </AlertDialog.Action>

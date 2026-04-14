@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
-import { deleteCaseRepository } from "@/lib/gitea/repositories";
 import { GiteaAdminClientError } from "@/lib/gitea/client";
+import { deleteCaseRepository } from "@/lib/gitea/repositories";
 
 export async function deleteCandidateCase(caseId: string, actorId: string) {
   const caseRecord = await db.candidateCase.findUniqueOrThrow({

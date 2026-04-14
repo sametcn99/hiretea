@@ -226,7 +226,9 @@ export function SetupForm({
                   name="giteaAuthClientId"
                   placeholder="hiretea-client-id"
                   type="text"
-                  color={state.fieldErrors?.giteaAuthClientId ? "red" : undefined}
+                  color={
+                    state.fieldErrors?.giteaAuthClientId ? "red" : undefined
+                  }
                 />
                 {state.fieldErrors?.giteaAuthClientId?.map((error) => (
                   <Text size="1" color="red" key={error}>
@@ -299,7 +301,9 @@ export function SetupForm({
                   name="giteaWebhookSecret"
                   placeholder="Shared webhook secret"
                   type="password"
-                  color={state.fieldErrors?.giteaWebhookSecret ? "red" : undefined}
+                  color={
+                    state.fieldErrors?.giteaWebhookSecret ? "red" : undefined
+                  }
                 />
                 {state.fieldErrors?.giteaWebhookSecret?.map((error) => (
                   <Text size="1" color="red" key={error}>

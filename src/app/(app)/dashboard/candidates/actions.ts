@@ -4,12 +4,12 @@ import { UserRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import type { ZodIssue } from "zod";
 import { requireRole } from "@/lib/auth/session";
+import { deleteCandidate } from "@/lib/candidates/delete-candidate";
 import { provisionCandidate } from "@/lib/candidates/provision-candidate";
 import {
   type CandidateProvisionInput,
   candidateProvisionSchema,
 } from "@/lib/candidates/schemas";
-import { deleteCandidate } from "@/lib/candidates/delete-candidate";
 
 type ProvisionCandidateField = keyof CandidateProvisionInput;
 
@@ -102,5 +102,3 @@ export async function deleteCandidateAction(candidateId: string) {
     };
   }
 }
-
-

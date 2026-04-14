@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "smoke:test": "./scripts/smoke-test.sh",
     "docker:auto-bootstrap": "bun run scripts/docker/bootstrap-app.ts",
     "docker:down": "docker compose down --volumes --remove-orphans",
     "docker:nuke": "docker compose down --volumes --remove-orphans --rmi all",

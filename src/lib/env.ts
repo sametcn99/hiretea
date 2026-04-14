@@ -1,6 +1,28 @@
 import { z } from "zod";
 
 const deploymentGiteaModeSchema = z.enum(["bundled", "external"]);
+const emptyStringToUndefined = (value: unknown) =>
+  typeof value === "string" && value.trim() === "" ? undefined : value;
+
+const optionalStringEnv = z.preprocess(
+  emptyStringToUndefined,
+  z.string().min(1).optional(),
+);
+
+const optionalUrlEnv = z.preprocess(
+  emptyStringToUndefined,
+  z.string().url().optional(),
+);
+
+const optionalEmailEnv = z.preprocess(
+  emptyStringToUndefined,
+  z.string().email().optional(),
+);
+
+const optionalBooleanStringEnv = z.preprocess(
+  emptyStringToUndefined,
+  z.enum(["true", "false"]).optional(),
+);
 
 export type DeploymentGiteaMode = z.infer<typeof deploymentGiteaModeSchema>;
 
@@ -9,23 +31,23 @@ const envSchema = z.object({
     .enum(["development", "test", "production"])
     .default("development"),
   HIRETEA_GITEA_MODE: deploymentGiteaModeSchema.default("bundled"),
-  HIRETEA_CONFIG_ENCRYPTION_KEY: z.string().min(1).optional(),
-  DATABASE_URL: z.string().min(1).optional(),
-  hiretea_ADMIN_EMAIL: z.string().email().optional(),
-  hiretea_ADMIN_NAME: z.string().min(1).optional(),
-  hiretea_COMPANY_NAME: z.string().min(1).optional(),
-  hiretea_DEFAULT_BRANCH: z.string().min(1).optional(),
-  hiretea_MANUAL_INVITE_MODE: z.enum(["true", "false"]).optional(),
-  NEXTAUTH_SECRET: z.string().min(1).optional(),
-  NEXTAUTH_URL: z.string().url().optional(),
-  AUTH_GITEA_ID: z.string().min(1).optional(),
-  AUTH_GITEA_SECRET: z.string().min(1).optional(),
-  AUTH_GITEA_ISSUER: z.string().url().optional(),
-  GITEA_ADMIN_BASE_URL: z.string().url().optional(),
-  GITEA_ADMIN_TOKEN: z.string().min(1).optional(),
-  GITEA_ORGANIZATION_NAME: z.string().min(1).optional(),
-  GITEA_WEBHOOK_SECRET: z.string().min(1).optional(),
-  BOOTSTRAP_TOKEN: z.string().min(1).optional(),
+  HIRETEA_CONFIG_ENCRYPTION_KEY: optionalStringEnv,
+  DATABASE_URL: optionalStringEnv,
+  hiretea_ADMIN_EMAIL: optionalEmailEnv,
+  hiretea_ADMIN_NAME: optionalStringEnv,
+  hiretea_COMPANY_NAME: optionalStringEnv,
+  hiretea_DEFAULT_BRANCH: optionalStringEnv,
+  hiretea_MANUAL_INVITE_MODE: optionalBooleanStringEnv,
+  NEXTAUTH_SECRET: optionalStringEnv,
+  NEXTAUTH_URL: optionalUrlEnv,
+  AUTH_GITEA_ID: optionalStringEnv,
+  AUTH_GITEA_SECRET: optionalStringEnv,
+  AUTH_GITEA_ISSUER: optionalUrlEnv,
+  GITEA_ADMIN_BASE_URL: optionalUrlEnv,
+  GITEA_ADMIN_TOKEN: optionalStringEnv,
+  GITEA_ORGANIZATION_NAME: optionalStringEnv,
+  GITEA_WEBHOOK_SECRET: optionalStringEnv,
+  BOOTSTRAP_TOKEN: optionalStringEnv,
 });
 
 export const env = envSchema.parse({

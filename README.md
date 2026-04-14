@@ -137,6 +137,7 @@ docker compose up --build
 COMPOSE_PROFILES="" HIRETEA_GITEA_MODE=external docker compose up --build
 docker compose down
 docker compose down -v
+bun run smoke:test
 bun run lint
 bun run typecheck
 bun run build

@@ -1,5 +1,5 @@
-import { createAuditLog } from "@/lib/audit/log";
 import { WorkspaceGiteaMode } from "@prisma/client";
+import { createAuditLog } from "@/lib/audit/log";
 import { db } from "@/lib/db";
 import { encryptExternalGiteaSecret } from "@/lib/gitea/secret-store";
 import type { WorkspaceSettingsUpdateInput } from "@/lib/workspace-settings/schemas";
@@ -84,13 +84,14 @@ export async function updateWorkspaceSettings(
       update: {
         authClientSecretEncrypted: input.giteaAuthClientSecret
           ? encryptExternalGiteaSecret(input.giteaAuthClientSecret)
-          : currentSettings.giteaConfigSecret?.authClientSecretEncrypted ?? null,
+          : (currentSettings.giteaConfigSecret?.authClientSecretEncrypted ??
+            null),
         adminTokenEncrypted: input.giteaAdminToken
           ? encryptExternalGiteaSecret(input.giteaAdminToken)
-          : currentSettings.giteaConfigSecret?.adminTokenEncrypted ?? null,
+          : (currentSettings.giteaConfigSecret?.adminTokenEncrypted ?? null),
         webhookSecretEncrypted: input.giteaWebhookSecret
           ? encryptExternalGiteaSecret(input.giteaWebhookSecret)
-          : currentSettings.giteaConfigSecret?.webhookSecretEncrypted ?? null,
+          : (currentSettings.giteaConfigSecret?.webhookSecretEncrypted ?? null),
       },
       create: {
         workspaceSettingsId: currentSettings.id,

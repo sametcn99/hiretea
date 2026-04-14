@@ -1,9 +1,12 @@
 import { db } from "@/lib/db";
-import { revokeRepositoryAccess } from "@/lib/gitea/permissions";
 import { GiteaAdminClientError } from "@/lib/gitea/client";
+import { revokeRepositoryAccess } from "@/lib/gitea/permissions";
 import { getWorkspaceSettings } from "@/lib/workspace-settings/queries";
 
-export async function revokeCandidateCaseAccess(caseId: string, actorId: string) {
+export async function revokeCandidateCaseAccess(
+  caseId: string,
+  actorId: string,
+) {
   const caseRecord = await db.candidateCase.findUniqueOrThrow({
     where: { id: caseId },
     include: {

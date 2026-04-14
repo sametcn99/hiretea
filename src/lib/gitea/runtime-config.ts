@@ -1,10 +1,10 @@
 import { WorkspaceGiteaMode } from "@prisma/client";
 import { db } from "@/lib/db";
 import {
+  type DeploymentGiteaMode,
   env,
   getDeploymentGiteaMode,
   hasConfigEncryptionKey,
-  type DeploymentGiteaMode,
 } from "@/lib/env";
 import { decryptExternalGiteaSecret } from "@/lib/gitea/secret-store";
 
@@ -101,7 +101,10 @@ function getBundledRuntimeConfig(): GiteaRuntimeConfig {
 async function getExternalRuntimeConfig(): Promise<GiteaRuntimeConfig> {
   const persistedConfig = await getPersistedWorkspaceGiteaConfig();
 
-  if (!persistedConfig || persistedConfig.giteaMode !== WorkspaceGiteaMode.EXTERNAL) {
+  if (
+    !persistedConfig ||
+    persistedConfig.giteaMode !== WorkspaceGiteaMode.EXTERNAL
+  ) {
     return {
       mode: "external",
       source: "database",

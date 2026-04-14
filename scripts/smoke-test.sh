@@ -1,109 +1,294 @@
 #!/bin/bash
-set -e
 
-# Create test results directory
-RESULTS_DIR="$(pwd)/test-results"
-mkdir -p "$RESULTS_DIR"
+set -euo pipefail
 
-# Clean up any existing containers and volumes to start fresh
-echo "Cleaning up existing containers and volumes..."
-docker compose --profile bundled-gitea down -v || true
+ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+RESULTS_DIR="$ROOT_DIR/test-results/smoke"
+ENV_FILE="$ROOT_DIR/.env"
+ENV_BACKUP_FILE="$RESULTS_DIR/.env.backup"
+APP_URL="http://localhost:3000"
+GITEA_URL="http://localhost:3001"
+APP_PORT=3000
+GITEA_PORT=3001
+MAX_RETRIES=120
+WAIT_SECONDS=2
+ORIGINAL_ENV_PRESENT=0
 
-echo "========================================="
-echo "Running BUNDLED Mode Smoke Test"
-echo "========================================="
+SMOKE_BOOTSTRAP_TOKEN="smoke_test_bootstrap_token_123"
+SMOKE_CONFIG_ENCRYPTION_KEY="smoke_test_config_key_12345678901234567890"
+SMOKE_NEXTAUTH_SECRET="smoke_test_nextauth_secret_123456789012345"
+SMOKE_WEBHOOK_SECRET="smoke_test_webhook_secret_12345678901234"
+SMOKE_ADMIN_EMAIL="admin@hiretea.local"
+SMOKE_ADMIN_NAME="Hiretea Smoke Admin"
+SMOKE_COMPANY_NAME="Hiretea Smoke Workspace"
+SMOKE_DEFAULT_BRANCH="smoke-main"
+SMOKE_GITEA_ADMIN_USERNAME="hiretea-smoke-admin"
+SMOKE_GITEA_ADMIN_PASSWORD="HireTeaSmoke!23"
+SMOKE_GITEA_ORGANIZATION="hiretea-smoke"
 
-# Create .env for bundled mode
-cat <<EOF > .env
+bundled_results_dir() {
+  printf "%s/bundled" "$RESULTS_DIR"
+}
+
+external_results_dir() {
+  printf "%s/external" "$RESULTS_DIR"
+}
+
+log() {
+  printf "\n[%s] %s\n" "$(date +%H:%M:%S)" "$1"
+}
+
+cleanup_compose() {
+  (
+    cd "$ROOT_DIR"
+    docker compose --profile bundled-gitea down -v --remove-orphans >/dev/null 2>&1 || true
+  )
+}
+
+restore_env() {
+  if [ "$ORIGINAL_ENV_PRESENT" -eq 1 ] && [ -f "$ENV_BACKUP_FILE" ]; then
+    mv "$ENV_BACKUP_FILE" "$ENV_FILE"
+    return
+  fi
+
+  rm -f "$ENV_FILE" "$ENV_BACKUP_FILE"
+}
+
+cleanup() {
+  local exit_code=$?
+
+  cleanup_compose
+  restore_env
+
+  exit "$exit_code"
+}
+
+trap cleanup EXIT
+
+prepare_results() {
+  rm -rf "$RESULTS_DIR"
+  mkdir -p "$(bundled_results_dir)" "$(external_results_dir)"
+}
+
+backup_env() {
+  mkdir -p "$RESULTS_DIR"
+
+  if [ -f "$ENV_FILE" ]; then
+    cp "$ENV_FILE" "$ENV_BACKUP_FILE"
+    ORIGINAL_ENV_PRESENT=1
+  fi
+}
+
+write_bundled_env() {
+  cat <<EOF > "$ENV_FILE"
+COMPOSE_PROFILES=bundled-gitea
 HIRETEA_GITEA_MODE=bundled
-HIRETEA_CONFIG_ENCRYPTION_KEY=supersecretkey1234567890123456
-NEXTAUTH_SECRET=supersecretkey1234567890123456
-NEXTAUTH_URL=http://localhost:3000
-BOOTSTRAP_TOKEN=smoke_test_bootstrap_token_123
-hiretea_ADMIN_EMAIL=admin@hiretea.local
+HIRETEA_CONFIG_ENCRYPTION_KEY=$SMOKE_CONFIG_ENCRYPTION_KEY
+NEXTAUTH_SECRET=$SMOKE_NEXTAUTH_SECRET
+NEXTAUTH_URL=$APP_URL
+BOOTSTRAP_TOKEN=$SMOKE_BOOTSTRAP_TOKEN
+APP_HTTP_PORT=$APP_PORT
+GITEA_HTTP_PORT=$GITEA_PORT
+GITEA_PUBLIC_URL=$GITEA_URL
+hiretea_ADMIN_EMAIL=$SMOKE_ADMIN_EMAIL
+hiretea_ADMIN_NAME=$SMOKE_ADMIN_NAME
+hiretea_COMPANY_NAME=$SMOKE_COMPANY_NAME
+hiretea_DEFAULT_BRANCH=$SMOKE_DEFAULT_BRANCH
+GITEA_ADMIN_EMAIL=$SMOKE_ADMIN_EMAIL
+GITEA_ADMIN_USERNAME=$SMOKE_GITEA_ADMIN_USERNAME
+GITEA_ADMIN_PASSWORD=$SMOKE_GITEA_ADMIN_PASSWORD
+GITEA_ORGANIZATION_NAME=$SMOKE_GITEA_ORGANIZATION
+GITEA_WEBHOOK_SECRET=$SMOKE_WEBHOOK_SECRET
 EOF
+}
 
-# Start bundled mode
-docker compose --profile bundled-gitea up -d --build
-
-echo "Waiting for app to become ready on port 3000..."
-max_retries=30
-count=0
-until curl -s http://localhost:3000 > /dev/null; do
-    if [ $count -eq $max_retries ]; then
-        echo "Timeout waiting for app"
-        docker compose --profile bundled-gitea logs > "$RESULTS_DIR/bundled-logs-failed.txt"
-        exit 1
-    fi
-    echo "Waiting... ($count/$max_retries)"
-    sleep 5
-    count=$((count+1))
-done
-
-echo "App is responding! Saving logs..."
-docker compose --profile bundled-gitea logs > "$RESULTS_DIR/bundled-logs.txt"
-curl -s http://localhost:3000 > "$RESULTS_DIR/bundled-index.html"
-
-# Verify that the app is truly loaded, maybe check if we hit a specific page or login
-if grep -qi "Next" "$RESULTS_DIR/bundled-index.html"; then
-    echo "Bundled mode HTML looks somewhat valid."
-else
-    echo "Bundled mode HTML might not be fully loaded, but it responded."
-fi
-
-# Clean up bundled mode
-docker compose --profile bundled-gitea down -v
-
-echo "========================================="
-echo "Running EXTERNAL Mode Smoke Test"
-echo "========================================="
-
-# Create .env for external mode
-cat <<EOF > .env
+write_external_env() {
+  cat <<EOF > "$ENV_FILE"
+COMPOSE_PROFILES=
 HIRETEA_GITEA_MODE=external
-HIRETEA_CONFIG_ENCRYPTION_KEY=supersecretkey1234567890123456
-NEXTAUTH_SECRET=supersecretkey1234567890123456
-NEXTAUTH_URL=http://localhost:3000
-BOOTSTRAP_TOKEN=smoke_test_bootstrap_token_123
-hiretea_ADMIN_EMAIL=admin@hiretea.local
-AUTH_GITEA_ID=dummy-client-id
-AUTH_GITEA_SECRET=dummy-client-secret
-AUTH_GITEA_ISSUER=http://localhost:3001
-GITEA_ADMIN_BASE_URL=http://localhost:3001
-GITEA_ORGANIZATION_NAME=hiretea
+HIRETEA_CONFIG_ENCRYPTION_KEY=$SMOKE_CONFIG_ENCRYPTION_KEY
+NEXTAUTH_SECRET=$SMOKE_NEXTAUTH_SECRET
+NEXTAUTH_URL=$APP_URL
+BOOTSTRAP_TOKEN=$SMOKE_BOOTSTRAP_TOKEN
+APP_HTTP_PORT=$APP_PORT
+GITEA_HTTP_PORT=$GITEA_PORT
+GITEA_PUBLIC_URL=$GITEA_URL
+hiretea_ADMIN_EMAIL=$SMOKE_ADMIN_EMAIL
+hiretea_ADMIN_NAME=$SMOKE_ADMIN_NAME
+hiretea_COMPANY_NAME=$SMOKE_COMPANY_NAME
+hiretea_DEFAULT_BRANCH=$SMOKE_DEFAULT_BRANCH
+GITEA_ADMIN_EMAIL=$SMOKE_ADMIN_EMAIL
+GITEA_ADMIN_USERNAME=$SMOKE_GITEA_ADMIN_USERNAME
+GITEA_ADMIN_PASSWORD=$SMOKE_GITEA_ADMIN_PASSWORD
+GITEA_ORGANIZATION_NAME=$SMOKE_GITEA_ORGANIZATION
 EOF
+}
 
-# Start external mode (without the bundled-gitea profile)
-docker compose up -d --build
+compose() {
+  (
+    cd "$ROOT_DIR"
+    docker compose "$@"
+  )
+}
 
-echo "Waiting for app to become ready on port 3000..."
-count=0
-until curl -s http://localhost:3000/setup > /dev/null; do
-    if [ $count -eq $max_retries ]; then
-        echo "Timeout waiting for app"
-        docker compose logs > "$RESULTS_DIR/external-logs-failed.txt"
-        exit 1
+save_logs() {
+  local destination="$1"
+
+  compose --profile bundled-gitea logs --timestamps > "$destination"
+}
+
+wait_for_url() {
+  local url="$1"
+  local destination="$2"
+  local label="$3"
+  local attempt=0
+
+  until curl --silent --show-error --fail --location "$url" -o "$destination"; do
+    attempt=$((attempt + 1))
+
+    if [ "$attempt" -ge "$MAX_RETRIES" ]; then
+      save_logs "$RESULTS_DIR/${label}-timeout-logs.txt"
+      echo "Timed out waiting for $label at $url" >&2
+      return 1
     fi
-    echo "Waiting... ($count/$max_retries)"
-    sleep 5
-    count=$((count+1))
-done
 
-echo "App is responding! Saving logs..."
-docker compose logs > "$RESULTS_DIR/external-logs.txt"
-curl -s http://localhost:3000/setup > "$RESULTS_DIR/external-setup.html"
+    sleep "$WAIT_SECONDS"
+  done
+}
 
-# In external mode, we expect to be redirected to /setup or see setup content
-if grep -qi "setup" "$RESULTS_DIR/external-setup.html" || curl -s -I http://localhost:3000 | grep -qi "Location: /setup"; then
-    echo "External mode setup page looks accessible."
-else
-    echo "External mode might not have hit setup correctly, but responded."
-fi
+capture_response() {
+  local url="$1"
+  local body_file="$2"
+  local header_file="$3"
 
-# Clean up external mode
-docker compose down -v
+  curl --silent --show-error --location --dump-header "$header_file" "$url" > "$body_file"
+}
 
-echo "========================================="
-echo "Smoke tests completed successfully!"
-echo "Check the $RESULTS_DIR directory for logs."
-echo "========================================="
+capture_headers() {
+  local url="$1"
+  local header_file="$2"
+
+  curl --silent --show-error --head "$url" > "$header_file"
+}
+
+assert_contains() {
+  local file="$1"
+  local expected="$2"
+
+  if ! grep -Fq "$expected" "$file"; then
+    echo "Expected to find '$expected' in $file" >&2
+    return 1
+  fi
+}
+
+assert_header_contains() {
+  local file="$1"
+  local expected="$2"
+
+  if ! grep -Fiq "$expected" "$file"; then
+    echo "Expected to find header '$expected' in $file" >&2
+    return 1
+  fi
+}
+
+run_in_app() {
+  local command="$1"
+  compose exec -T app /bin/sh -lc "$command"
+}
+
+run_bundled_mode() {
+  local mode_dir
+  mode_dir="$(bundled_results_dir)"
+
+  log "Running bundled smoke scenario"
+  cleanup_compose
+  write_bundled_env
+
+  compose --profile bundled-gitea up -d --build
+
+  wait_for_url "$APP_URL/sign-in" "$mode_dir/sign-in.html" "bundled-app"
+  wait_for_url "$GITEA_URL/user/login" "$mode_dir/gitea-login.html" "bundled-gitea"
+
+  capture_response "$APP_URL/sign-in" "$mode_dir/sign-in.html" "$mode_dir/sign-in.headers.txt"
+  capture_headers "$APP_URL/setup" "$mode_dir/setup.headers.txt"
+  capture_headers "$APP_URL/dashboard" "$mode_dir/dashboard.headers.txt"
+
+  assert_contains "$mode_dir/sign-in.html" "Sign in with your Gitea identity"
+  assert_contains "$mode_dir/sign-in.html" "OAuth configuration"
+  assert_contains "$mode_dir/sign-in.html" "Ready"
+  assert_header_contains "$mode_dir/setup.headers.txt" "location: /sign-in"
+  assert_header_contains "$mode_dir/dashboard.headers.txt" "location: /sign-in"
+
+  run_in_app "set -a && . /runtime/gitea/hiretea.generated.env && set +a && bun scripts/smoke/assert-state.ts --phase bundled-ready" \
+    > "$mode_dir/assertions.txt"
+
+  save_logs "$mode_dir/compose.log"
+}
+
+run_external_mode() {
+  local mode_dir
+  mode_dir="$(external_results_dir)"
+
+  log "Running external smoke scenario"
+  cleanup_compose
+
+  write_bundled_env
+  compose --profile bundled-gitea up -d --build db db-init gitea gitea-init
+  wait_for_url "$GITEA_URL/user/login" "$mode_dir/gitea-login.html" "external-gitea"
+
+  write_external_env
+  compose up -d --build app
+
+  wait_for_url "$APP_URL/setup" "$mode_dir/setup-pre-bootstrap.html" "external-app"
+
+  capture_headers "$APP_URL/sign-in" "$mode_dir/sign-in-pre-bootstrap.headers.txt"
+  capture_response "$APP_URL/setup" "$mode_dir/setup-pre-bootstrap.html" "$mode_dir/setup-pre-bootstrap.headers.txt"
+  capture_headers "$APP_URL/dashboard" "$mode_dir/dashboard-pre-bootstrap.headers.txt"
+
+  assert_header_contains "$mode_dir/sign-in-pre-bootstrap.headers.txt" "location: /setup"
+  assert_contains "$mode_dir/setup-pre-bootstrap.html" "Workspace setup"
+  assert_contains "$mode_dir/setup-pre-bootstrap.html" "Admin token"
+  assert_contains "$mode_dir/setup-pre-bootstrap.html" "OAuth client secret"
+  assert_contains "$mode_dir/setup-pre-bootstrap.html" "Webhook secret"
+  assert_header_contains "$mode_dir/dashboard-pre-bootstrap.headers.txt" "location: /sign-in"
+
+  run_in_app "set -a && . /runtime/gitea/hiretea.generated.env && set +a && bun scripts/smoke/assert-state.ts --phase external-pre-setup" \
+    > "$mode_dir/pre-setup-assertions.txt"
+
+  run_in_app "set -a && . /runtime/gitea/hiretea.generated.env && set +a && bun scripts/smoke/complete-external-bootstrap.ts --expect-invalid-token" \
+    > "$mode_dir/invalid-token-check.txt"
+
+  run_in_app "set -a && . /runtime/gitea/hiretea.generated.env && set +a && bun scripts/smoke/assert-state.ts --phase external-pre-setup" \
+    > "$mode_dir/pre-setup-after-invalid-token-assertions.txt"
+
+  run_in_app "set -a && . /runtime/gitea/hiretea.generated.env && set +a && bun scripts/smoke/complete-external-bootstrap.ts" \
+    > "$mode_dir/bootstrap.txt"
+
+  capture_response "$APP_URL/sign-in" "$mode_dir/sign-in-post-bootstrap.html" "$mode_dir/sign-in-post-bootstrap.headers.txt"
+  capture_headers "$APP_URL/setup" "$mode_dir/setup-post-bootstrap.headers.txt"
+
+  assert_contains "$mode_dir/sign-in-post-bootstrap.html" "Sign in with your Gitea identity"
+  assert_contains "$mode_dir/sign-in-post-bootstrap.html" "Ready"
+  assert_header_contains "$mode_dir/setup-post-bootstrap.headers.txt" "location: /sign-in"
+
+  run_in_app "set -a && . /runtime/gitea/hiretea.generated.env && set +a && bun scripts/smoke/assert-state.ts --phase external-post-setup" \
+    > "$mode_dir/post-setup-assertions.txt"
+
+  save_logs "$mode_dir/compose.log"
+}
+
+main() {
+  prepare_results
+  backup_env
+
+  log "Preparing clean docker state"
+  cleanup_compose
+
+  run_bundled_mode
+  run_external_mode
+
+  log "Smoke test suite completed successfully"
+  printf "Artifacts: %s\n" "$RESULTS_DIR"
+}
+
+main "$@"

@@ -150,7 +150,9 @@ export function CandidateCaseTable({
             <Table.Cell>
               <CandidateCaseActions
                 caseId={candidateCase.id}
-                repositoryName={candidateCase.workingRepository || "Pending Repository"}
+                repositoryName={
+                  candidateCase.workingRepository || "Pending Repository"
+                }
               />
             </Table.Cell>
           </Table.Row>

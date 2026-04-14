@@ -105,7 +105,8 @@ export async function deleteCaseAction(caseId: string) {
   } catch (e: unknown) {
     return {
       status: "error",
-      message: e instanceof Error ? e.message : "Failed to delete candidate case.",
+      message:
+        e instanceof Error ? e.message : "Failed to delete candidate case.",
     };
   }
 }
@@ -127,4 +128,3 @@ export async function revokeAccessAction(caseId: string) {
     };
   }
 }
-

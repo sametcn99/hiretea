@@ -1,4 +1,7 @@
-import { GiteaAdminClientError, createGiteaAdminClient } from "@/lib/gitea/client";
+import {
+  createGiteaAdminClient,
+  GiteaAdminClientError,
+} from "@/lib/gitea/client";
 import { getGiteaRuntimeConfig } from "@/lib/gitea/runtime-config";
 
 type GiteaAdminUserResponse = {

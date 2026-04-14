@@ -1,8 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { AlertDialog, Button, DropdownMenu, Flex, IconButton } from "@radix-ui/themes";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
+import {
+  AlertDialog,
+  Button,
+  DropdownMenu,
+  Flex,
+  IconButton,
+} from "@radix-ui/themes";
+import { useState } from "react";
 import { deleteCandidateAction } from "../actions";
 
 type CandidateActionsProps = {
@@ -10,7 +16,10 @@ type CandidateActionsProps = {
   candidateName: string;
 };
 
-export function CandidateActions({ candidateId, candidateName }: CandidateActionsProps) {
+export function CandidateActions({
+  candidateId,
+  candidateName,
+}: CandidateActionsProps) {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -43,13 +52,17 @@ export function CandidateActions({ candidateId, candidateName }: CandidateAction
         </DropdownMenu.Content>
       </DropdownMenu.Root>
 
-      <AlertDialog.Root open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+      <AlertDialog.Root
+        open={isDeleteAlertOpen}
+        onOpenChange={setIsDeleteAlertOpen}
+      >
         <AlertDialog.Content maxWidth="450px">
           <AlertDialog.Title>Archive Candidate</AlertDialog.Title>
           <AlertDialog.Description size="2">
-            Are you sure you want to archive <strong>{candidateName}</strong>? This action
-            will delete their Gitea account and prevent them from logging in, but it will
-            preserve their data and test submissions for record-keeping.
+            Are you sure you want to archive <strong>{candidateName}</strong>?
+            This action will delete their Gitea account and prevent them from
+            logging in, but it will preserve their data and test submissions for
+            record-keeping.
           </AlertDialog.Description>
 
           <Flex gap="3" mt="4" justify="end">
@@ -59,7 +72,12 @@ export function CandidateActions({ candidateId, candidateName }: CandidateAction
               </Button>
             </AlertDialog.Cancel>
             <AlertDialog.Action>
-              <Button variant="solid" color="red" onClick={handleDelete} loading={isDeleting}>
+              <Button
+                variant="solid"
+                color="red"
+                onClick={handleDelete}
+                loading={isDeleting}
+              >
                 Archive
               </Button>
             </AlertDialog.Action>

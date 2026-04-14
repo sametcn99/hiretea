@@ -81,7 +81,9 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
             <Table.Cell>
               <CandidateActions
                 candidateId={candidate.id}
-                candidateName={candidate.displayName || candidate.email || candidate.id}
+                candidateName={
+                  candidate.displayName || candidate.email || candidate.id
+                }
               />
             </Table.Cell>
           </Table.Row>

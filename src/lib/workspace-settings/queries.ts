@@ -1,5 +1,5 @@
-import { cache } from "react";
 import { WorkspaceGiteaMode } from "@prisma/client";
+import { cache } from "react";
 import { db } from "@/lib/db";
 
 function mapWorkspaceSettingsRecord(settings: {
@@ -17,9 +17,7 @@ function mapWorkspaceSettingsRecord(settings: {
   giteaConfigSecret: { id: string } | null;
 }) {
   const giteaMode: "bundled" | "external" =
-    settings.giteaMode === WorkspaceGiteaMode.EXTERNAL
-      ? "external"
-      : "bundled";
+    settings.giteaMode === WorkspaceGiteaMode.EXTERNAL ? "external" : "bundled";
 
   return {
     id: settings.id,

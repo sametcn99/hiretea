@@ -1,4 +1,9 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  randomBytes,
+} from "node:crypto";
 import { env } from "@/lib/env";
 
 const ENCRYPTION_PREFIX = "v1";
@@ -20,7 +25,10 @@ function getEncryptionKey() {
 export function encryptExternalGiteaSecret(value: string) {
   const iv = randomBytes(IV_LENGTH_BYTES);
   const cipher = createCipheriv(ENCRYPTION_ALGORITHM, getEncryptionKey(), iv);
-  const encrypted = Buffer.concat([cipher.update(value, "utf8"), cipher.final()]);
+  const encrypted = Buffer.concat([
+    cipher.update(value, "utf8"),
+    cipher.final(),
+  ]);
   const authTag = cipher.getAuthTag();
 
   return [
@@ -34,7 +42,13 @@ export function encryptExternalGiteaSecret(value: string) {
 export function decryptExternalGiteaSecret(payload: string) {
   const [prefix, iv, authTag, encrypted] = payload.split(":");
 
-  if (!prefix || !iv || !authTag || !encrypted || prefix !== ENCRYPTION_PREFIX) {
+  if (
+    !prefix ||
+    !iv ||
+    !authTag ||
+    !encrypted ||
+    prefix !== ENCRYPTION_PREFIX
+  ) {
     throw new Error("Unsupported encrypted external Gitea secret payload.");
   }
 
