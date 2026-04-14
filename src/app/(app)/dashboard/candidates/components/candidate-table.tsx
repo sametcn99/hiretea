@@ -1,6 +1,7 @@
 import { Flex, Table, Text } from "@radix-ui/themes";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { CandidateListItem } from "@/lib/candidates/queries";
+import { CandidateActions } from "./candidate-actions";
 
 type CandidateTableProps = {
   candidates: CandidateListItem[];
@@ -30,6 +31,7 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
           <Table.ColumnHeaderCell>Credentials</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Cases</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Created</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell></Table.ColumnHeaderCell>
         </Table.Row>
       </Table.Header>
       <Table.Body>
@@ -76,6 +78,12 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
             </Table.Cell>
             <Table.Cell>{candidate.caseCount}</Table.Cell>
             <Table.Cell>{dateFormatter.format(candidate.createdAt)}</Table.Cell>
+            <Table.Cell>
+              <CandidateActions
+                candidateId={candidate.id}
+                candidateName={candidate.displayName || candidate.email || candidate.id}
+              />
+            </Table.Cell>
           </Table.Row>
         ))}
       </Table.Body>

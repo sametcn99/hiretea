@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import type { ZodIssue } from "zod";
 import { requireRole } from "@/lib/auth/session";
 import { createCandidateCase } from "@/lib/candidate-cases/create-candidate-case";
+import { deleteCandidateCase } from "@/lib/candidate-cases/delete-candidate-case";
+import { revokeCandidateCaseAccess } from "@/lib/candidate-cases/revoke-case-access";
 import {
   type CandidateCaseCreateInput,
   candidateCaseCreateSchema,
@@ -87,3 +89,42 @@ export async function createCandidateCaseAction(
     };
   }
 }
+
+export async function deleteCaseAction(caseId: string) {
+  const session = await requireRole(UserRole.ADMIN, UserRole.RECRUITER);
+
+  try {
+    await deleteCandidateCase(caseId, session.user.id);
+
+    revalidatePath("/dashboard/candidate-cases");
+    revalidatePath("/dashboard/candidates");
+    revalidatePath("/dashboard/case-templates");
+    revalidatePath("/dashboard/audit-trail");
+
+    return { status: "success" };
+  } catch (e: unknown) {
+    return {
+      status: "error",
+      message: e instanceof Error ? e.message : "Failed to delete candidate case.",
+    };
+  }
+}
+
+export async function revokeAccessAction(caseId: string) {
+  const session = await requireRole(UserRole.ADMIN, UserRole.RECRUITER);
+
+  try {
+    await revokeCandidateCaseAccess(caseId, session.user.id);
+
+    revalidatePath("/dashboard/candidate-cases");
+    revalidatePath("/dashboard/audit-trail");
+
+    return { status: "success" };
+  } catch (e: unknown) {
+    return {
+      status: "error",
+      message: e instanceof Error ? e.message : "Failed to revoke access.",
+    };
+  }
+}
+

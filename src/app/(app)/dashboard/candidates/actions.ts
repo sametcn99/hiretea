@@ -9,6 +9,7 @@ import {
   type CandidateProvisionInput,
   candidateProvisionSchema,
 } from "@/lib/candidates/schemas";
+import { deleteCandidate } from "@/lib/candidates/delete-candidate";
 
 type ProvisionCandidateField = keyof CandidateProvisionInput;
 
@@ -83,3 +84,23 @@ export async function provisionCandidateAction(
     };
   }
 }
+
+export async function deleteCandidateAction(candidateId: string) {
+  const session = await requireRole(UserRole.ADMIN, UserRole.RECRUITER);
+
+  try {
+    await deleteCandidate(candidateId, session.user.id);
+
+    revalidatePath("/dashboard/candidates");
+    revalidatePath("/dashboard/audit-trail");
+
+    return { status: "success" };
+  } catch (e: unknown) {
+    return {
+      status: "error",
+      message: e instanceof Error ? e.message : "Failed to delete candidate.",
+    };
+  }
+}
+
+

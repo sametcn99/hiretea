@@ -1,6 +1,7 @@
 import { Flex, Link as RadixLink, Table, Text } from "@radix-ui/themes";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { CandidateCaseListItem } from "@/lib/candidate-cases/queries";
+import { CandidateCaseActions } from "./candidate-case-actions";
 
 type CandidateCaseTableProps = {
   candidateCases: CandidateCaseListItem[];
@@ -48,6 +49,7 @@ export function CandidateCaseTable({
           <Table.ColumnHeaderCell>Repository</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Dates</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell></Table.ColumnHeaderCell>
         </Table.Row>
       </Table.Header>
       <Table.Body>
@@ -144,6 +146,12 @@ export function CandidateCaseTable({
                   Owner: {candidateCase.createdByName}
                 </Text>
               </Flex>
+            </Table.Cell>
+            <Table.Cell>
+              <CandidateCaseActions
+                caseId={candidateCase.id}
+                repositoryName={candidateCase.workingRepository || "Pending Repository"}
+              />
             </Table.Cell>
           </Table.Row>
         ))}
