@@ -117,6 +117,15 @@ export function CandidateCaseTable({
                   Created: {dateFormatter.format(candidateCase.createdAt)}
                 </Text>
                 <Text size="1" color="gray">
+                  Started: {candidateCase.startedAt ? dateFormatter.format(candidateCase.startedAt) : "No repository activity yet"}
+                </Text>
+                <Text size="1" color="gray">
+                  Submitted: {candidateCase.submittedAt ? dateFormatter.format(candidateCase.submittedAt) : "No submission signal yet"}
+                </Text>
+                <Text size="1" color="gray">
+                  Last sync: {candidateCase.lastSyncedAt ? dateFormatter.format(candidateCase.lastSyncedAt) : "No webhook delivery yet"}
+                </Text>
+                <Text size="1" color="gray">
                   Due:{" "}
                   {candidateCase.dueAt
                     ? dateFormatter.format(candidateCase.dueAt)

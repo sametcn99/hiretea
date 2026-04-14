@@ -1,7 +1,10 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { env, hasWebhookConfiguration } from "@/lib/env";
-import { processGiteaWebhookDelivery } from "@/lib/gitea/webhooks";
+import {
+  processGiteaWebhookDelivery,
+  recordFailedGiteaWebhookDelivery,
+} from "@/lib/gitea/webhooks";
 
 export const runtime = "nodejs";
 
@@ -54,15 +57,35 @@ export async function POST(request: Request) {
     );
   }
 
-  const result = await processGiteaWebhookDelivery({
-    deliveryId,
-    eventName,
-    payload,
-  });
+  try {
+    const result = await processGiteaWebhookDelivery({
+      deliveryId,
+      eventName,
+      payload,
+    });
 
-  return NextResponse.json({
-    ok: true,
-    eventName,
-    candidateCaseId: result.candidateCaseId,
-  });
+    return NextResponse.json({
+      ok: true,
+      eventName,
+      candidateCaseId: result.candidateCaseId,
+    });
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Webhook delivery processing failed.";
+
+    await recordFailedGiteaWebhookDelivery({
+      deliveryId,
+      eventName,
+      payload,
+      errorMessage,
+      statusCode: 500,
+    });
+
+    return NextResponse.json(
+      { error: errorMessage },
+      { status: 500 },
+    );
+  }
 }

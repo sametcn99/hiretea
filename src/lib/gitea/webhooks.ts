@@ -4,6 +4,13 @@ import { db } from "@/lib/db";
 import { env, hasWebhookConfiguration } from "@/lib/env";
 import { getGiteaAdminClient } from "@/lib/gitea/client";
 
+const submissionActions = new Set([
+  "opened",
+  "reopened",
+  "synchronize",
+  "ready_for_review",
+]);
+
 type GiteaRepositoryWebhook = {
   id: number;
   config?: {
@@ -49,11 +56,64 @@ function getRepositoryNameFromPayload(payload: unknown) {
   return typeof repository.name === "string" ? repository.name : null;
 }
 
+function getEventAction(payload: unknown) {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const action = (payload as { action?: unknown }).action;
+
+  return typeof action === "string" ? action : null;
+}
+
+function getBranchNameFromPayload(payload: unknown) {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const ref = (payload as { ref?: unknown }).ref;
+
+  if (typeof ref !== "string") {
+    return null;
+  }
+
+  return ref.startsWith("refs/heads/") ? ref.replace("refs/heads/", "") : ref;
+}
+
+function getNextCandidateCaseStatus(input: {
+  currentStatus: CandidateCaseStatus;
+  shouldMarkStarted: boolean;
+  shouldMarkSubmitted: boolean;
+}) {
+  if (input.currentStatus === CandidateCaseStatus.COMPLETED) {
+    return CandidateCaseStatus.COMPLETED;
+  }
+
+  if (
+    input.shouldMarkSubmitted &&
+    (input.currentStatus === CandidateCaseStatus.READY ||
+      input.currentStatus === CandidateCaseStatus.IN_PROGRESS)
+  ) {
+    return CandidateCaseStatus.REVIEWING;
+  }
+
+  if (
+    input.shouldMarkStarted &&
+    input.currentStatus === CandidateCaseStatus.READY
+  ) {
+    return CandidateCaseStatus.IN_PROGRESS;
+  }
+
+  return input.currentStatus;
+}
+
 async function persistWebhookDelivery(input: {
   deliveryId: string | null;
   eventName: string;
   payload: Prisma.InputJsonValue;
   processedAt: Date;
+  statusCode: number;
+  errorMessage: string | null;
 }) {
   if (input.deliveryId) {
     return db.webhookDelivery.upsert({
@@ -63,16 +123,16 @@ async function persistWebhookDelivery(input: {
       update: {
         eventName: input.eventName,
         payload: input.payload,
-        statusCode: 200,
-        errorMessage: null,
+        statusCode: input.statusCode,
+        errorMessage: input.errorMessage,
         processedAt: input.processedAt,
       },
       create: {
         deliveryId: input.deliveryId,
         eventName: input.eventName,
         payload: input.payload,
-        statusCode: 200,
-        errorMessage: null,
+        statusCode: input.statusCode,
+        errorMessage: input.errorMessage,
         processedAt: input.processedAt,
       },
     });
@@ -82,8 +142,8 @@ async function persistWebhookDelivery(input: {
     data: {
       eventName: input.eventName,
       payload: input.payload,
-      statusCode: 200,
-      errorMessage: null,
+      statusCode: input.statusCode,
+      errorMessage: input.errorMessage,
       processedAt: input.processedAt,
     },
   });
@@ -144,11 +204,15 @@ export async function processGiteaWebhookDelivery(
 ) {
   const processedAt = new Date();
   const repositoryName = getRepositoryNameFromPayload(input.payload);
+  const eventAction = getEventAction(input.payload);
+  const branchName = getBranchNameFromPayload(input.payload);
   let candidateCaseSync:
     | {
         id: string;
         previousStatus: CandidateCaseStatus;
         nextStatus: CandidateCaseStatus;
+        startedAtRecorded: boolean;
+        submittedAtRecorded: boolean;
       }
     | undefined;
 
@@ -161,16 +225,32 @@ export async function processGiteaWebhookDelivery(
         id: true,
         status: true,
         startedAt: true,
+        submittedAt: true,
       },
     });
 
     if (candidateCase) {
       const shouldMarkStarted =
-        input.eventName === "push" || input.eventName === "pull_request";
-      const nextStatus =
-        shouldMarkStarted && candidateCase.status === CandidateCaseStatus.READY
-          ? CandidateCaseStatus.IN_PROGRESS
-          : candidateCase.status;
+        input.eventName === "push" ||
+        (input.eventName === "pull_request" &&
+          eventAction !== "closed" &&
+          eventAction !== "converted_to_draft");
+      const shouldMarkSubmitted =
+        input.eventName === "pull_request" &&
+        (eventAction == null || submissionActions.has(eventAction));
+      const nextStatus = getNextCandidateCaseStatus({
+        currentStatus: candidateCase.status,
+        shouldMarkStarted,
+        shouldMarkSubmitted,
+      });
+      const nextStartedAt =
+        shouldMarkStarted && !candidateCase.startedAt
+          ? processedAt
+          : candidateCase.startedAt;
+      const nextSubmittedAt =
+        shouldMarkSubmitted && !candidateCase.submittedAt
+          ? processedAt
+          : candidateCase.submittedAt;
 
       await db.candidateCase.update({
         where: {
@@ -178,10 +258,8 @@ export async function processGiteaWebhookDelivery(
         },
         data: {
           lastSyncedAt: processedAt,
-          startedAt:
-            shouldMarkStarted && !candidateCase.startedAt
-              ? processedAt
-              : candidateCase.startedAt,
+          startedAt: nextStartedAt,
+          submittedAt: nextSubmittedAt,
           status: nextStatus,
         },
       });
@@ -190,6 +268,12 @@ export async function processGiteaWebhookDelivery(
         id: candidateCase.id,
         previousStatus: candidateCase.status,
         nextStatus,
+        startedAtRecorded: Boolean(
+          shouldMarkStarted && !candidateCase.startedAt && nextStartedAt,
+        ),
+        submittedAtRecorded: Boolean(
+          shouldMarkSubmitted && !candidateCase.submittedAt && nextSubmittedAt,
+        ),
       };
     }
   }
@@ -199,6 +283,8 @@ export async function processGiteaWebhookDelivery(
     eventName: input.eventName,
     payload: input.payload as Prisma.InputJsonValue,
     processedAt,
+    statusCode: 200,
+    errorMessage: null,
   });
 
   await createAuditLog({
@@ -208,6 +294,8 @@ export async function processGiteaWebhookDelivery(
     detail: {
       deliveryId: input.deliveryId,
       eventName: input.eventName,
+      eventAction,
+      branchName,
       repositoryName,
       candidateCaseId: candidateCaseSync?.id ?? null,
     },
@@ -221,9 +309,13 @@ export async function processGiteaWebhookDelivery(
       detail: {
         deliveryId: input.deliveryId,
         eventName: input.eventName,
+        eventAction,
+        branchName,
         repositoryName,
         previousStatus: candidateCaseSync.previousStatus,
         nextStatus: candidateCaseSync.nextStatus,
+        startedAtRecorded: candidateCaseSync.startedAtRecorded,
+        submittedAtRecorded: candidateCaseSync.submittedAtRecorded,
       },
     });
   }
@@ -236,4 +328,41 @@ export async function processGiteaWebhookDelivery(
 
 export function canRegisterRepositoryWebhook() {
   return hasWebhookConfiguration();
+}
+
+export async function recordFailedGiteaWebhookDelivery(input: {
+  deliveryId: string | null;
+  eventName: string;
+  payload: unknown;
+  errorMessage: string;
+  statusCode?: number;
+}) {
+  const processedAt = new Date();
+  const repositoryName = getRepositoryNameFromPayload(input.payload);
+  const eventAction = getEventAction(input.payload);
+  const branchName = getBranchNameFromPayload(input.payload);
+  const delivery = await persistWebhookDelivery({
+    deliveryId: input.deliveryId,
+    eventName: input.eventName,
+    payload: input.payload as Prisma.InputJsonValue,
+    processedAt,
+    statusCode: input.statusCode ?? 500,
+    errorMessage: input.errorMessage,
+  });
+
+  await createAuditLog({
+    action: "gitea.webhook.failed",
+    resourceType: "WebhookDelivery",
+    resourceId: delivery.id,
+    detail: {
+      deliveryId: input.deliveryId,
+      eventName: input.eventName,
+      eventAction,
+      branchName,
+      repositoryName,
+      errorMessage: input.errorMessage,
+    },
+  });
+
+  return delivery;
 }

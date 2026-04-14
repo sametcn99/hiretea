@@ -15,6 +15,9 @@ export type CandidateCaseListItem = {
   workingRepositoryUrl: string | null;
   branchName: string | null;
   dueAt: Date | null;
+  startedAt: Date | null;
+  submittedAt: Date | null;
+  lastSyncedAt: Date | null;
   createdAt: Date;
   candidateDisplayName: string;
   candidateEmail: string;
@@ -55,6 +58,9 @@ export type CandidateWorkspaceCaseListItem = {
   workingRepositoryUrl: string | null;
   branchName: string | null;
   dueAt: Date | null;
+  startedAt: Date | null;
+  submittedAt: Date | null;
+  lastSyncedAt: Date | null;
   createdAt: Date;
   reviewedAt: Date | null;
   templateName: string;
@@ -108,6 +114,9 @@ export async function listCandidateCases() {
     workingRepositoryUrl: candidateCase.workingRepositoryUrl ?? null,
     branchName: candidateCase.branchName ?? null,
     dueAt: candidateCase.dueAt ?? null,
+    startedAt: candidateCase.startedAt ?? null,
+    submittedAt: candidateCase.submittedAt ?? null,
+    lastSyncedAt: candidateCase.lastSyncedAt ?? null,
     createdAt: candidateCase.createdAt,
     candidateDisplayName:
       candidateCase.candidate.name ??
@@ -247,6 +256,9 @@ export async function listCandidateWorkspaceCases(
       workingRepositoryUrl: candidateCase.workingRepositoryUrl ?? null,
       branchName: candidateCase.branchName ?? null,
       dueAt: candidateCase.dueAt ?? null,
+      startedAt: candidateCase.startedAt ?? null,
+      submittedAt: candidateCase.submittedAt ?? null,
+      lastSyncedAt: candidateCase.lastSyncedAt ?? null,
       createdAt: candidateCase.createdAt,
       reviewedAt: candidateCase.reviewedAt ?? null,
       templateName: candidateCase.caseTemplate.name,
