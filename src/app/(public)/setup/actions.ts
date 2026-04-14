@@ -10,14 +10,10 @@ import {
 
 type SetupField = keyof BootstrapSetupInput;
 
-type SetupActionState = {
+export type SetupActionState = {
   status: "idle" | "success" | "error";
   message?: string;
   fieldErrors?: Partial<Record<SetupField, string[]>>;
-};
-
-export const initialSetupActionState: SetupActionState = {
-  status: "idle",
 };
 
 function mapFieldErrors(issues: ZodIssue[]) {

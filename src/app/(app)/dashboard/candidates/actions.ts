@@ -12,15 +12,11 @@ import {
 
 type ProvisionCandidateField = keyof CandidateProvisionInput;
 
-type ProvisionCandidateActionState = {
+export type ProvisionCandidateActionState = {
   status: "idle" | "success" | "error";
   message?: string;
   temporaryPassword?: string;
   fieldErrors?: Partial<Record<ProvisionCandidateField, string[]>>;
-};
-
-export const initialProvisionCandidateState: ProvisionCandidateActionState = {
-  status: "idle",
 };
 
 function mapFieldErrors(issues: ZodIssue[]) {

@@ -14,9 +14,13 @@ import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
   createEvaluationNoteAction,
-  initialCreateEvaluationNoteState,
+  type CreateEvaluationNoteActionState,
 } from "@/app/(app)/dashboard/reviews/actions";
 import type { ReviewCaseListItem } from "@/lib/evaluation-notes/queries";
+
+const initialCreateEvaluationNoteState: CreateEvaluationNoteActionState = {
+  status: "idle",
+};
 
 type ReviewNoteFormProps = {
   reviewCases: ReviewCaseListItem[];

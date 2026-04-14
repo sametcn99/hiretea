@@ -12,9 +12,13 @@ import {
 import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
-  initialProvisionCandidateState,
+  type ProvisionCandidateActionState,
   provisionCandidateAction,
 } from "@/app/(app)/dashboard/candidates/actions";
+
+const initialProvisionCandidateState: ProvisionCandidateActionState = {
+  status: "idle",
+};
 
 function SubmitButton() {
   const { pending } = useFormStatus();

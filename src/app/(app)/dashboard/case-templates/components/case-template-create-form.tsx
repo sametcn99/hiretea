@@ -12,8 +12,12 @@ import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
   createCaseTemplateAction,
-  initialCreateCaseTemplateState,
+  type CreateCaseTemplateActionState,
 } from "@/app/(app)/dashboard/case-templates/actions";
+
+const initialCreateCaseTemplateState: CreateCaseTemplateActionState = {
+  status: "idle",
+};
 
 function SubmitButton() {
   const { pending } = useFormStatus();

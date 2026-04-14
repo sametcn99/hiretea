@@ -12,17 +12,12 @@ import {
 
 type EvaluationField = keyof EvaluationNoteCreateInput;
 
-type CreateEvaluationNoteActionState = {
+export type CreateEvaluationNoteActionState = {
   status: "idle" | "success" | "error";
   message?: string;
   latestScore?: number;
   fieldErrors?: Partial<Record<EvaluationField, string[]>>;
 };
-
-export const initialCreateEvaluationNoteState: CreateEvaluationNoteActionState =
-  {
-    status: "idle",
-  };
 
 function mapFieldErrors(issues: ZodIssue[]) {
   return issues.reduce<Partial<Record<EvaluationField, string[]>>>(

@@ -5,9 +5,13 @@ import { useRouter } from "next/navigation";
 import { useActionState, useEffect } from "react";
 import { useFormStatus } from "react-dom";
 import {
-  initialUpdateWorkspaceSettingsState,
+  type UpdateWorkspaceSettingsActionState,
   updateWorkspaceSettingsAction,
 } from "@/app/(app)/dashboard/settings/actions";
+
+const initialUpdateWorkspaceSettingsState: UpdateWorkspaceSettingsActionState = {
+  status: "idle",
+};
 
 type WorkspaceSettingsRecord = {
   id: string;

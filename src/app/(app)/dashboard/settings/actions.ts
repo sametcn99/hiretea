@@ -13,16 +13,11 @@ import { updateWorkspaceSettings } from "@/lib/workspace-settings/update-workspa
 
 type WorkspaceSettingsField = keyof WorkspaceSettingsUpdateInput;
 
-type UpdateWorkspaceSettingsActionState = {
+export type UpdateWorkspaceSettingsActionState = {
   status: "idle" | "success" | "error";
   message?: string;
   fieldErrors?: Partial<Record<WorkspaceSettingsField, string[]>>;
 };
-
-export const initialUpdateWorkspaceSettingsState: UpdateWorkspaceSettingsActionState =
-  {
-    status: "idle",
-  };
 
 function mapFieldErrors(issues: ZodIssue[]) {
   return issues.reduce<Partial<Record<WorkspaceSettingsField, string[]>>>(

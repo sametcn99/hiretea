@@ -12,14 +12,10 @@ import {
 
 type CaseTemplateField = keyof CaseTemplateCreateInput;
 
-type CreateCaseTemplateActionState = {
+export type CreateCaseTemplateActionState = {
   status: "idle" | "success" | "error";
   message?: string;
   fieldErrors?: Partial<Record<CaseTemplateField, string[]>>;
-};
-
-export const initialCreateCaseTemplateState: CreateCaseTemplateActionState = {
-  status: "idle",
 };
 
 function mapFieldErrors(issues: ZodIssue[]) {

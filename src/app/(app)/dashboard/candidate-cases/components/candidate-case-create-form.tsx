@@ -12,9 +12,13 @@ import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
   createCandidateCaseAction,
-  initialCreateCandidateCaseState,
+  type CreateCandidateCaseActionState,
 } from "@/app/(app)/dashboard/candidate-cases/actions";
 import type { CandidateCaseAssignmentOptions } from "@/lib/candidate-cases/queries";
+
+const initialCreateCandidateCaseState: CreateCandidateCaseActionState = {
+  status: "idle",
+};
 
 type CandidateCaseCreateFormProps = {
   assignmentOptions: CandidateCaseAssignmentOptions;

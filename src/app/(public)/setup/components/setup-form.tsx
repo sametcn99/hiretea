@@ -6,8 +6,12 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import {
   completeBootstrapSetupAction,
-  initialSetupActionState,
+  type SetupActionState,
 } from "@/app/(public)/setup/actions";
+
+const initialSetupActionState: SetupActionState = {
+  status: "idle",
+};
 
 type SetupFormProps = {
   bootstrapEnabled: boolean;

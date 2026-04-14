@@ -12,16 +12,12 @@ import {
 
 type CandidateCaseField = keyof CandidateCaseCreateInput;
 
-type CreateCandidateCaseActionState = {
+export type CreateCandidateCaseActionState = {
   status: "idle" | "success" | "error";
   message?: string;
   repositoryName?: string;
   repositoryUrl?: string | null;
   fieldErrors?: Partial<Record<CandidateCaseField, string[]>>;
-};
-
-export const initialCreateCandidateCaseState: CreateCandidateCaseActionState = {
-  status: "idle",
 };
 
 function mapFieldErrors(issues: ZodIssue[]) {
