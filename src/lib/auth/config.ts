@@ -1,5 +1,4 @@
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { UserRole } from "@prisma/client";
 import type { NextAuthOptions } from "next-auth";
 import { createGiteaProvider } from "@/lib/auth/providers/gitea";
 import { db } from "@/lib/db";
@@ -65,7 +64,7 @@ export const authOptions: NextAuthOptions = {
       }
 
       session.user.id = user.id;
-      session.user.role = user.role ?? UserRole.CANDIDATE;
+      session.user.role = user.role ?? "CANDIDATE";
       session.user.isActive = user.isActive ?? true;
 
       return session;

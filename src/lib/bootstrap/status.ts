@@ -1,4 +1,3 @@
-import { UserRole } from "@prisma/client";
 import { cache } from "react";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
@@ -14,7 +13,7 @@ export const getBootstrapStatus = cache(async (): Promise<BootstrapStatus> => {
   const [adminCount, workspaceSettingsCount] = await Promise.all([
     db.user.count({
       where: {
-        role: UserRole.ADMIN,
+        role: "ADMIN",
       },
     }),
     db.workspaceSettings.count(),

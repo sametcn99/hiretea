@@ -2,30 +2,37 @@ services:
   app:
     build:
       context: .
-      target: production
-    command: ["/bin/sh", "/app/scripts/docker/start-app.sh", "start"]
+      target: ${HIRETEA_APP_BUILD_TARGET:-production}
+    command: ["/bin/sh", "/app/scripts/docker/start-app.sh", "${HIRETEA_APP_MODE:-start}"]
     develop:
       watch:
-        - action: rebuild
+        - action: sync
           path: ./src
-        - action: rebuild
+          target: /app/src
+        - action: sync
           path: ./public
-        - action: rebuild
+          target: /app/public
+        - action: sync+restart
           path: ./prisma
-        - action: rebuild
+          target: /app/prisma
+        - action: sync+restart
           path: ./scripts
+          target: /app/scripts
         - action: rebuild
           path: ./Dockerfile
         - action: rebuild
           path: ./package.json
         - action: rebuild
           path: ./bun.lock
-        - action: rebuild
+        - action: sync+restart
           path: ./next.config.ts
-        - action: rebuild
+          target: /app/next.config.ts
+        - action: sync+restart
           path: ./prisma.config.ts
-        - action: rebuild
+          target: /app/prisma.config.ts
+        - action: sync+restart
           path: ./tsconfig.json
+          target: /app/tsconfig.json
     depends_on:
       db:
         condition: service_healthy
