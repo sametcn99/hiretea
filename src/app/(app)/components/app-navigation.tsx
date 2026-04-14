@@ -1,20 +1,20 @@
 "use client";
 
 import type { UserRole } from "@prisma/client";
-import { Flex, Text, Box } from "@radix-ui/themes";
+import {
+  ActivityLogIcon,
+  ArchiveIcon,
+  Component1Icon,
+  DashboardIcon,
+  GearIcon,
+  MagnifyingGlassIcon,
+  PersonIcon,
+  TokensIcon,
+} from "@radix-ui/react-icons";
+import { Box, Flex, Text } from "@radix-ui/themes";
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  DashboardIcon,
-  ArchiveIcon,
-  PersonIcon,
-  TokensIcon,
-  Component1Icon,
-  MagnifyingGlassIcon,
-  ActivityLogIcon,
-  GearIcon,
-} from "@radix-ui/react-icons";
 
 type AppNavigationProps = {
   role: UserRole;
@@ -28,7 +28,7 @@ type NavigationItem = {
 };
 
 const baseItems: NavigationItem[] = [
-  { href: "/dashboard", label: "Overview", icon: <DashboardIcon /> }
+  { href: "/dashboard", label: "Overview", icon: <DashboardIcon /> },
 ];
 
 const candidateItems: NavigationItem[] = [
@@ -38,10 +38,26 @@ const candidateItems: NavigationItem[] = [
 
 const managementItems: NavigationItem[] = [
   { href: "/dashboard/candidates", label: "Candidates", icon: <PersonIcon /> },
-  { href: "/dashboard/case-templates", label: "Case templates", icon: <TokensIcon /> },
-  { href: "/dashboard/candidate-cases", label: "Candidate cases", icon: <Component1Icon /> },
-  { href: "/dashboard/reviews", label: "Reviews", icon: <MagnifyingGlassIcon /> },
-  { href: "/dashboard/audit-trail", label: "Audit trail", icon: <ActivityLogIcon /> },
+  {
+    href: "/dashboard/case-templates",
+    label: "Case templates",
+    icon: <TokensIcon />,
+  },
+  {
+    href: "/dashboard/candidate-cases",
+    label: "Candidate cases",
+    icon: <Component1Icon />,
+  },
+  {
+    href: "/dashboard/reviews",
+    label: "Reviews",
+    icon: <MagnifyingGlassIcon />,
+  },
+  {
+    href: "/dashboard/audit-trail",
+    label: "Audit trail",
+    icon: <ActivityLogIcon />,
+  },
 ];
 
 const adminItems: NavigationItem[] = [
@@ -50,21 +66,21 @@ const adminItems: NavigationItem[] = [
 
 export function AppNavigation({ role, user }: AppNavigationProps) {
   const pathname = usePathname();
-  
+
   const getNavSections = () => {
     if (role === "CANDIDATE") {
       return [{ title: "Main", items: candidateItems }];
     }
-    
+
     const sections = [
       { title: "Main", items: baseItems },
-      { title: "Management", items: managementItems }
+      { title: "Management", items: managementItems },
     ];
-    
+
     if (role === "ADMIN") {
       sections.push({ title: "Administration", items: adminItems });
     }
-    
+
     return sections;
   };
 
@@ -74,7 +90,16 @@ export function AppNavigation({ role, user }: AppNavigationProps) {
         <nav aria-label="Primary navigation">
           {getNavSections().map((section) => (
             <Flex direction="column" gap="2" key={section.title}>
-              <Text size="1" weight="medium" color="gray" style={{ paddingLeft: "12px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <Text
+                size="1"
+                weight="medium"
+                color="gray"
+                style={{
+                  paddingLeft: "12px",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                }}
+              >
                 {section.title}
               </Text>
               <Flex direction="column" gap="1">
@@ -96,9 +121,15 @@ export function AppNavigation({ role, user }: AppNavigationProps) {
           ))}
         </nav>
       </Flex>
-      
+
       {/* User Profile */}
-      <Box style={{ paddingTop: "1rem", borderTop: "1px solid var(--gray-6)", marginTop: "auto" }}>
+      <Box
+        style={{
+          paddingTop: "1rem",
+          borderTop: "1px solid var(--gray-6)",
+          marginTop: "auto",
+        }}
+      >
         <Flex direction="column" gap="1">
           <Text size="2" weight="bold">
             {user.name ?? user.email}

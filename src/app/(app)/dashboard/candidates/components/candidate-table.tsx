@@ -27,6 +27,7 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
         <Table.Row>
           <Table.ColumnHeaderCell>Candidate</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Access</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell>Credentials</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Cases</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Created</Table.ColumnHeaderCell>
         </Table.Row>
@@ -62,6 +63,16 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
                   tone={candidate.hasLinkedSignIn ? "info" : "neutral"}
                 />
               </Flex>
+            </Table.Cell>
+            <Table.Cell>
+              {candidate.hasLinkedSignIn ? (
+                <StatusBadge label="Password Changed" tone="positive" />
+              ) : (
+                <Text size="2" color="gray">
+                  <Text weight="bold">Default: </Text>
+                  {candidate.initialPassword || "Not stored"}
+                </Text>
+              )}
             </Table.Cell>
             <Table.Cell>{candidate.caseCount}</Table.Cell>
             <Table.Cell>{dateFormatter.format(candidate.createdAt)}</Table.Cell>

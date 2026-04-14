@@ -70,7 +70,7 @@ export async function provisionCandidateAction(
 
     return {
       status: "success",
-      message: `${result.candidate.name ?? result.candidate.email} was provisioned successfully. Copy the temporary password now because it will not be shown again.`,
+      message: `${result.candidate.name ?? result.candidate.email} was provisioned successfully.`,
       temporaryPassword: result.temporaryPassword,
     };
   } catch (error) {

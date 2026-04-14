@@ -1,7 +1,7 @@
 "use client";
 
-import type { KeyboardEvent } from "react";
 import { Code, Flex, Table, Text } from "@radix-ui/themes";
+import type { KeyboardEvent } from "react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { CaseTemplateListItem } from "@/lib/case-templates/queries";
 
@@ -89,75 +89,76 @@ export function CaseTemplateTable({
           const cloneCommand = buildCloneCommand(repositoryUrl);
 
           return (
-          <Table.Row
-            key={template.id}
-            onClick={() => openRepository(repositoryUrl)}
-            onKeyDown={(event) => handleRowKeyDown(event, repositoryUrl)}
-            tabIndex={repositoryUrl ? 0 : -1}
-            style={{
-              cursor: repositoryUrl ? "pointer" : "default",
-            }}
-          >
-            <Table.Cell>
-              <Flex direction="column" gap="1">
-                <Text weight="bold">{template.name}</Text>
-                <Text size="1" color="gray">
-                  Slug: {template.slug}
-                </Text>
-                <Text size="1" color="gray">
-                  {template.summary}
-                </Text>
-                {repositoryUrl ? (
-                  <Text size="1" color="blue">
-                    Open in Gitea
-                  </Text>
-                ) : null}
-              </Flex>
-            </Table.Cell>
-            <Table.Cell>
-              <Flex direction="column" gap="1">
-                <StatusBadge label={template.defaultBranch} tone="info" />
-                <Text size="1" color="gray">
-                  {template.repositoryName}
-                </Text>
-                {template.repositoryDescription ? (
+            <Table.Row
+              key={template.id}
+              onClick={() => openRepository(repositoryUrl)}
+              onKeyDown={(event) => handleRowKeyDown(event, repositoryUrl)}
+              tabIndex={repositoryUrl ? 0 : -1}
+              style={{
+                cursor: repositoryUrl ? "pointer" : "default",
+              }}
+            >
+              <Table.Cell>
+                <Flex direction="column" gap="1">
+                  <Text weight="bold">{template.name}</Text>
                   <Text size="1" color="gray">
-                    {template.repositoryDescription}
+                    Slug: {template.slug}
                   </Text>
-                ) : null}
-                {cloneCommand ? (
-                  <Code
-                    size="1"
-                    variant="soft"
-                    style={{
-                      display: "block",
-                      overflowWrap: "anywhere",
-                      whiteSpace: "pre-wrap",
-                    }}
-                  >
-                    {cloneCommand}
-                  </Code>
-                ) : null}
-              </Flex>
-            </Table.Cell>
-            <Table.Cell>
-              <Flex direction="column" gap="1">
-                <Text>{template.candidateCaseCount}</Text>
-                <Text size="1" color="gray">
-                  Assigned candidate cases
-                </Text>
-              </Flex>
-            </Table.Cell>
-            <Table.Cell>
-              <Flex direction="column" gap="1">
-                <Text>{dateFormatter.format(template.createdAt)}</Text>
-                <Text size="1" color="gray">
-                  Owner: {template.createdByName}
-                </Text>
-              </Flex>
-            </Table.Cell>
-          </Table.Row>
-        );})}
+                  <Text size="1" color="gray">
+                    {template.summary}
+                  </Text>
+                  {repositoryUrl ? (
+                    <Text size="1" color="blue">
+                      Open in Gitea
+                    </Text>
+                  ) : null}
+                </Flex>
+              </Table.Cell>
+              <Table.Cell>
+                <Flex direction="column" gap="1">
+                  <StatusBadge label={template.defaultBranch} tone="info" />
+                  <Text size="1" color="gray">
+                    {template.repositoryName}
+                  </Text>
+                  {template.repositoryDescription ? (
+                    <Text size="1" color="gray">
+                      {template.repositoryDescription}
+                    </Text>
+                  ) : null}
+                  {cloneCommand ? (
+                    <Code
+                      size="1"
+                      variant="soft"
+                      style={{
+                        display: "block",
+                        overflowWrap: "anywhere",
+                        whiteSpace: "pre-wrap",
+                      }}
+                    >
+                      {cloneCommand}
+                    </Code>
+                  ) : null}
+                </Flex>
+              </Table.Cell>
+              <Table.Cell>
+                <Flex direction="column" gap="1">
+                  <Text>{template.candidateCaseCount}</Text>
+                  <Text size="1" color="gray">
+                    Assigned candidate cases
+                  </Text>
+                </Flex>
+              </Table.Cell>
+              <Table.Cell>
+                <Flex direction="column" gap="1">
+                  <Text>{dateFormatter.format(template.createdAt)}</Text>
+                  <Text size="1" color="gray">
+                    Owner: {template.createdByName}
+                  </Text>
+                </Flex>
+              </Table.Cell>
+            </Table.Row>
+          );
+        })}
       </Table.Body>
     </Table.Root>
   );

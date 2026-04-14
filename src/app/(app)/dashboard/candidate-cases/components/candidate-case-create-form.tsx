@@ -11,8 +11,8 @@ import {
 import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
-  createCandidateCaseAction,
   type CreateCandidateCaseActionState,
+  createCandidateCaseAction,
 } from "@/app/(app)/dashboard/candidate-cases/actions";
 import type { CandidateCaseAssignmentOptions } from "@/lib/candidate-cases/queries";
 

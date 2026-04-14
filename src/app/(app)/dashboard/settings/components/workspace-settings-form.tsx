@@ -9,9 +9,10 @@ import {
   updateWorkspaceSettingsAction,
 } from "@/app/(app)/dashboard/settings/actions";
 
-const initialUpdateWorkspaceSettingsState: UpdateWorkspaceSettingsActionState = {
-  status: "idle",
-};
+const initialUpdateWorkspaceSettingsState: UpdateWorkspaceSettingsActionState =
+  {
+    status: "idle",
+  };
 
 type WorkspaceSettingsRecord = {
   id: string;

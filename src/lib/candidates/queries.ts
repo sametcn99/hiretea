@@ -6,6 +6,7 @@ export type CandidateListItem = {
   displayName: string;
   email: string;
   giteaLogin: string | null;
+  initialPassword: string | null;
   caseCount: number;
   hasLinkedSignIn: boolean;
   isActive: boolean;
@@ -21,6 +22,7 @@ export async function listCandidates() {
       giteaIdentity: {
         select: {
           login: true,
+          initialPassword: true,
         },
       },
       _count: {
@@ -40,6 +42,7 @@ export async function listCandidates() {
     displayName: user.name ?? "Unnamed candidate",
     email: user.email ?? "No email",
     giteaLogin: user.giteaIdentity?.login ?? null,
+    initialPassword: user.giteaIdentity?.initialPassword ?? null,
     caseCount: user._count.candidateCases,
     hasLinkedSignIn: user._count.accounts > 0,
     isActive: user.isActive,

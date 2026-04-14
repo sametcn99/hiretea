@@ -10,64 +10,62 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const user = session.user;
 
   return (
-    <>
-      <Grid
-        columns={{ initial: "1fr", md: "280px minmax(0, 1fr)" }}
-        style={{ minHeight: "100vh" }}
+    <Grid
+      columns={{ initial: "1fr", md: "280px minmax(0, 1fr)" }}
+      style={{ minHeight: "100vh" }}
+    >
+      <Flex
+        direction="column"
+        gap="5"
+        p="5"
+        display={{ initial: "none", md: "flex" }}
+        style={{
+          borderRight: "1px solid var(--gray-6)",
+          background: "#16191d",
+          position: "sticky",
+          top: 0,
+          height: "100vh",
+          overflowY: "auto",
+        }}
       >
-        <Flex
-          direction="column"
-          gap="5"
-          p="5"
-          display={{ initial: "none", md: "flex" }}
-          style={{
-            borderRight: "1px solid var(--gray-6)",
-            background: "#16191d",
-            position: "sticky",
-            top: 0,
-            height: "100vh",
-            overflowY: "auto",
-          }}
-        >
-          <AppLogo subtitle="Operations workspace" />
-          <AppNavigation role={user.role} user={user} />
-        </Flex>
+        <AppLogo subtitle="Operations workspace" />
+        <AppNavigation role={user.role} user={user} />
+      </Flex>
 
-        <Flex direction="column" display={{ initial: "flex", md: "none" }}>
-          <MobileNav role={user.role} user={user} />
-          <Separator size="4" />
-        </Flex>
+      <Flex direction="column" display={{ initial: "flex", md: "none" }}>
+        <MobileNav role={user.role} user={user} />
+        <Separator size="4" />
+      </Flex>
 
-        <Flex
-          direction="column"
-          gap="5"
-          p="5"
-          asChild
-          style={{ minWidth: 0, width: "100%" }}
-        >
-          <main>
-            <Flex justify="between" gap="4" align="start" wrap="wrap">
-              <Box>
-                <Text
-                  size="1"
-                  weight="bold"
-                  color="blue"
-                  style={{
-                    letterSpacing: "0.16em",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Workspace
-                </Text>
-                <Heading as="h1" size="7" mt="1">
-                  Dashboard
-                </Heading>
-              </Box>
-            </Flex>
-            {children}
-          </main>
-        </Flex>
-      </Grid>
-    </>
+      <Flex
+        direction="column"
+        gap="5"
+        p="5"
+        asChild
+        style={{ minWidth: 0, width: "100%" }}
+      >
+        <main>
+          <Flex justify="between" gap="4" align="start" wrap="wrap">
+            <Box>
+              <Text
+                size="1"
+                weight="bold"
+                color="blue"
+                style={{
+                  letterSpacing: "0.16em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Workspace
+              </Text>
+              <Heading as="h1" size="7" mt="1">
+                Dashboard
+              </Heading>
+            </Box>
+          </Flex>
+          {children}
+        </main>
+      </Flex>
+    </Grid>
   );
 }

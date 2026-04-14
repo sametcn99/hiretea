@@ -68,6 +68,7 @@ export async function provisionCandidate(input: ProvisionCandidateParams) {
             giteaUserId: giteaAccount.id,
             login: giteaAccount.login,
             email: giteaAccount.email ?? input.email,
+            initialPassword: temporaryPassword,
           },
         },
       },

@@ -11,8 +11,8 @@ import {
 import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
-  createCaseTemplateAction,
   type CreateCaseTemplateActionState,
+  createCaseTemplateAction,
 } from "@/app/(app)/dashboard/case-templates/actions";
 
 const initialCreateCaseTemplateState: CreateCaseTemplateActionState = {

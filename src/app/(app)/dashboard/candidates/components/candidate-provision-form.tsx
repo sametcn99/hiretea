@@ -108,8 +108,10 @@ export function CandidateProvisionForm() {
 
         <Callout.Root color="gray" size="1">
           <Callout.Text>
-            The temporary password is generated server-side and must be shared
-            manually with the candidate during the MVP phase.
+            The default password is generated automatically and must be shared
+            manually with the candidate during the MVP phase. You can view this
+            password later in the candidates list until the candidate changes
+            it.
           </Callout.Text>
         </Callout.Root>
 
@@ -133,7 +135,7 @@ export function CandidateProvisionForm() {
               >
                 <Flex direction="column" gap="1">
                   <Text size="1" color="gray">
-                    Temporary password
+                    Default password
                   </Text>
                   <Code size="3" style={{ wordBreak: "break-all" }}>
                     {state.temporaryPassword}
