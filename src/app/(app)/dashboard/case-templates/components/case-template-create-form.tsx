@@ -1,24 +1,26 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { Button, Callout, Flex, Text, TextArea, TextField } from "@radix-ui/themes";
+import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
   createCaseTemplateAction,
   initialCreateCaseTemplateState,
 } from "@/app/(app)/dashboard/case-templates/actions";
-import styles from "@/app/(app)/dashboard/case-templates/page.module.css";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
 
   return (
-    <button
-      className={`ui fluid primary button ${pending ? "loading disabled" : ""}`}
+    <Button
+      size="3"
+      loading={pending}
       disabled={pending}
       type="submit"
+      style={{ width: "100%" }}
     >
       Create template
-    </button>
+    </Button>
   );
 }
 
@@ -27,131 +29,121 @@ export function CaseTemplateCreateForm() {
     createCaseTemplateAction,
     initialCreateCaseTemplateState,
   );
-  const formRef = useRef<HTMLFormElement | null>(null);
+  const [formKey, setFormKey] = useState(0);
 
   useEffect(() => {
     if (state.status === "success") {
-      formRef.current?.reset();
+      setFormKey((k) => k + 1);
     }
   }, [state.status]);
 
   return (
-    <form action={formAction} className={styles.form} ref={formRef}>
-      <div className={`field ${state.fieldErrors?.name ? "error" : ""}`}>
-        <label htmlFor="name">Template name</label>
-        <input
-          id="name"
-          name="name"
-          placeholder="Backend API challenge"
-          type="text"
-        />
-        {state.fieldErrors?.name?.map((error) => (
-          <p className={styles.errorText} key={error}>
-            {error}
-          </p>
-        ))}
-      </div>
+    <form action={formAction} key={formKey}>
+      <Flex direction="column" gap="3">
+        <Flex direction="column" gap="1">
+          <Text as="label" size="2" weight="medium" htmlFor="name">Template name</Text>
+          <TextField.Root
+            id="name"
+            name="name"
+            placeholder="Backend API challenge"
+            type="text"
+            color={state.fieldErrors?.name ? "red" : undefined}
+          />
+          {state.fieldErrors?.name?.map((error) => (
+            <Text size="1" color="red" key={error}>{error}</Text>
+          ))}
+        </Flex>
 
-      <div className={`field ${state.fieldErrors?.slug ? "error" : ""}`}>
-        <label htmlFor="slug">Template slug</label>
-        <input
-          id="slug"
-          name="slug"
-          placeholder="backend-api-challenge"
-          type="text"
-        />
-        {state.fieldErrors?.slug?.map((error) => (
-          <p className={styles.errorText} key={error}>
-            {error}
-          </p>
-        ))}
-      </div>
+        <Flex direction="column" gap="1">
+          <Text as="label" size="2" weight="medium" htmlFor="slug">Template slug</Text>
+          <TextField.Root
+            id="slug"
+            name="slug"
+            placeholder="backend-api-challenge"
+            type="text"
+            color={state.fieldErrors?.slug ? "red" : undefined}
+          />
+          {state.fieldErrors?.slug?.map((error) => (
+            <Text size="1" color="red" key={error}>{error}</Text>
+          ))}
+        </Flex>
 
-      <div className={`field ${state.fieldErrors?.summary ? "error" : ""}`}>
-        <label htmlFor="summary">Summary</label>
-        <textarea
-          id="summary"
-          name="summary"
-          placeholder="A concise description of the challenge, expected output, and review focus."
-          rows={4}
-        />
-        {state.fieldErrors?.summary?.map((error) => (
-          <p className={styles.errorText} key={error}>
-            {error}
-          </p>
-        ))}
-      </div>
+        <Flex direction="column" gap="1">
+          <Text as="label" size="2" weight="medium" htmlFor="summary">Summary</Text>
+          <TextArea
+            id="summary"
+            name="summary"
+            placeholder="A concise description of the challenge, expected output, and review focus."
+            rows={4}
+            color={state.fieldErrors?.summary ? "red" : undefined}
+          />
+          {state.fieldErrors?.summary?.map((error) => (
+            <Text size="1" color="red" key={error}>{error}</Text>
+          ))}
+        </Flex>
 
-      <div
-        className={`field ${state.fieldErrors?.repositoryName ? "error" : ""}`}
-      >
-        <label htmlFor="repositoryName">Repository name</label>
-        <input
-          id="repositoryName"
-          name="repositoryName"
-          placeholder="backend-api-challenge"
-          type="text"
-        />
-        {state.fieldErrors?.repositoryName?.map((error) => (
-          <p className={styles.errorText} key={error}>
-            {error}
-          </p>
-        ))}
-      </div>
+        <Flex direction="column" gap="1">
+          <Text as="label" size="2" weight="medium" htmlFor="repositoryName">Repository name</Text>
+          <TextField.Root
+            id="repositoryName"
+            name="repositoryName"
+            placeholder="backend-api-challenge"
+            type="text"
+            color={state.fieldErrors?.repositoryName ? "red" : undefined}
+          />
+          {state.fieldErrors?.repositoryName?.map((error) => (
+            <Text size="1" color="red" key={error}>{error}</Text>
+          ))}
+        </Flex>
 
-      <div className="field">
-        <label htmlFor="repositoryDescription">Repository description</label>
-        <textarea
-          id="repositoryDescription"
-          name="repositoryDescription"
-          placeholder="Optional short description that will be stored in Gitea."
-          rows={3}
-        />
-        {state.fieldErrors?.repositoryDescription?.map((error) => (
-          <p className={styles.errorText} key={error}>
-            {error}
-          </p>
-        ))}
-      </div>
+        <Flex direction="column" gap="1">
+          <Text as="label" size="2" weight="medium" htmlFor="repositoryDescription">Repository description</Text>
+          <TextArea
+            id="repositoryDescription"
+            name="repositoryDescription"
+            placeholder="Optional short description that will be stored in Gitea."
+            rows={3}
+          />
+          {state.fieldErrors?.repositoryDescription?.map((error) => (
+            <Text size="1" color="red" key={error}>{error}</Text>
+          ))}
+        </Flex>
 
-      <div
-        className={`field ${state.fieldErrors?.defaultBranch ? "error" : ""}`}
-      >
-        <label htmlFor="defaultBranch">Default branch</label>
-        <input
-          id="defaultBranch"
-          name="defaultBranch"
-          placeholder="main"
-          type="text"
-        />
-        {state.fieldErrors?.defaultBranch?.map((error) => (
-          <p className={styles.errorText} key={error}>
-            {error}
-          </p>
-        ))}
-      </div>
+        <Flex direction="column" gap="1">
+          <Text as="label" size="2" weight="medium" htmlFor="defaultBranch">Default branch</Text>
+          <TextField.Root
+            id="defaultBranch"
+            name="defaultBranch"
+            placeholder="main"
+            type="text"
+            color={state.fieldErrors?.defaultBranch ? "red" : undefined}
+          />
+          {state.fieldErrors?.defaultBranch?.map((error) => (
+            <Text size="1" color="red" key={error}>{error}</Text>
+          ))}
+        </Flex>
 
-      <div className={styles.message}>
-        <p className={styles.summary}>
-          The repository is created first in Gitea. If the local database write
-          fails afterwards, the repository creation is rolled back
-          automatically.
-        </p>
-      </div>
+        <Callout.Root color="gray" size="1">
+          <Callout.Text>
+            The repository is created first in Gitea. If the local database write
+            fails afterwards, the repository creation is rolled back automatically.
+          </Callout.Text>
+        </Callout.Root>
 
-      {state.status === "error" && state.message ? (
-        <div className={`${styles.message} ${styles.messageError}`}>
-          <p style={{ margin: 0 }}>{state.message}</p>
-        </div>
-      ) : null}
+        {state.status === "error" && state.message ? (
+          <Callout.Root color="red" size="1">
+            <Callout.Text>{state.message}</Callout.Text>
+          </Callout.Root>
+        ) : null}
 
-      {state.status === "success" && state.message ? (
-        <div className={`${styles.message} ${styles.messageSuccess}`}>
-          <p style={{ margin: 0 }}>{state.message}</p>
-        </div>
-      ) : null}
+        {state.status === "success" && state.message ? (
+          <Callout.Root color="green" size="1">
+            <Callout.Text>{state.message}</Callout.Text>
+          </Callout.Root>
+        ) : null}
 
-      <SubmitButton />
+        <SubmitButton />
+      </Flex>
     </form>
   );
 }

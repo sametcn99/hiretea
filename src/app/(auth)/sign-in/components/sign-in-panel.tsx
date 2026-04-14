@@ -1,8 +1,8 @@
 "use client";
 
+import { Box, Button, Card, Flex, Heading, Text } from "@radix-ui/themes";
 import { signIn } from "next-auth/react";
 import { startTransition, useState } from "react";
-import styles from "@/app/(auth)/sign-in/page.module.css";
 import { AppLogo } from "@/components/ui/app-logo";
 import { StatusBadge } from "@/components/ui/status-badge";
 
@@ -24,50 +24,60 @@ export function SignInPanel({ isConfigured }: SignInPanelProps) {
   };
 
   return (
-    <section className={`ui segment ht-surface-card ${styles.panel}`}>
-      <AppLogo subtitle="Authenticate against your company Gitea server" />
+    <Card size="3">
+      <Flex direction="column" gap="4">
+        <AppLogo subtitle="Authenticate against your company Gitea server" />
 
-      <div className={styles.meta}>
-        <div>
-          <p className="ht-kicker">Access control</p>
-          <h1 className={styles.title}>Sign in with your Gitea identity</h1>
-        </div>
-        <p className={styles.copy}>
-          The platform relies on your self-hosted Gitea instance for
-          authentication. Local application roles still control what each
-          signed-in user can manage once they enter the workspace.
-        </p>
-      </div>
+        <Flex direction="column" gap="3">
+          <Box>
+            <Text size="1" weight="bold" color="blue" style={{ letterSpacing: "0.16em", textTransform: "uppercase" }}>
+              Access control
+            </Text>
+            <Heading as="h1" size="6" mt="1" style={{ lineHeight: 0.98 }}>
+              Sign in with your Gitea identity
+            </Heading>
+          </Box>
+          <Text as="p" size="2" color="gray" style={{ lineHeight: 1.7 }}>
+            The platform relies on your self-hosted Gitea instance for
+            authentication. Local application roles still control what each
+            signed-in user can manage once they enter the workspace.
+          </Text>
+        </Flex>
 
-      <div className={styles.details}>
-        <div className={styles.detailRow}>
-          <span>OAuth configuration</span>
-          <StatusBadge
-            label={isConfigured ? "Ready" : "Missing"}
-            tone={isConfigured ? "positive" : "warning"}
-          />
-        </div>
-        <div className={styles.detailRow}>
-          <span>Invitation model</span>
-          <StatusBadge label="Manual for MVP" tone="neutral" />
-        </div>
-      </div>
+        <Card variant="surface" size="2">
+          <Flex direction="column" gap="3">
+            <Flex justify="between" align="center" gap="3">
+              <Text size="2">OAuth configuration</Text>
+              <StatusBadge
+                label={isConfigured ? "Ready" : "Missing"}
+                tone={isConfigured ? "positive" : "warning"}
+              />
+            </Flex>
+            <Flex justify="between" align="center" gap="3">
+              <Text size="2">Invitation model</Text>
+              <StatusBadge label="Manual for MVP" tone="neutral" />
+            </Flex>
+          </Flex>
+        </Card>
 
-      <button
-        className={`ui fluid primary button ${isPending ? "loading disabled" : ""}`}
-        disabled={!isConfigured || isPending}
-        onClick={handleSignIn}
-        type="button"
-      >
-        Continue with Gitea
-      </button>
+        <Button
+          size="3"
+          loading={isPending}
+          disabled={!isConfigured || isPending}
+          onClick={handleSignIn}
+          type="button"
+          style={{ width: "100%" }}
+        >
+          Continue with Gitea
+        </Button>
 
-      {!isConfigured ? (
-        <p className="ht-muted" style={{ margin: 0 }}>
-          Add the Gitea OAuth environment variables before testing the full
-          authentication flow.
-        </p>
-      ) : null}
-    </section>
+        {!isConfigured ? (
+          <Text size="2" color="gray">
+            Add the Gitea OAuth environment variables before testing the full
+            authentication flow.
+          </Text>
+        ) : null}
+      </Flex>
+    </Card>
   );
 }

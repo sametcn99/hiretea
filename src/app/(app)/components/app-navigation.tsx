@@ -1,5 +1,6 @@
 "use client";
 
+import { Flex } from "@radix-ui/themes";
 import type { UserRole } from "@prisma/client";
 import type { Route } from "next";
 import Link from "next/link";
@@ -38,19 +39,19 @@ export function AppNavigation({ role }: AppNavigationProps) {
         : [...baseItems, ...managementItems];
 
   return (
-    <nav
-      aria-label="Primary navigation"
-      className="ui secondary vertical pointing menu fluid"
-    >
-      {items.map((item) => (
-        <Link
-          className={`item ${pathname === item.href ? "active" : ""}`}
-          href={item.href as Route}
-          key={item.label}
-        >
-          {item.label}
-        </Link>
-      ))}
-    </nav>
+    <Flex direction="column" gap="1" asChild>
+      <nav aria-label="Primary navigation">
+        {items.map((item) => (
+          <Link
+            className="ht-nav-link"
+            data-active={pathname === item.href}
+            href={item.href as Route}
+            key={item.label}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+    </Flex>
   );
 }

@@ -1,4 +1,5 @@
 import type { AuditLog } from "@prisma/client";
+import { Code, Table, Text } from "@radix-ui/themes";
 import { StatusBadge } from "@/components/ui/status-badge";
 
 type AuditLogWithActor = AuditLog & {
@@ -27,42 +28,52 @@ function formatDetail(detail: AuditLog["detail"]) {
 
 export function AuditLogTable({ auditLogs }: AuditLogTableProps) {
   if (auditLogs.length === 0) {
-    return <p className="ht-muted">No audit events have been recorded yet.</p>;
+    return (
+      <Text as="p" size="2" color="gray">
+        No audit events have been recorded yet.
+      </Text>
+    );
   }
 
   return (
-    <div style={{ overflowX: "auto" }}>
-      <table className="ui very basic table">
-        <thead>
-          <tr>
-            <th>Action</th>
-            <th>Actor</th>
-            <th>Resource</th>
-            <th>Detail</th>
-            <th>Timestamp</th>
-          </tr>
-        </thead>
-        <tbody>
-          {auditLogs.map((auditLog) => (
-            <tr key={auditLog.id}>
-              <td>
-                <StatusBadge label={auditLog.action} tone="info" />
-              </td>
-              <td>
+    <Table.Root variant="ghost">
+      <Table.Header>
+        <Table.Row>
+          <Table.ColumnHeaderCell>Action</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell>Actor</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell>Resource</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell>Detail</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell>Timestamp</Table.ColumnHeaderCell>
+        </Table.Row>
+      </Table.Header>
+      <Table.Body>
+        {auditLogs.map((auditLog) => (
+          <Table.Row key={auditLog.id}>
+            <Table.Cell>
+              <StatusBadge label={auditLog.action} tone="info" />
+            </Table.Cell>
+            <Table.Cell>
+              <Text size="2">
                 {auditLog.actor?.name ?? auditLog.actor?.email ?? "System"}
-              </td>
-              <td>
+              </Text>
+            </Table.Cell>
+            <Table.Cell>
+              <Text size="2">
                 {auditLog.resourceType}
                 {auditLog.resourceId ? ` · ${auditLog.resourceId}` : ""}
-              </td>
-              <td>
-                <code>{formatDetail(auditLog.detail)}</code>
-              </td>
-              <td>{dateFormatter.format(auditLog.createdAt)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+              </Text>
+            </Table.Cell>
+            <Table.Cell>
+              <Code size="1" style={{ wordBreak: "break-all" }}>
+                {formatDetail(auditLog.detail)}
+              </Code>
+            </Table.Cell>
+            <Table.Cell>
+              <Text size="2">{dateFormatter.format(auditLog.createdAt)}</Text>
+            </Table.Cell>
+          </Table.Row>
+        ))}
+      </Table.Body>
+    </Table.Root>
   );
 }

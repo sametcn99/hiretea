@@ -1,10 +1,12 @@
+import { Badge } from "@radix-ui/themes";
+
 type StatusTone = "info" | "neutral" | "positive" | "warning";
 
-const toneClassMap: Record<StatusTone, string> = {
+const toneColorMap: Record<StatusTone, "blue" | "gray" | "green" | "orange"> = {
   info: "blue",
-  neutral: "grey",
+  neutral: "gray",
   positive: "green",
-  warning: "yellow",
+  warning: "orange",
 };
 
 type StatusBadgeProps = {
@@ -14,8 +16,8 @@ type StatusBadgeProps = {
 
 export function StatusBadge({ label, tone = "neutral" }: StatusBadgeProps) {
   return (
-    <span className={`ui ${toneClassMap[tone]} label ht-status-badge`}>
+    <Badge variant="soft" color={toneColorMap[tone]}>
       {label}
-    </span>
+    </Badge>
   );
 }

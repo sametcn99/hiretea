@@ -2,7 +2,7 @@ import type {
   CandidateCaseDecision,
   CandidateCaseStatus,
 } from "@prisma/client";
-import styles from "@/app/(app)/dashboard/reviews/page.module.css";
+import { Flex, Link as RadixLink, Table, Text } from "@radix-ui/themes";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { ReviewCaseListItem } from "@/lib/evaluation-notes/queries";
 
@@ -40,114 +40,113 @@ const decisionToneMap: Record<
 export function ReviewCaseTable({ reviewCases }: ReviewCaseTableProps) {
   if (reviewCases.length === 0) {
     return (
-      <p className={styles.emptyState}>
+      <Text as="p" size="2" color="gray">
         No reviewable candidate cases exist yet. Assign a candidate case before
         recording reviewer notes.
-      </p>
+      </Text>
     );
   }
 
   return (
-    <div style={{ overflowX: "auto" }}>
-      <table className={`ui very basic table ${styles.table}`}>
-        <thead>
-          <tr>
-            <th>Candidate case</th>
-            <th>Repository</th>
-            <th>Review state</th>
-            <th>Latest note</th>
-            <th>Dates</th>
-          </tr>
-        </thead>
-        <tbody>
-          {reviewCases.map((reviewCase) => (
-            <tr key={reviewCase.id}>
-              <td>
-                <strong>{reviewCase.candidateDisplayName}</strong>
-                <span className={styles.metaText}>
-                  {reviewCase.candidateEmail}
-                </span>
-                <span className={styles.metaText}>
-                  {reviewCase.templateName}
-                </span>
-                <span className={styles.metaText}>
-                  Slug: {reviewCase.templateSlug}
-                </span>
-              </td>
-              <td>
+    <Table.Root variant="ghost">
+      <Table.Header>
+        <Table.Row>
+          <Table.ColumnHeaderCell>Candidate case</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell>Repository</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell>Review state</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell>Latest note</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell>Dates</Table.ColumnHeaderCell>
+        </Table.Row>
+      </Table.Header>
+      <Table.Body>
+        {reviewCases.map((reviewCase) => (
+          <Table.Row key={reviewCase.id}>
+            <Table.Cell>
+              <Flex direction="column" gap="1">
+                <Text weight="bold">{reviewCase.candidateDisplayName}</Text>
+                <Text size="1" color="gray">{reviewCase.candidateEmail}</Text>
+                <Text size="1" color="gray">{reviewCase.templateName}</Text>
+                <Text size="1" color="gray">Slug: {reviewCase.templateSlug}</Text>
+              </Flex>
+            </Table.Cell>
+            <Table.Cell>
+              <Flex direction="column" gap="1">
                 {reviewCase.workingRepositoryUrl ? (
-                  <a
-                    className={styles.link}
+                  <RadixLink
                     href={reviewCase.workingRepositoryUrl}
-                    rel="noreferrer"
                     target="_blank"
+                    rel="noreferrer"
+                    size="2"
                   >
                     {reviewCase.workingRepository ?? "Open repository"}
-                  </a>
+                  </RadixLink>
                 ) : (
-                  <strong>{reviewCase.workingRepository ?? "Pending"}</strong>
+                  <Text weight="bold">{reviewCase.workingRepository ?? "Pending"}</Text>
                 )}
-                <span className={styles.metaText}>
+                <Text size="1" color="gray">
                   Candidate login: {reviewCase.candidateLogin ?? "Not linked"}
-                </span>
-              </td>
-              <td>
-                <div className={styles.statusStack}>
+                </Text>
+              </Flex>
+            </Table.Cell>
+            <Table.Cell>
+              <Flex direction="column" gap="2">
+                <StatusBadge
+                  label={reviewCase.status.toLowerCase().replace(/_/g, " ")}
+                  tone={statusToneMap[reviewCase.status]}
+                />
+                {reviewCase.decision ? (
                   <StatusBadge
-                    label={reviewCase.status.toLowerCase().replace(/_/g, " ")}
-                    tone={statusToneMap[reviewCase.status]}
+                    label={reviewCase.decision.toLowerCase()}
+                    tone={decisionToneMap[reviewCase.decision]}
                   />
-                  {reviewCase.decision ? (
-                    <StatusBadge
-                      label={reviewCase.decision.toLowerCase()}
-                      tone={decisionToneMap[reviewCase.decision]}
-                    />
-                  ) : (
-                    <StatusBadge label="No decision yet" tone="neutral" />
-                  )}
-                  <span className={styles.metaText}>
-                    {reviewCase.notesCount} notes recorded
-                  </span>
-                </div>
-              </td>
-              <td>
-                {typeof reviewCase.latestScore === "number" ? (
-                  <strong>Score: {reviewCase.latestScore}/10</strong>
                 ) : (
-                  <strong>No score yet</strong>
+                  <StatusBadge label="No decision yet" tone="neutral" />
                 )}
-                <span className={styles.metaText}>
-                  {reviewCase.latestSummary ??
-                    "No review summary recorded yet."}
-                </span>
-                <span className={styles.metaText}>
+                <Text size="1" color="gray">
+                  {reviewCase.notesCount} notes recorded
+                </Text>
+              </Flex>
+            </Table.Cell>
+            <Table.Cell>
+              <Flex direction="column" gap="1">
+                {typeof reviewCase.latestScore === "number" ? (
+                  <Text weight="bold">Score: {reviewCase.latestScore}/10</Text>
+                ) : (
+                  <Text weight="bold">No score yet</Text>
+                )}
+                <Text size="1" color="gray">
+                  {reviewCase.latestSummary ?? "No review summary recorded yet."}
+                </Text>
+                <Text size="1" color="gray">
                   Reviewer: {reviewCase.latestReviewerName ?? "Not reviewed"}
-                </span>
-              </td>
-              <td>
-                <span className={styles.metaText}>
+                </Text>
+              </Flex>
+            </Table.Cell>
+            <Table.Cell>
+              <Flex direction="column" gap="1">
+                <Text size="1" color="gray">
                   Due:{" "}
                   {reviewCase.dueAt
                     ? dateFormatter.format(reviewCase.dueAt)
                     : "No due date"}
-                </span>
-                <span className={styles.metaText}>
+                </Text>
+                <Text size="1" color="gray">
                   Last review:{" "}
                   {reviewCase.latestReviewedAt
                     ? dateFormatter.format(reviewCase.latestReviewedAt)
                     : "No notes yet"}
-                </span>
-                <span className={styles.metaText}>
+                </Text>
+                <Text size="1" color="gray">
                   Finalized:{" "}
                   {reviewCase.reviewedAt
                     ? dateFormatter.format(reviewCase.reviewedAt)
                     : "Not completed"}
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+                </Text>
+              </Flex>
+            </Table.Cell>
+          </Table.Row>
+        ))}
+      </Table.Body>
+    </Table.Root>
   );
 }

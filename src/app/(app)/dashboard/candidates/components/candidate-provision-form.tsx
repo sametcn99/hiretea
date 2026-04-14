@@ -1,24 +1,26 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { Box, Button, Callout, Code, Flex, Text, TextField } from "@radix-ui/themes";
+import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
   initialProvisionCandidateState,
   provisionCandidateAction,
 } from "@/app/(app)/dashboard/candidates/actions";
-import styles from "@/app/(app)/dashboard/candidates/page.module.css";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
 
   return (
-    <button
-      className={`ui fluid primary button ${pending ? "loading disabled" : ""}`}
+    <Button
+      size="3"
+      loading={pending}
       disabled={pending}
       type="submit"
+      style={{ width: "100%" }}
     >
       Provision candidate
-    </button>
+    </Button>
   );
 }
 
@@ -27,89 +29,88 @@ export function CandidateProvisionForm() {
     provisionCandidateAction,
     initialProvisionCandidateState,
   );
-  const formRef = useRef<HTMLFormElement | null>(null);
+  const [formKey, setFormKey] = useState(0);
 
   useEffect(() => {
     if (state.status === "success") {
-      formRef.current?.reset();
+      setFormKey((k) => k + 1);
     }
   }, [state.status]);
 
   return (
-    <form action={formAction} className={styles.form} ref={formRef}>
-      <div className={`field ${state.fieldErrors?.displayName ? "error" : ""}`}>
-        <label htmlFor="displayName">Display name</label>
-        <input
-          id="displayName"
-          name="displayName"
-          placeholder="Alex Morgan"
-          type="text"
-        />
-        {state.fieldErrors?.displayName?.map((error) => (
-          <p className={styles.errorText} key={error}>
-            {error}
-          </p>
-        ))}
-      </div>
+    <form action={formAction} key={formKey}>
+      <Flex direction="column" gap="3">
+        <Flex direction="column" gap="1">
+          <Text as="label" size="2" weight="medium" htmlFor="displayName">Display name</Text>
+          <TextField.Root
+            id="displayName"
+            name="displayName"
+            placeholder="Alex Morgan"
+            type="text"
+            color={state.fieldErrors?.displayName ? "red" : undefined}
+          />
+          {state.fieldErrors?.displayName?.map((error) => (
+            <Text size="1" color="red" key={error}>{error}</Text>
+          ))}
+        </Flex>
 
-      <div className={`field ${state.fieldErrors?.email ? "error" : ""}`}>
-        <label htmlFor="email">Email address</label>
-        <input
-          id="email"
-          name="email"
-          placeholder="alex@example.com"
-          type="email"
-        />
-        {state.fieldErrors?.email?.map((error) => (
-          <p className={styles.errorText} key={error}>
-            {error}
-          </p>
-        ))}
-      </div>
+        <Flex direction="column" gap="1">
+          <Text as="label" size="2" weight="medium" htmlFor="email">Email address</Text>
+          <TextField.Root
+            id="email"
+            name="email"
+            placeholder="alex@example.com"
+            type="email"
+            color={state.fieldErrors?.email ? "red" : undefined}
+          />
+          {state.fieldErrors?.email?.map((error) => (
+            <Text size="1" color="red" key={error}>{error}</Text>
+          ))}
+        </Flex>
 
-      <div className={`field ${state.fieldErrors?.username ? "error" : ""}`}>
-        <label htmlFor="username">Gitea username</label>
-        <input
-          id="username"
-          name="username"
-          placeholder="alex.morgan"
-          type="text"
-        />
-        {state.fieldErrors?.username?.map((error) => (
-          <p className={styles.errorText} key={error}>
-            {error}
-          </p>
-        ))}
-      </div>
+        <Flex direction="column" gap="1">
+          <Text as="label" size="2" weight="medium" htmlFor="username">Gitea username</Text>
+          <TextField.Root
+            id="username"
+            name="username"
+            placeholder="alex.morgan"
+            type="text"
+            color={state.fieldErrors?.username ? "red" : undefined}
+          />
+          {state.fieldErrors?.username?.map((error) => (
+            <Text size="1" color="red" key={error}>{error}</Text>
+          ))}
+        </Flex>
 
-      <div className={styles.message}>
-        <p style={{ margin: 0 }}>
-          The temporary password is generated server-side and must be shared
-          manually with the candidate during the MVP phase.
-        </p>
-      </div>
+        <Callout.Root color="gray" size="1">
+          <Callout.Text>
+            The temporary password is generated server-side and must be shared
+            manually with the candidate during the MVP phase.
+          </Callout.Text>
+        </Callout.Root>
 
-      {state.status === "error" && state.message ? (
-        <div className={`${styles.message} ${styles.messageError}`}>
-          <p style={{ margin: 0 }}>{state.message}</p>
-        </div>
-      ) : null}
+        {state.status === "error" && state.message ? (
+          <Callout.Root color="red" size="1">
+            <Callout.Text>{state.message}</Callout.Text>
+          </Callout.Root>
+        ) : null}
 
-      {state.status === "success" && state.message ? (
-        <div className={`${styles.message} ${styles.messageSuccess}`}>
-          <p style={{ margin: 0 }}>{state.message}</p>
-          {state.temporaryPassword ? (
-            <div className={styles.passwordBox}>
-              <span className="ht-muted">Temporary password</span>
-              <span className={styles.passwordValue}>
-                {state.temporaryPassword}
-              </span>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+        {state.status === "success" && state.message ? (
+          <Callout.Root color="green" size="1">
+            <Callout.Text>{state.message}</Callout.Text>
+            {state.temporaryPassword ? (
+              <Box mt="2" p="3" style={{ borderRadius: "var(--radius-2)", background: "var(--gray-a2)" }}>
+                <Flex direction="column" gap="1">
+                  <Text size="1" color="gray">Temporary password</Text>
+                  <Code size="3" style={{ wordBreak: "break-all" }}>{state.temporaryPassword}</Code>
+                </Flex>
+              </Box>
+            ) : null}
+          </Callout.Root>
+        ) : null}
 
-      <SubmitButton />
+        <SubmitButton />
+      </Flex>
     </form>
   );
 }

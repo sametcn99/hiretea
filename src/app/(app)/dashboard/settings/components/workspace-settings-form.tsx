@@ -1,5 +1,6 @@
 "use client";
 
+import { Button, Callout, Checkbox, Flex, Grid, Text, TextField } from "@radix-ui/themes";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect } from "react";
 import { useFormStatus } from "react-dom";
@@ -7,7 +8,6 @@ import {
   initialUpdateWorkspaceSettingsState,
   updateWorkspaceSettingsAction,
 } from "@/app/(app)/dashboard/settings/actions";
-import styles from "@/app/(app)/dashboard/settings/page.module.css";
 
 type WorkspaceSettingsRecord = {
   id: string;
@@ -28,13 +28,15 @@ function SubmitButton() {
   const { pending } = useFormStatus();
 
   return (
-    <button
-      className={`ui fluid primary button ${pending ? "loading disabled" : ""}`}
+    <Button
+      size="3"
+      loading={pending}
       disabled={pending}
       type="submit"
+      style={{ width: "100%" }}
     >
       Save settings
-    </button>
+    </Button>
   );
 }
 
@@ -54,106 +56,94 @@ export function WorkspaceSettingsForm({
   }, [router, state.status]);
 
   return (
-    <form action={formAction} className={`ui form ${styles.form}`}>
-      <div className={`field ${state.fieldErrors?.companyName ? "error" : ""}`}>
-        <label htmlFor="companyName">Company name</label>
-        <input
-          defaultValue={settings.companyName}
-          id="companyName"
-          name="companyName"
-          type="text"
-        />
-        {state.fieldErrors?.companyName?.map((error) => (
-          <p className={styles.errorText} key={error}>
-            {error}
-          </p>
-        ))}
-      </div>
-
-      <div className={styles.fieldGrid}>
-        <div
-          className={`field ${state.fieldErrors?.giteaBaseUrl ? "error" : ""}`}
-        >
-          <label htmlFor="giteaBaseUrl">Gitea base URL</label>
-          <input
-            defaultValue={settings.giteaBaseUrl}
-            id="giteaBaseUrl"
-            name="giteaBaseUrl"
-            type="url"
+    <form action={formAction}>
+      <Flex direction="column" gap="3">
+        <Flex direction="column" gap="1">
+          <Text as="label" size="2" weight="medium" htmlFor="companyName">Company name</Text>
+          <TextField.Root
+            id="companyName"
+            name="companyName"
+            defaultValue={settings.companyName}
+            color={state.fieldErrors?.companyName ? "red" : undefined}
           />
-          {state.fieldErrors?.giteaBaseUrl?.map((error) => (
-            <p className={styles.errorText} key={error}>
-              {error}
-            </p>
+          {state.fieldErrors?.companyName?.map((error) => (
+            <Text size="1" color="red" key={error}>{error}</Text>
           ))}
-        </div>
+        </Flex>
 
-        <div
-          className={`field ${state.fieldErrors?.giteaOrganization ? "error" : ""}`}
-        >
-          <label htmlFor="giteaOrganization">Gitea organization</label>
-          <input
-            defaultValue={settings.giteaOrganization}
-            id="giteaOrganization"
-            name="giteaOrganization"
-            type="text"
+        <Grid columns="2" gap="3">
+          <Flex direction="column" gap="1">
+            <Text as="label" size="2" weight="medium" htmlFor="giteaBaseUrl">Gitea base URL</Text>
+            <TextField.Root
+              id="giteaBaseUrl"
+              name="giteaBaseUrl"
+              defaultValue={settings.giteaBaseUrl}
+              type="url"
+              color={state.fieldErrors?.giteaBaseUrl ? "red" : undefined}
+            />
+            {state.fieldErrors?.giteaBaseUrl?.map((error) => (
+              <Text size="1" color="red" key={error}>{error}</Text>
+            ))}
+          </Flex>
+
+          <Flex direction="column" gap="1">
+            <Text as="label" size="2" weight="medium" htmlFor="giteaOrganization">Gitea organization</Text>
+            <TextField.Root
+              id="giteaOrganization"
+              name="giteaOrganization"
+              defaultValue={settings.giteaOrganization}
+              color={state.fieldErrors?.giteaOrganization ? "red" : undefined}
+            />
+            {state.fieldErrors?.giteaOrganization?.map((error) => (
+              <Text size="1" color="red" key={error}>{error}</Text>
+            ))}
+          </Flex>
+        </Grid>
+
+        <Flex direction="column" gap="1">
+          <Text as="label" size="2" weight="medium" htmlFor="defaultBranch">Default branch</Text>
+          <TextField.Root
+            id="defaultBranch"
+            name="defaultBranch"
+            defaultValue={settings.defaultBranch}
+            color={state.fieldErrors?.defaultBranch ? "red" : undefined}
           />
-          {state.fieldErrors?.giteaOrganization?.map((error) => (
-            <p className={styles.errorText} key={error}>
-              {error}
-            </p>
+          {state.fieldErrors?.defaultBranch?.map((error) => (
+            <Text size="1" color="red" key={error}>{error}</Text>
           ))}
-        </div>
-      </div>
+        </Flex>
 
-      <div
-        className={`field ${state.fieldErrors?.defaultBranch ? "error" : ""}`}
-      >
-        <label htmlFor="defaultBranch">Default branch</label>
-        <input
-          defaultValue={settings.defaultBranch}
-          id="defaultBranch"
-          name="defaultBranch"
-          type="text"
-        />
-        {state.fieldErrors?.defaultBranch?.map((error) => (
-          <p className={styles.errorText} key={error}>
-            {error}
-          </p>
-        ))}
-      </div>
-
-      <div className={styles.message}>
-        <label className={styles.toggleRow} htmlFor="manualInviteMode">
-          <input
-            defaultChecked={settings.manualInviteMode}
-            id="manualInviteMode"
+        <Flex gap="3" align="start">
+          <Checkbox
             name="manualInviteMode"
-            type="checkbox"
+            id="manualInviteMode"
+            defaultChecked={settings.manualInviteMode}
           />
-          <span className={styles.toggleCopy}>
-            <strong>Keep manual invites enabled</strong>
-            <span className={styles.summary}>
+          <Flex direction="column" gap="1">
+            <Text as="label" htmlFor="manualInviteMode" size="2" weight="bold">
+              Keep manual invites enabled
+            </Text>
+            <Text size="1" color="gray">
               Manual invites remain the current MVP onboarding path for
               candidate provisioning.
-            </span>
-          </span>
-        </label>
-      </div>
+            </Text>
+          </Flex>
+        </Flex>
 
-      {state.status === "error" && state.message ? (
-        <div className={`${styles.message} ${styles.messageError}`}>
-          <p className={styles.summary}>{state.message}</p>
-        </div>
-      ) : null}
+        {state.status === "error" && state.message ? (
+          <Callout.Root color="red" size="1">
+            <Callout.Text>{state.message}</Callout.Text>
+          </Callout.Root>
+        ) : null}
 
-      {state.status === "success" && state.message ? (
-        <div className={`${styles.message} ${styles.messageSuccess}`}>
-          <p className={styles.summary}>{state.message}</p>
-        </div>
-      ) : null}
+        {state.status === "success" && state.message ? (
+          <Callout.Root color="green" size="1">
+            <Callout.Text>{state.message}</Callout.Text>
+          </Callout.Root>
+        ) : null}
 
-      <SubmitButton />
+        <SubmitButton />
+      </Flex>
     </form>
   );
 }

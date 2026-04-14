@@ -1,5 +1,5 @@
 import type { UserRole } from "@prisma/client";
-import styles from "@/app/(app)/dashboard/page.module.css";
+import { Card, Flex, Grid, Text } from "@radix-ui/themes";
 import { SectionCard } from "@/components/ui/section-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 
@@ -13,7 +13,7 @@ export function DashboardOverview({
   role,
 }: DashboardOverviewProps) {
   return (
-    <div className={styles.grid}>
+    <Grid columns={{ initial: "1fr", md: "repeat(3, minmax(0, 1fr))" }} gap="4">
       <SectionCard
         title={`Welcome back, ${displayName}`}
         description={
@@ -21,16 +21,16 @@ export function DashboardOverview({
         }
         eyebrow="Protected route"
       >
-        <p className={styles.summary}>
+        <Text as="p" size="2" color="gray" style={{ lineHeight: 1.7 }}>
           Your current role is <strong>{role.toLowerCase()}</strong>. As the
           product surface grows, this dashboard will branch into candidate
           provisioning, case repository operations, webhook monitoring, and
           reviewer workflows.
-        </p>
+        </Text>
       </SectionCard>
 
       <SectionCard title="Readiness status" eyebrow="Foundation">
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+        <Flex wrap="wrap" gap="2">
           <StatusBadge label="Prisma connected by contract" tone="info" />
           <StatusBadge
             label="Gitea admin services scaffolded"
@@ -41,49 +41,53 @@ export function DashboardOverview({
           <StatusBadge label="Reviewer workflows ready" tone="positive" />
           <StatusBadge label="Settings screen ready" tone="positive" />
           <StatusBadge label="Webhook sync pending" tone="warning" />
-        </div>
+        </Flex>
       </SectionCard>
 
       <SectionCard
-        className={styles.wide}
+        style={{ gridColumn: "span 2" }}
         title="Implementation checkpoints"
         eyebrow="Next steps"
       >
-        <ol className={styles.list}>
-          <li>Connect the real Gitea OAuth application credentials.</li>
+        <ol style={{ margin: 0, paddingLeft: "1.1rem", display: "grid", gap: "0.75rem" }}>
+          <li><Text color="gray">Connect the real Gitea OAuth application credentials.</Text></li>
           <li>
-            Add webhook-driven synchronization for repository activity and
-            candidate case state.
+            <Text color="gray">
+              Add webhook-driven synchronization for repository activity and
+              candidate case state.
+            </Text>
           </li>
           <li>
-            Add operational metrics and summaries that read from real candidate,
-            assignment, and review data.
+            <Text color="gray">
+              Add operational metrics and summaries that read from real candidate,
+              assignment, and review data.
+            </Text>
           </li>
         </ol>
       </SectionCard>
 
       <SectionCard title="Initial operating metrics" eyebrow="Planned widgets">
-        <div className={styles.metrics}>
-          <div className={styles.metric}>
-            <span className={styles.metricLabel}>
-              Candidate accounts provisioned
-            </span>
-            <span className={styles.metricValue}>0</span>
-          </div>
-          <div className={styles.metric}>
-            <span className={styles.metricLabel}>
-              Case repositories attached
-            </span>
-            <span className={styles.metricValue}>0</span>
-          </div>
-          <div className={styles.metric}>
-            <span className={styles.metricLabel}>
-              Webhook deliveries tracked
-            </span>
-            <span className={styles.metricValue}>0</span>
-          </div>
-        </div>
+        <Flex direction="column" gap="3">
+          <Card variant="surface" size="1">
+            <Flex direction="column" gap="1">
+              <Text size="2" color="gray">Candidate accounts provisioned</Text>
+              <Text size="5" weight="bold">0</Text>
+            </Flex>
+          </Card>
+          <Card variant="surface" size="1">
+            <Flex direction="column" gap="1">
+              <Text size="2" color="gray">Case repositories attached</Text>
+              <Text size="5" weight="bold">0</Text>
+            </Flex>
+          </Card>
+          <Card variant="surface" size="1">
+            <Flex direction="column" gap="1">
+              <Text size="2" color="gray">Webhook deliveries tracked</Text>
+              <Text size="5" weight="bold">0</Text>
+            </Flex>
+          </Card>
+        </Flex>
       </SectionCard>
-    </div>
+    </Grid>
   );
 }

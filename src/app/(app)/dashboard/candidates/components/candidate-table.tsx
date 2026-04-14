@@ -1,4 +1,4 @@
-import styles from "@/app/(app)/dashboard/candidates/page.module.css";
+import { Flex, Table, Text } from "@radix-ui/themes";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { CandidateListItem } from "@/lib/candidates/queries";
 
@@ -14,58 +14,58 @@ const dateFormatter = new Intl.DateTimeFormat("en", {
 export function CandidateTable({ candidates }: CandidateTableProps) {
   if (candidates.length === 0) {
     return (
-      <p className={styles.emptyState}>
+      <Text as="p" size="2" color="gray">
         No candidates are provisioned yet. Start by creating the first candidate
         account from the form on the left.
-      </p>
+      </Text>
     );
   }
 
   return (
-    <div style={{ overflowX: "auto" }}>
-      <table className={`ui very basic table ${styles.table}`}>
-        <thead>
-          <tr>
-            <th>Candidate</th>
-            <th>Access</th>
-            <th>Cases</th>
-            <th>Created</th>
-          </tr>
-        </thead>
-        <tbody>
-          {candidates.map((candidate) => (
-            <tr key={candidate.id}>
-              <td>
-                <strong>{candidate.displayName}</strong>
-                <span className={styles.metaText}>{candidate.email}</span>
-                <span className={styles.metaText}>
+    <Table.Root variant="ghost">
+      <Table.Header>
+        <Table.Row>
+          <Table.ColumnHeaderCell>Candidate</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell>Access</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell>Cases</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell>Created</Table.ColumnHeaderCell>
+        </Table.Row>
+      </Table.Header>
+      <Table.Body>
+        {candidates.map((candidate) => (
+          <Table.Row key={candidate.id}>
+            <Table.Cell>
+              <Flex direction="column" gap="1">
+                <Text weight="bold">{candidate.displayName}</Text>
+                <Text size="1" color="gray">{candidate.email}</Text>
+                <Text size="1" color="gray">
                   {candidate.giteaLogin
                     ? `Gitea: ${candidate.giteaLogin}`
                     : "No linked Gitea login"}
-                </span>
-              </td>
-              <td>
+                </Text>
+              </Flex>
+            </Table.Cell>
+            <Table.Cell>
+              <Flex direction="column" gap="2">
                 <StatusBadge
                   label={candidate.isActive ? "Active" : "Inactive"}
                   tone={candidate.isActive ? "positive" : "warning"}
                 />
-                <div style={{ marginTop: "8px" }}>
-                  <StatusBadge
-                    label={
-                      candidate.hasLinkedSignIn
-                        ? "Connected"
-                        : "Awaiting first sign-in"
-                    }
-                    tone={candidate.hasLinkedSignIn ? "info" : "neutral"}
-                  />
-                </div>
-              </td>
-              <td>{candidate.caseCount}</td>
-              <td>{dateFormatter.format(candidate.createdAt)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+                <StatusBadge
+                  label={
+                    candidate.hasLinkedSignIn
+                      ? "Connected"
+                      : "Awaiting first sign-in"
+                  }
+                  tone={candidate.hasLinkedSignIn ? "info" : "neutral"}
+                />
+              </Flex>
+            </Table.Cell>
+            <Table.Cell>{candidate.caseCount}</Table.Cell>
+            <Table.Cell>{dateFormatter.format(candidate.createdAt)}</Table.Cell>
+          </Table.Row>
+        ))}
+      </Table.Body>
+    </Table.Root>
   );
 }

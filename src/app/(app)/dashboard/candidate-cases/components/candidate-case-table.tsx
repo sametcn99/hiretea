@@ -1,4 +1,4 @@
-import styles from "@/app/(app)/dashboard/candidate-cases/page.module.css";
+import { Flex, Link as RadixLink, Table, Text } from "@radix-ui/themes";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { CandidateCaseListItem } from "@/lib/candidate-cases/queries";
 
@@ -32,100 +32,100 @@ export function CandidateCaseTable({
 }: CandidateCaseTableProps) {
   if (candidateCases.length === 0) {
     return (
-      <p className={styles.emptyState}>
+      <Text as="p" size="2" color="gray">
         No candidate cases are assigned yet. Use the form on the left to create
         the first working repository from a template.
-      </p>
+      </Text>
     );
   }
 
   return (
-    <div style={{ overflowX: "auto" }}>
-      <table className={`ui very basic table ${styles.table}`}>
-        <thead>
-          <tr>
-            <th>Candidate</th>
-            <th>Template</th>
-            <th>Repository</th>
-            <th>Status</th>
-            <th>Dates</th>
-          </tr>
-        </thead>
-        <tbody>
-          {candidateCases.map((candidateCase) => (
-            <tr key={candidateCase.id}>
-              <td>
-                <strong>{candidateCase.candidateDisplayName}</strong>
-                <span className={styles.metaText}>
-                  {candidateCase.candidateEmail}
-                </span>
-                <span className={styles.metaText}>
+    <Table.Root variant="ghost">
+      <Table.Header>
+        <Table.Row>
+          <Table.ColumnHeaderCell>Candidate</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell>Template</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell>Repository</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell>Dates</Table.ColumnHeaderCell>
+        </Table.Row>
+      </Table.Header>
+      <Table.Body>
+        {candidateCases.map((candidateCase) => (
+          <Table.Row key={candidateCase.id}>
+            <Table.Cell>
+              <Flex direction="column" gap="1">
+                <Text weight="bold">{candidateCase.candidateDisplayName}</Text>
+                <Text size="1" color="gray">{candidateCase.candidateEmail}</Text>
+                <Text size="1" color="gray">
                   {candidateCase.candidateLogin
                     ? `Gitea: ${candidateCase.candidateLogin}`
                     : "No linked Gitea login"}
-                </span>
-              </td>
-              <td>
-                <strong>{candidateCase.templateName}</strong>
-                <span className={styles.metaText}>
-                  Slug: {candidateCase.templateSlug}
-                </span>
-              </td>
-              <td>
+                </Text>
+              </Flex>
+            </Table.Cell>
+            <Table.Cell>
+              <Flex direction="column" gap="1">
+                <Text weight="bold">{candidateCase.templateName}</Text>
+                <Text size="1" color="gray">Slug: {candidateCase.templateSlug}</Text>
+              </Flex>
+            </Table.Cell>
+            <Table.Cell>
+              <Flex direction="column" gap="1">
                 {candidateCase.workingRepositoryUrl ? (
-                  <a
-                    className={styles.link}
+                  <RadixLink
                     href={candidateCase.workingRepositoryUrl}
-                    rel="noreferrer"
                     target="_blank"
+                    rel="noreferrer"
+                    size="2"
                   >
                     {candidateCase.workingRepository ?? "Open repository"}
-                  </a>
+                  </RadixLink>
                 ) : (
-                  <strong>
+                  <Text weight="bold">
                     {candidateCase.workingRepository ?? "Pending"}
-                  </strong>
+                  </Text>
                 )}
-                <span className={styles.metaText}>
+                <Text size="1" color="gray">
                   Branch: {candidateCase.branchName ?? "Not set"}
-                </span>
-              </td>
-              <td>
-                <div className={styles.statusStack}>
+                </Text>
+              </Flex>
+            </Table.Cell>
+            <Table.Cell>
+              <Flex direction="column" gap="2">
+                <StatusBadge
+                  label={candidateCase.status.toLowerCase().replace(/_/g, " ")}
+                  tone={statusToneMap[candidateCase.status]}
+                />
+                {candidateCase.decision ? (
                   <StatusBadge
-                    label={candidateCase.status
-                      .toLowerCase()
-                      .replace(/_/g, " ")}
-                    tone={statusToneMap[candidateCase.status]}
+                    label={candidateCase.decision.toLowerCase()}
+                    tone={decisionToneMap[candidateCase.decision]}
                   />
-                  {candidateCase.decision ? (
-                    <StatusBadge
-                      label={candidateCase.decision.toLowerCase()}
-                      tone={decisionToneMap[candidateCase.decision]}
-                    />
-                  ) : (
-                    <StatusBadge label="No decision yet" tone="neutral" />
-                  )}
-                </div>
-              </td>
-              <td>
-                <span className={styles.metaText}>
+                ) : (
+                  <StatusBadge label="No decision yet" tone="neutral" />
+                )}
+              </Flex>
+            </Table.Cell>
+            <Table.Cell>
+              <Flex direction="column" gap="1">
+                <Text size="1" color="gray">
                   Created: {dateFormatter.format(candidateCase.createdAt)}
-                </span>
-                <span className={styles.metaText}>
+                </Text>
+                <Text size="1" color="gray">
                   Due:{" "}
                   {candidateCase.dueAt
                     ? dateFormatter.format(candidateCase.dueAt)
                     : "No due date"}
-                </span>
-                <span className={styles.metaText}>
+                </Text>
+                <Text size="1" color="gray">
                   Owner: {candidateCase.createdByName}
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+                </Text>
+              </Flex>
+            </Table.Cell>
+          </Table.Row>
+        ))}
+      </Table.Body>
+    </Table.Root>
   );
 }

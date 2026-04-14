@@ -1,25 +1,12 @@
-@import "fomantic-ui-css/semantic.min.css";
+@import "@radix-ui/themes/styles.css";
 
 :root {
   color-scheme: dark;
-  --ht-background: #0b1118;
-  --ht-background-elevated: #111a24;
-  --ht-background-subtle: #182432;
-  --ht-border: #24364a;
-  --ht-border-strong: #33506e;
-  --ht-foreground: #f5f9fc;
-  --ht-muted: #96a7b9;
-  --ht-accent: #5eb6ff;
-  --ht-accent-strong: #3992e0;
-  --ht-success: #59c28b;
-  --ht-warning: #f0b95b;
-  --ht-danger: #ff7b72;
-  --ht-shadow: 0 24px 80px rgb(0 0 0 / 35%);
 }
 
 html {
   height: 100%;
-  background: var(--ht-background);
+  background: #1b1f23;
 }
 
 html,
@@ -32,67 +19,72 @@ body {
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  color: var(--ht-foreground);
-  background:
-    radial-gradient(circle at top left, rgb(94 182 255 / 10%), transparent 32%),
-    linear-gradient(180deg, #081018 0%, #0b1118 100%);
-  font-family: var(--font-body), sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
+.radix-themes {
+  --default-font-family: var(--font-body), sans-serif;
+  --heading-font-family: var(--font-body), sans-serif;
+  --code-font-family: var(--font-mono), monospace;
+  --default-font-size: 15px;
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+  --color-background: #1b1f23;
+  --color-surface: #14171a;
+  --color-panel-solid: #171a1e;
+  --color-panel-translucent: rgba(23, 26, 30, 0.85);
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
+  --gray-1: #14171a;
+  --gray-2: #171a1e;
+  --gray-3: #1a1d1f;
+  --gray-4: #1e2225;
+  --gray-5: #24292e;
+  --gray-6: #2d3339;
+  --gray-7: #3b444c;
+  --gray-8: #4e5861;
+  --gray-9: #6b7681;
+  --gray-10: #7d8893;
+  --gray-11: #d0d5da;
+  --gray-12: #f7f8f9;
 
-code,
-pre,
-kbd,
-samp {
-  font-family: var(--font-mono), monospace;
-}
+  --gray-a1: rgba(0, 0, 0, 0);
+  --gray-a2: rgba(255, 255, 255, 0.02);
+  --gray-a3: rgba(255, 255, 255, 0.04);
+  --gray-a4: rgba(255, 255, 255, 0.06);
+  --gray-a5: rgba(255, 255, 255, 0.09);
+  --gray-a6: rgba(255, 255, 255, 0.14);
+  --gray-a7: rgba(255, 255, 255, 0.22);
+  --gray-a8: rgba(255, 255, 255, 0.30);
+  --gray-a9: rgba(255, 255, 255, 0.40);
+  --gray-a10: rgba(255, 255, 255, 0.47);
+  --gray-a11: rgba(255, 255, 255, 0.80);
+  --gray-a12: rgba(255, 255, 255, 0.96);
 
-.ht-container {
-  width: min(1120px, calc(100vw - 48px));
-  margin: 0 auto;
-}
+  --accent-1: #14191e;
+  --accent-2: #17202b;
+  --accent-3: #1a2d44;
+  --accent-4: #1f3a5b;
+  --accent-5: #274a71;
+  --accent-6: #305b87;
+  --accent-7: #3a6fa0;
+  --accent-8: #4183c4;
+  --accent-9: #4183c4;
+  --accent-10: #5a96cf;
+  --accent-11: #7db4e0;
+  --accent-12: #d4e7f7;
 
-.ht-page-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.ht-kicker {
-  margin: 0;
-  color: var(--ht-accent);
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.ht-muted {
-  color: var(--ht-muted);
+  --accent-a1: rgba(65, 131, 196, 0.05);
+  --accent-a2: rgba(65, 131, 196, 0.10);
+  --accent-a3: rgba(65, 131, 196, 0.20);
+  --accent-a4: rgba(65, 131, 196, 0.30);
+  --accent-a5: rgba(65, 131, 196, 0.38);
+  --accent-a6: rgba(65, 131, 196, 0.48);
+  --accent-a7: rgba(65, 131, 196, 0.60);
+  --accent-a8: rgba(65, 131, 196, 0.75);
+  --accent-a9: rgba(65, 131, 196, 0.75);
+  --accent-a10: rgba(65, 131, 196, 0.80);
+  --accent-a11: rgba(125, 180, 224, 0.85);
+  --accent-a12: rgba(212, 231, 247, 0.96);
 }
 
 .ht-brand-mark {
@@ -109,10 +101,10 @@ samp {
   height: 2.75rem;
   border-radius: 16px;
   background:
-    linear-gradient(135deg, rgb(94 182 255 / 22%), rgb(89 194 139 / 24%)),
-    var(--ht-background-subtle);
-  border: 1px solid rgb(94 182 255 / 24%);
-  color: var(--ht-foreground);
+    linear-gradient(135deg, rgba(65, 131, 196, 0.22), rgba(108, 198, 100, 0.24)),
+    var(--gray-3);
+  border: 1px solid rgba(65, 131, 196, 0.24);
+  color: var(--gray-12);
   font-weight: 700;
 }
 
@@ -130,88 +122,26 @@ samp {
 
 .ht-brand-mark__subtitle {
   font-size: 0.85rem;
-  color: var(--ht-muted);
+  color: var(--gray-11);
 }
 
-.ht-surface-card.ui.segment {
-  background: linear-gradient(180deg, rgb(17 26 36 / 92%), rgb(12 20 29 / 96%));
-  border: 1px solid var(--ht-border);
-  border-radius: 20px;
-  box-shadow: var(--ht-shadow);
+.ht-nav-link {
+  display: block;
+  padding: 8px 14px;
+  border-radius: var(--radius-2);
+  color: var(--gray-11);
+  font-size: var(--font-size-2);
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 120ms, color 120ms;
 }
 
-.ht-status-badge.ui.label {
-  border-radius: 999px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+.ht-nav-link:hover {
+  background: var(--gray-a3);
+  color: var(--gray-12);
 }
 
-.ui.secondary.pointing.menu {
-  gap: 8px;
-  border-bottom-color: transparent;
-}
-
-.ui.secondary.pointing.menu .item {
-  border-bottom-width: 2px;
-  color: var(--ht-muted);
-}
-
-.ui.secondary.pointing.menu .active.item {
-  border-color: var(--ht-accent);
-  color: var(--ht-foreground);
-}
-
-.ui.button.primary,
-.ui.primary.button {
-  background: var(--ht-accent);
-}
-
-.ui.button.primary:hover,
-.ui.primary.button:hover {
-  background: var(--ht-accent-strong);
-}
-
-body .ui.button,
-body .ui.input > input,
-body .ui.form input,
-body .ui.form textarea,
-body .ui.form select {
-  border-radius: 14px;
-}
-
-body .ui.input > input,
-body .ui.form input,
-body .ui.form textarea,
-body .ui.form select,
-body .ui.selection.dropdown {
-  background: rgb(10 17 24 / 88%);
-  color: var(--ht-foreground);
-  border-color: var(--ht-border);
-}
-
-.ui.message,
-.ui.table,
-.ui.card,
-.ui.cards > .card,
-.ui.menu,
-.ui.segment {
-  background: var(--ht-background-elevated);
-  color: var(--ht-foreground);
-  border-color: var(--ht-border);
-}
-
-.ui.table td,
-.ui.table th {
-  border-top-color: var(--ht-border);
-}
-
-.ui.table thead th {
-  background: rgb(255 255 255 / 2%);
-  color: var(--ht-foreground);
-}
-
-@media (max-width: 720px) {
-  .ht-container {
-    width: min(100vw - 24px, 1120px);
-  }
+.ht-nav-link[data-active="true"] {
+  background: var(--accent-a3);
+  color: var(--accent-11);
 }

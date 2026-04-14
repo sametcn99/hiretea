@@ -1,3 +1,4 @@
+import { Card, Flex, Heading, Text } from "@radix-ui/themes";
 import type { ReactNode } from "react";
 
 type SectionCardProps = {
@@ -6,6 +7,7 @@ type SectionCardProps = {
   eyebrow?: string;
   children?: ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 };
 
 export function SectionCard({
@@ -14,27 +16,30 @@ export function SectionCard({
   eyebrow,
   children,
   className,
+  style,
 }: SectionCardProps) {
   return (
-    <section
-      className={`ui segment ht-surface-card${className ? ` ${className}` : ""}`}
-    >
-      {(eyebrow || description) && (
-        <header style={{ marginBottom: "1rem" }}>
-          {eyebrow ? <p className="ht-kicker">{eyebrow}</p> : null}
-          <h3 style={{ margin: "0.35rem 0 0" }}>{title}</h3>
-          {description ? (
-            <p className="ht-muted" style={{ margin: "0.6rem 0 0" }}>
-              {description}
-            </p>
-          ) : null}
-        </header>
-      )}
+    <Card asChild size="3" className={className} style={style}>
+      <section>
+        {(eyebrow || description) && (
+          <Flex direction="column" gap="1" mb="4">
+            {eyebrow ? (
+              <Text size="1" weight="bold" color="blue" style={{ letterSpacing: "0.16em", textTransform: "uppercase" }}>
+                {eyebrow}
+              </Text>
+            ) : null}
+            <Heading as="h3" size="4">{title}</Heading>
+            {description ? (
+              <Text as="p" size="2" color="gray">{description}</Text>
+            ) : null}
+          </Flex>
+        )}
 
-      {!eyebrow && !description ? (
-        <h3 style={{ marginTop: 0 }}>{title}</h3>
-      ) : null}
-      {children}
-    </section>
+        {!eyebrow && !description ? (
+          <Heading as="h3" size="4" mb="3">{title}</Heading>
+        ) : null}
+        {children}
+      </section>
+    </Card>
   );
 }

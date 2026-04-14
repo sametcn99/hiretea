@@ -1,7 +1,7 @@
 import { UserRole } from "@prisma/client";
+import { Grid } from "@radix-ui/themes";
 import { CandidateCaseCreateForm } from "@/app/(app)/dashboard/candidate-cases/components/candidate-case-create-form";
 import { CandidateCaseTable } from "@/app/(app)/dashboard/candidate-cases/components/candidate-case-table";
-import styles from "@/app/(app)/dashboard/candidate-cases/page.module.css";
 import { SectionCard } from "@/components/ui/section-card";
 import { requireRole } from "@/lib/auth/session";
 import {
@@ -18,9 +18,9 @@ export default async function CandidateCasesPage() {
   ]);
 
   return (
-    <div className={styles.grid}>
+    <Grid columns={{ initial: "1fr", lg: "minmax(320px, 400px) minmax(0, 1fr)" }} gap="4" align="start">
       <SectionCard
-        className={styles.formCard}
+        style={{ position: "sticky", top: 28 }}
         title="Assign a candidate case"
         description="Generate a private working repository from the selected template and grant the candidate direct write access in one flow."
         eyebrow="Case operations"
@@ -29,13 +29,12 @@ export default async function CandidateCasesPage() {
       </SectionCard>
 
       <SectionCard
-        className={styles.tableCard}
         title="Assigned candidate cases"
         description="Each assignment is tracked locally and backed by a generated Gitea repository for hands-on evaluation."
         eyebrow="Current workload"
       >
         <CandidateCaseTable candidateCases={candidateCases} />
       </SectionCard>
-    </div>
+    </Grid>
   );
 }

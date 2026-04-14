@@ -35,8 +35,7 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${bodyFont.variable} ${monoFont.variable}`}
-      data-theme="dark"
-      data-color-scheme="dark"
+      suppressHydrationWarning
     >
       <body>
         <AppProviders>{children}</AppProviders>
