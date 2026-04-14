@@ -1,21 +1,26 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
-import { env, hasWebhookConfiguration } from "@/lib/env";
 import {
   processGiteaWebhookDelivery,
   recordFailedGiteaWebhookDelivery,
 } from "@/lib/gitea/webhooks";
+import {
+  getGiteaRuntimeReadiness,
+  getResolvedGiteaWebhookConfig,
+} from "@/lib/gitea/runtime-config";
 
 export const runtime = "nodejs";
 
-function isValidSignature(payload: string, signature: string | null) {
-  if (!env.GITEA_WEBHOOK_SECRET || !signature) {
+function isValidSignature(
+  payload: string,
+  signature: string | null,
+  secret: string,
+) {
+  if (!signature) {
     return false;
   }
 
-  const digest = createHmac("sha256", env.GITEA_WEBHOOK_SECRET)
-    .update(payload)
-    .digest("hex");
+  const digest = createHmac("sha256", secret).update(payload).digest("hex");
   const digestBuffer = Buffer.from(digest);
   const signatureBuffer = Buffer.from(signature);
 
@@ -27,19 +32,23 @@ function isValidSignature(payload: string, signature: string | null) {
 }
 
 export async function POST(request: Request) {
-  if (!hasWebhookConfiguration()) {
+  const readiness = await getGiteaRuntimeReadiness();
+
+  if (!readiness.webhookReady) {
     return NextResponse.json(
       { error: "Webhook runtime configuration is incomplete." },
       { status: 503 },
     );
   }
 
+  const { secret } = await getResolvedGiteaWebhookConfig();
+
   const rawBody = await request.text();
   const eventName = request.headers.get("x-gitea-event") ?? "unknown";
   const deliveryId = request.headers.get("x-gitea-delivery");
   const signature = request.headers.get("x-gitea-signature");
 
-  if (!signature || !isValidSignature(rawBody, signature)) {
+  if (!signature || !isValidSignature(rawBody, signature, secret)) {
     return NextResponse.json(
       { error: "Invalid webhook signature." },
       { status: 401 },

@@ -1,6 +1,6 @@
 import { createAuditLog } from "@/lib/audit/log";
-import { env } from "@/lib/env";
 import { getGiteaAdminClient } from "@/lib/gitea/client";
+import { getResolvedGiteaAdminConfig } from "@/lib/gitea/runtime-config";
 
 type CreateCaseRepositoryInput = {
   actorId: string;
@@ -27,9 +27,9 @@ type GenerateCaseRepositoryFromTemplateInput = {
 };
 
 export async function createCaseRepository(input: CreateCaseRepositoryInput) {
-  const client = getGiteaAdminClient();
-  const organizationName =
-    input.organizationName ?? env.GITEA_ORGANIZATION_NAME;
+  const client = await getGiteaAdminClient();
+  const adminConfig = await getResolvedGiteaAdminConfig();
+  const organizationName = input.organizationName ?? adminConfig.organization;
 
   if (!organizationName) {
     throw new Error(
@@ -68,8 +68,9 @@ export async function createCaseRepository(input: CreateCaseRepositoryInput) {
 export async function generateCaseRepositoryFromTemplate(
   input: GenerateCaseRepositoryFromTemplateInput,
 ) {
-  const client = getGiteaAdminClient();
-  const ownerName = input.ownerName ?? env.GITEA_ORGANIZATION_NAME;
+  const client = await getGiteaAdminClient();
+  const adminConfig = await getResolvedGiteaAdminConfig();
+  const ownerName = input.ownerName ?? adminConfig.organization;
 
   if (!ownerName) {
     throw new Error(
@@ -119,9 +120,9 @@ type DeleteCaseRepositoryInput = {
 };
 
 export async function deleteCaseRepository(input: DeleteCaseRepositoryInput) {
-  const client = getGiteaAdminClient();
-  const organizationName =
-    input.organizationName ?? env.GITEA_ORGANIZATION_NAME;
+  const client = await getGiteaAdminClient();
+  const adminConfig = await getResolvedGiteaAdminConfig();
+  const organizationName = input.organizationName ?? adminConfig.organization;
 
   if (!organizationName) {
     throw new Error(

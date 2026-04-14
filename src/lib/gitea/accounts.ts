@@ -19,7 +19,7 @@ type GiteaUserResponse = {
 export async function createCandidateAccount(
   input: CreateCandidateAccountInput,
 ) {
-  const client = getGiteaAdminClient();
+  const client = await getGiteaAdminClient();
 
   const user = await client.request<GiteaUserResponse>("/admin/users", {
     method: "POST",
@@ -57,7 +57,7 @@ type DeleteCandidateAccountInput = {
 export async function deleteCandidateAccount(
   input: DeleteCandidateAccountInput,
 ) {
-  const client = getGiteaAdminClient();
+  const client = await getGiteaAdminClient();
 
   await client.request<void>(`/admin/users/${input.username}`, {
     method: "DELETE",

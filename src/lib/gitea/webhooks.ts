@@ -1,8 +1,11 @@
 import { CandidateCaseStatus, type Prisma } from "@prisma/client";
 import { createAuditLog } from "@/lib/audit/log";
 import { db } from "@/lib/db";
-import { env, hasWebhookConfiguration } from "@/lib/env";
 import { getGiteaAdminClient } from "@/lib/gitea/client";
+import {
+  getResolvedGiteaWebhookConfig,
+  hasResolvedWebhookConfiguration,
+} from "@/lib/gitea/runtime-config";
 
 const submissionActions = new Set([
   "opened",
@@ -29,17 +32,6 @@ type ProcessGiteaWebhookDeliveryInput = {
   eventName: string;
   payload: unknown;
 };
-
-function getWebhookTargetUrl() {
-  if (!env.NEXTAUTH_URL || !env.GITEA_WEBHOOK_SECRET) {
-    throw new Error("Webhook runtime configuration is incomplete.");
-  }
-
-  return {
-    callbackUrl: `${env.NEXTAUTH_URL.replace(/\/$/, "")}/api/webhooks/gitea`,
-    secret: env.GITEA_WEBHOOK_SECRET,
-  };
-}
 
 function getRepositoryNameFromPayload(payload: unknown) {
   if (!payload || typeof payload !== "object") {
@@ -152,8 +144,8 @@ async function persistWebhookDelivery(input: {
 export async function ensureRepositoryWebhook(
   input: EnsureRepositoryWebhookInput,
 ) {
-  const { callbackUrl, secret } = getWebhookTargetUrl();
-  const client = getGiteaAdminClient();
+  const { callbackUrl, secret } = await getResolvedGiteaWebhookConfig();
+  const client = await getGiteaAdminClient();
 
   const existingHooks = await client.request<GiteaRepositoryWebhook[]>(
     `/repos/${input.owner}/${input.repositoryName}/hooks`,
@@ -326,8 +318,8 @@ export async function processGiteaWebhookDelivery(
   };
 }
 
-export function canRegisterRepositoryWebhook() {
-  return hasWebhookConfiguration();
+export async function canRegisterRepositoryWebhook() {
+  return hasResolvedWebhookConfiguration();
 }
 
 export async function recordFailedGiteaWebhookDelivery(input: {

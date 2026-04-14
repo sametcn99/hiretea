@@ -8,9 +8,10 @@ import { StatusBadge } from "@/components/ui/status-badge";
 
 type SignInPanelProps = {
   isConfigured: boolean;
+  mode: "bundled" | "external";
 };
 
-export function SignInPanel({ isConfigured }: SignInPanelProps) {
+export function SignInPanel({ isConfigured, mode }: SignInPanelProps) {
   const [isPending, setIsPending] = useState(false);
 
   const handleSignIn = () => {
@@ -78,8 +79,9 @@ export function SignInPanel({ isConfigured }: SignInPanelProps) {
 
         {!isConfigured ? (
           <Text size="2" color="gray">
-            Add the Gitea OAuth environment variables before testing the full
-            authentication flow.
+            {mode === "external"
+              ? "Complete the external Gitea connection setup before testing the full authentication flow."
+              : "Finish the bundled Gitea bootstrap so the OAuth runtime values are available before testing the full authentication flow."}
           </Text>
         ) : null}
       </Flex>

@@ -4,11 +4,7 @@ import { WorkspaceSettingsForm } from "@/app/(app)/dashboard/settings/components
 import { SectionCard } from "@/components/ui/section-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { requireRole } from "@/lib/auth/session";
-import {
-  hasAuthConfiguration,
-  hasGiteaAdminConfiguration,
-  hasWebhookConfiguration,
-} from "@/lib/env";
+import { getGiteaRuntimeReadiness } from "@/lib/gitea/runtime-config";
 import { getGiteaWorkspaceValidationResult } from "@/lib/gitea/validation";
 import { getWorkspaceSettingsOrThrow } from "@/lib/workspace-settings/queries";
 
@@ -20,9 +16,12 @@ const dateFormatter = new Intl.DateTimeFormat("en", {
 export default async function SettingsPage() {
   await requireRole(UserRole.ADMIN);
   const settings = await getWorkspaceSettingsOrThrow();
+  const runtimeReadiness = await getGiteaRuntimeReadiness();
   const giteaValidation = await getGiteaWorkspaceValidationResult({
     giteaBaseUrl: settings.giteaBaseUrl,
+    giteaAdminBaseUrl: settings.giteaAdminBaseUrl,
     giteaOrganization: settings.giteaOrganization,
+    giteaAuthClientId: settings.giteaAuthClientId,
   });
 
   return (
@@ -48,6 +47,17 @@ export default async function SettingsPage() {
         >
           <Flex direction="column" gap="3">
             <Flex justify="between" align="center" gap="3">
+              <Text size="2">Connection mode</Text>
+              <StatusBadge
+                label={
+                  settings.giteaMode === "external"
+                    ? "External Gitea"
+                    : "Bundled Gitea"
+                }
+                tone="info"
+              />
+            </Flex>
+            <Flex justify="between" align="center" gap="3">
               <Text size="2">Company name</Text>
               <Text size="2" weight="bold">
                 {settings.companyName}
@@ -71,24 +81,37 @@ export default async function SettingsPage() {
             <Flex justify="between" align="center" gap="3">
               <Text size="2">OAuth readiness</Text>
               <StatusBadge
-                label={hasAuthConfiguration() ? "Ready" : "Missing"}
-                tone={hasAuthConfiguration() ? "positive" : "warning"}
+                label={runtimeReadiness.authReady ? "Ready" : "Missing"}
+                tone={runtimeReadiness.authReady ? "positive" : "warning"}
               />
             </Flex>
             <Flex justify="between" align="center" gap="3">
               <Text size="2">Gitea admin readiness</Text>
               <StatusBadge
-                label={hasGiteaAdminConfiguration() ? "Ready" : "Missing"}
-                tone={hasGiteaAdminConfiguration() ? "positive" : "warning"}
+                label={runtimeReadiness.adminReady ? "Ready" : "Missing"}
+                tone={runtimeReadiness.adminReady ? "positive" : "warning"}
               />
             </Flex>
             <Flex justify="between" align="center" gap="3">
               <Text size="2">Webhook runtime</Text>
               <StatusBadge
-                label={hasWebhookConfiguration() ? "Ready" : "Missing"}
-                tone={hasWebhookConfiguration() ? "positive" : "warning"}
+                label={runtimeReadiness.webhookReady ? "Ready" : "Missing"}
+                tone={runtimeReadiness.webhookReady ? "positive" : "warning"}
               />
             </Flex>
+            {settings.giteaMode === "external" ? (
+              <Flex justify="between" align="center" gap="3">
+                <Text size="2">Encrypted secrets</Text>
+                <StatusBadge
+                  label={
+                    settings.hasStoredExternalSecrets ? "Stored" : "Missing"
+                  }
+                  tone={
+                    settings.hasStoredExternalSecrets ? "positive" : "warning"
+                  }
+                />
+              </Flex>
+            ) : null}
             <Flex justify="between" align="center" gap="3">
               <Text size="2">Live Gitea validation</Text>
               <StatusBadge
@@ -114,8 +137,16 @@ export default async function SettingsPage() {
             Gitea base URL: {settings.giteaBaseUrl}
           </Text>
           <Text size="1" color="gray">
+            Admin API URL: {settings.giteaAdminBaseUrl ?? settings.giteaBaseUrl}
+          </Text>
+          <Text size="1" color="gray">
             Organization: {settings.giteaOrganization}
           </Text>
+          {settings.giteaAuthClientId ? (
+            <Text size="1" color="gray">
+              OAuth client ID: {settings.giteaAuthClientId}
+            </Text>
+          ) : null}
           <Text size="1" color="gray">
             Last updated: {dateFormatter.format(settings.updatedAt)}
           </Text>
@@ -144,6 +175,11 @@ export default async function SettingsPage() {
               <li>
                 Use the real Gitea organization slug that should own generated
                 repositories.
+              </li>
+              <li>
+                {settings.giteaMode === "external"
+                  ? "Leave the secret rotation fields empty if you only want to update metadata. Filled secret inputs replace the stored encrypted values immediately."
+                  : "Bundled mode keeps OAuth, admin, and webhook secrets in the generated runtime environment instead of the database."}
               </li>
               <li>
                 Changing the default branch affects future templates and

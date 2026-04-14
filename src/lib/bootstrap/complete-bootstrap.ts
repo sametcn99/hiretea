@@ -1,9 +1,10 @@
 import type { Prisma } from "@prisma/client";
-import { UserRole } from "@prisma/client";
+import { UserRole, WorkspaceGiteaMode } from "@prisma/client";
 import type { BootstrapSetupInput } from "@/lib/bootstrap/schemas";
 import { getBootstrapStatus } from "@/lib/bootstrap/status";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
+import { encryptExternalGiteaSecret } from "@/lib/gitea/secret-store";
 
 type BootstrapResult = {
   adminEmail: string;
@@ -21,6 +22,10 @@ async function applyWorkspaceBootstrap(
   auditAction: string,
   existingSettingsId?: string,
 ): Promise<BootstrapResult> {
+  const giteaMode =
+    input.giteaMode === "external"
+      ? WorkspaceGiteaMode.EXTERNAL
+      : WorkspaceGiteaMode.BUNDLED;
   const adminUser = await transaction.user.upsert({
     where: {
       email: input.adminEmail,
@@ -46,8 +51,13 @@ async function applyWorkspaceBootstrap(
     companyName: input.companyName,
     defaultBranch: input.defaultBranch,
     manualInviteMode: true,
+    giteaMode,
     giteaBaseUrl: input.giteaBaseUrl,
+    giteaAdminBaseUrl:
+      input.giteaAdminBaseUrl ??
+      (input.giteaMode === "external" ? input.giteaBaseUrl : null),
     giteaOrganization: input.giteaOrganization,
+    giteaAuthClientId: input.giteaAuthClientId ?? null,
   };
 
   const workspaceSettings = existingSettingsId
@@ -60,6 +70,7 @@ async function applyWorkspaceBootstrap(
           id: true,
           companyName: true,
           giteaBaseUrl: true,
+          giteaAdminBaseUrl: true,
           giteaOrganization: true,
         },
       })
@@ -69,9 +80,41 @@ async function applyWorkspaceBootstrap(
           id: true,
           companyName: true,
           giteaBaseUrl: true,
+          giteaAdminBaseUrl: true,
           giteaOrganization: true,
         },
       });
+
+  if (input.giteaMode === "external") {
+    await transaction.workspaceGiteaConfigSecret.upsert({
+      where: {
+        workspaceSettingsId: workspaceSettings.id,
+      },
+      update: {
+        authClientSecretEncrypted: input.giteaAuthClientSecret
+          ? encryptExternalGiteaSecret(input.giteaAuthClientSecret)
+          : null,
+        adminTokenEncrypted: input.giteaAdminToken
+          ? encryptExternalGiteaSecret(input.giteaAdminToken)
+          : null,
+        webhookSecretEncrypted: input.giteaWebhookSecret
+          ? encryptExternalGiteaSecret(input.giteaWebhookSecret)
+          : null,
+      },
+      create: {
+        workspaceSettingsId: workspaceSettings.id,
+        authClientSecretEncrypted: input.giteaAuthClientSecret
+          ? encryptExternalGiteaSecret(input.giteaAuthClientSecret)
+          : null,
+        adminTokenEncrypted: input.giteaAdminToken
+          ? encryptExternalGiteaSecret(input.giteaAdminToken)
+          : null,
+        webhookSecretEncrypted: input.giteaWebhookSecret
+          ? encryptExternalGiteaSecret(input.giteaWebhookSecret)
+          : null,
+      },
+    });
+  }
 
   await transaction.auditLog.create({
     data: {
@@ -82,8 +125,11 @@ async function applyWorkspaceBootstrap(
       detail: {
         adminEmail: adminUser.email ?? input.adminEmail,
         companyName: workspaceSettings.companyName,
+        giteaMode: input.giteaMode,
         giteaBaseUrl: workspaceSettings.giteaBaseUrl,
+        giteaAdminBaseUrl: workspaceSettings.giteaAdminBaseUrl,
         giteaOrganization: workspaceSettings.giteaOrganization,
+        hasExternalConnectionSecrets: input.giteaMode === "external",
         defaultBranch: input.defaultBranch,
         manualInviteMode: true,
       },

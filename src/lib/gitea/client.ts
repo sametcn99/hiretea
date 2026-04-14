@@ -1,4 +1,4 @@
-import { env, hasGiteaAdminConfiguration } from "@/lib/env";
+import { getResolvedGiteaAdminConfig } from "@/lib/gitea/runtime-config";
 
 type GiteaRequestOptions = RequestInit & {
   searchParams?: URLSearchParams;
@@ -73,17 +73,12 @@ export class GiteaAdminClient {
   }
 }
 
-export function getGiteaAdminClient() {
-  if (!hasGiteaAdminConfiguration()) {
-    throw new Error("Gitea admin configuration is incomplete.");
-  }
-
-  const baseUrl = env.GITEA_ADMIN_BASE_URL;
-  const token = env.GITEA_ADMIN_TOKEN;
-
-  if (!baseUrl || !token) {
-    throw new Error("Gitea admin configuration is incomplete.");
-  }
-
+export function createGiteaAdminClient(baseUrl: string, token: string) {
   return new GiteaAdminClient(baseUrl, token);
+}
+
+export async function getGiteaAdminClient() {
+  const config = await getResolvedGiteaAdminConfig();
+
+  return new GiteaAdminClient(config.baseUrl, config.token);
 }

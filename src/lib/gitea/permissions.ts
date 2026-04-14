@@ -17,7 +17,7 @@ type RevokeRepositoryAccessInput = Omit<
 >;
 
 export async function grantRepositoryAccess(input: GrantRepositoryAccessInput) {
-  const client = getGiteaAdminClient();
+  const client = await getGiteaAdminClient();
 
   await client.request<void>(
     `/repos/${input.owner}/${input.repositoryName}/collaborators/${input.username}`,
@@ -44,7 +44,7 @@ export async function grantRepositoryAccess(input: GrantRepositoryAccessInput) {
 export async function revokeRepositoryAccess(
   input: RevokeRepositoryAccessInput,
 ) {
-  const client = getGiteaAdminClient();
+  const client = await getGiteaAdminClient();
 
   await client.request<void>(
     `/repos/${input.owner}/${input.repositoryName}/collaborators/${input.username}`,

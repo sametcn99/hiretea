@@ -3,7 +3,6 @@ import { CandidateCaseStatus, UserRole } from "@prisma/client";
 import { createAuditLog } from "@/lib/audit/log";
 import type { CandidateCaseCreateInput } from "@/lib/candidate-cases/schemas";
 import { db } from "@/lib/db";
-import { hasWebhookConfiguration } from "@/lib/env";
 import {
   grantRepositoryAccess,
   revokeRepositoryAccess,
@@ -12,6 +11,7 @@ import {
   deleteCaseRepository,
   generateCaseRepositoryFromTemplate,
 } from "@/lib/gitea/repositories";
+import { hasResolvedWebhookConfiguration } from "@/lib/gitea/runtime-config";
 import { ensureRepositoryWebhook } from "@/lib/gitea/webhooks";
 import { getWorkspaceSettingsOrThrow } from "@/lib/workspace-settings/queries";
 
@@ -138,7 +138,7 @@ export async function createCandidateCase(input: CreateCandidateCaseParams) {
   });
 
   try {
-    if (hasWebhookConfiguration()) {
+    if (await hasResolvedWebhookConfiguration()) {
       await ensureRepositoryWebhook({
         actorId: input.actorId,
         owner: workspaceSettings.giteaOrganization,

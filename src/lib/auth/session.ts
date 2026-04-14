@@ -1,11 +1,12 @@
 import type { UserRole } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
-import { cache } from "react";
-import { authOptions } from "@/lib/auth/config";
+import { getAuthOptions } from "@/lib/auth/config";
 import { hasAnyRole } from "@/lib/permissions/roles";
 
-export const getServerAuthSession = cache(() => getServerSession(authOptions));
+export async function getServerAuthSession() {
+  return getServerSession(await getAuthOptions());
+}
 
 export async function requireAuthSession() {
   const session = await getServerAuthSession();

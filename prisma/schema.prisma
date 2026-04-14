@@ -28,6 +28,11 @@ enum CandidateCaseDecision {
   REJECT
 }
 
+enum WorkspaceGiteaMode {
+  BUNDLED
+  EXTERNAL
+}
+
 model User {
   id            String          @id @default(cuid())
   name          String?
@@ -67,10 +72,25 @@ model WorkspaceSettings {
   companyName          String
   defaultBranch        String   @default("main")
   manualInviteMode     Boolean  @default(true)
+  giteaMode            WorkspaceGiteaMode @default(BUNDLED)
   giteaBaseUrl         String
+  giteaAdminBaseUrl    String?
   giteaOrganization    String
+  giteaAuthClientId    String?
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
+  giteaConfigSecret    WorkspaceGiteaConfigSecret?
+}
+
+model WorkspaceGiteaConfigSecret {
+  id                        String   @id @default(cuid())
+  workspaceSettingsId       String   @unique
+  authClientSecretEncrypted String?
+  adminTokenEncrypted       String?
+  webhookSecretEncrypted    String?
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+  workspaceSettings         WorkspaceSettings @relation(fields: [workspaceSettingsId], references: [id], onDelete: Cascade)
 }
 
 model CaseTemplate {

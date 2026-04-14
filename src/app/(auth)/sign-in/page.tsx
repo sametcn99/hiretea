@@ -5,7 +5,7 @@ import { connection } from "next/server";
 import { SignInPanel } from "@/app/(auth)/sign-in/components/sign-in-panel";
 import { getServerAuthSession } from "@/lib/auth/session";
 import { getBootstrapStatus } from "@/lib/bootstrap/status";
-import { hasAuthConfiguration } from "@/lib/env";
+import { getGiteaRuntimeReadiness } from "@/lib/gitea/runtime-config";
 
 export default async function SignInPage() {
   await connection();
@@ -22,7 +22,7 @@ export default async function SignInPage() {
     redirect("/dashboard" as Route);
   }
 
-  const isConfigured = hasAuthConfiguration();
+  const runtimeReadiness = await getGiteaRuntimeReadiness();
 
   return (
     <Box
@@ -35,7 +35,10 @@ export default async function SignInPage() {
       }}
     >
       <Box style={{ width: "min(100%, 460px)" }}>
-        <SignInPanel isConfigured={isConfigured} />
+        <SignInPanel
+          isConfigured={runtimeReadiness.authReady}
+          mode={runtimeReadiness.mode}
+        />
       </Box>
     </Box>
   );
