@@ -133,8 +133,10 @@ If you change the public ports, keep the matching public URLs in sync. In bundle
 ## Useful Commands
 
 ```bash
-docker compose up --build
-COMPOSE_PROFILES="" HIRETEA_GITEA_MODE=external docker compose up --build
+bun run docker:up:bundled
+bun run docker:up:external
+bun run docker:watch:bundled
+bun run docker:watch:external
 docker compose down
 docker compose down -v
 bun run smoke:test
