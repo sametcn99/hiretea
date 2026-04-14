@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Button, Callout, Checkbox, Flex, Grid, Text, TextField } from "@radix-ui/themes";
+import { Button, Callout, Flex, Grid, Text, TextField } from "@radix-ui/themes";
 import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
@@ -42,6 +42,7 @@ export function SetupForm({ bootstrapEnabled, defaultValues }: SetupFormProps) {
 
   return (
     <form action={formAction}>
+      <input type="hidden" name="manualInviteMode" value="on" />
       <Flex direction="column" gap="4">
         {!bootstrapEnabled ? (
           <Callout.Root color="red" size="1">
@@ -53,7 +54,9 @@ export function SetupForm({ bootstrapEnabled, defaultValues }: SetupFormProps) {
         ) : null}
 
         <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium" htmlFor="bootstrapToken">Bootstrap token</Text>
+          <Text as="label" size="2" weight="medium" htmlFor="bootstrapToken">
+            Bootstrap token
+          </Text>
           <TextField.Root
             id="bootstrapToken"
             name="bootstrapToken"
@@ -62,13 +65,17 @@ export function SetupForm({ bootstrapEnabled, defaultValues }: SetupFormProps) {
             color={state.fieldErrors?.bootstrapToken ? "red" : undefined}
           />
           {state.fieldErrors?.bootstrapToken?.map((error) => (
-            <Text size="1" color="red" key={error}>{error}</Text>
+            <Text size="1" color="red" key={error}>
+              {error}
+            </Text>
           ))}
         </Flex>
 
         <Grid columns="2" gap="3">
           <Flex direction="column" gap="1">
-            <Text as="label" size="2" weight="medium" htmlFor="adminEmail">First admin email</Text>
+            <Text as="label" size="2" weight="medium" htmlFor="adminEmail">
+              First admin email
+            </Text>
             <TextField.Root
               id="adminEmail"
               name="adminEmail"
@@ -77,12 +84,16 @@ export function SetupForm({ bootstrapEnabled, defaultValues }: SetupFormProps) {
               color={state.fieldErrors?.adminEmail ? "red" : undefined}
             />
             {state.fieldErrors?.adminEmail?.map((error) => (
-              <Text size="1" color="red" key={error}>{error}</Text>
+              <Text size="1" color="red" key={error}>
+                {error}
+              </Text>
             ))}
           </Flex>
 
           <Flex direction="column" gap="1">
-            <Text as="label" size="2" weight="medium" htmlFor="adminName">First admin name</Text>
+            <Text as="label" size="2" weight="medium" htmlFor="adminName">
+              First admin name
+            </Text>
             <TextField.Root
               id="adminName"
               name="adminName"
@@ -91,13 +102,17 @@ export function SetupForm({ bootstrapEnabled, defaultValues }: SetupFormProps) {
               color={state.fieldErrors?.adminName ? "red" : undefined}
             />
             {state.fieldErrors?.adminName?.map((error) => (
-              <Text size="1" color="red" key={error}>{error}</Text>
+              <Text size="1" color="red" key={error}>
+                {error}
+              </Text>
             ))}
           </Flex>
         </Grid>
 
         <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium" htmlFor="companyName">Company name</Text>
+          <Text as="label" size="2" weight="medium" htmlFor="companyName">
+            Company name
+          </Text>
           <TextField.Root
             defaultValue={defaultValues.companyName}
             id="companyName"
@@ -106,13 +121,17 @@ export function SetupForm({ bootstrapEnabled, defaultValues }: SetupFormProps) {
             color={state.fieldErrors?.companyName ? "red" : undefined}
           />
           {state.fieldErrors?.companyName?.map((error) => (
-            <Text size="1" color="red" key={error}>{error}</Text>
+            <Text size="1" color="red" key={error}>
+              {error}
+            </Text>
           ))}
         </Flex>
 
         <Grid columns="2" gap="3">
           <Flex direction="column" gap="1">
-            <Text as="label" size="2" weight="medium" htmlFor="giteaBaseUrl">Gitea base URL</Text>
+            <Text as="label" size="2" weight="medium" htmlFor="giteaBaseUrl">
+              Gitea base URL
+            </Text>
             <TextField.Root
               defaultValue={defaultValues.giteaBaseUrl}
               id="giteaBaseUrl"
@@ -122,12 +141,21 @@ export function SetupForm({ bootstrapEnabled, defaultValues }: SetupFormProps) {
               color={state.fieldErrors?.giteaBaseUrl ? "red" : undefined}
             />
             {state.fieldErrors?.giteaBaseUrl?.map((error) => (
-              <Text size="1" color="red" key={error}>{error}</Text>
+              <Text size="1" color="red" key={error}>
+                {error}
+              </Text>
             ))}
           </Flex>
 
           <Flex direction="column" gap="1">
-            <Text as="label" size="2" weight="medium" htmlFor="giteaOrganization">Gitea organization</Text>
+            <Text
+              as="label"
+              size="2"
+              weight="medium"
+              htmlFor="giteaOrganization"
+            >
+              Gitea organization
+            </Text>
             <TextField.Root
               defaultValue={defaultValues.giteaOrganization}
               id="giteaOrganization"
@@ -137,14 +165,18 @@ export function SetupForm({ bootstrapEnabled, defaultValues }: SetupFormProps) {
               color={state.fieldErrors?.giteaOrganization ? "red" : undefined}
             />
             {state.fieldErrors?.giteaOrganization?.map((error) => (
-              <Text size="1" color="red" key={error}>{error}</Text>
+              <Text size="1" color="red" key={error}>
+                {error}
+              </Text>
             ))}
           </Flex>
         </Grid>
 
         <Grid columns="2" gap="3">
           <Flex direction="column" gap="1">
-            <Text as="label" size="2" weight="medium" htmlFor="defaultBranch">Default branch</Text>
+            <Text as="label" size="2" weight="medium" htmlFor="defaultBranch">
+              Default branch
+            </Text>
             <TextField.Root
               defaultValue={defaultValues.defaultBranch}
               id="defaultBranch"
@@ -154,31 +186,23 @@ export function SetupForm({ bootstrapEnabled, defaultValues }: SetupFormProps) {
               color={state.fieldErrors?.defaultBranch ? "red" : undefined}
             />
             {state.fieldErrors?.defaultBranch?.map((error) => (
-              <Text size="1" color="red" key={error}>{error}</Text>
+              <Text size="1" color="red" key={error}>
+                {error}
+              </Text>
             ))}
           </Flex>
 
           <Flex direction="column" gap="1">
-            <Text as="p" size="2" weight="medium" mb="1">Invite mode</Text>
-            <Box p="3" style={{ borderRadius: "var(--radius-2)", background: "var(--gray-a2)", border: "1px solid var(--gray-a5)" }}>
-              <Flex asChild gap="2" align="start">
-                <label htmlFor="manualInviteMode">
-                  <Checkbox
-                    defaultChecked
-                    id="manualInviteMode"
-                    name="manualInviteMode"
-                    mt="1"
-                  />
-                  <Flex direction="column" gap="1">
-                    <Text size="2" weight="bold">Keep manual invites enabled</Text>
-                    <Text size="1" color="gray">
-                      Recommended for the current MVP. Candidate onboarding remains
-                      a deliberate internal action.
-                    </Text>
-                  </Flex>
-                </label>
-              </Flex>
-            </Box>
+            <Text as="p" size="2" weight="medium" mb="1">
+              Candidate onboarding
+            </Text>
+            <Callout.Root color="blue" size="1">
+              <Callout.Text>
+                Candidate onboarding stays on manual credential handoff during
+                the current MVP. First-run setup stores that operating mode
+                automatically.
+              </Callout.Text>
+            </Callout.Root>
           </Flex>
         </Grid>
 

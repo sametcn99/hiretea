@@ -1,6 +1,13 @@
 "use client";
 
-import { Button, Callout, Flex, Text, TextArea, TextField } from "@radix-ui/themes";
+import {
+  Button,
+  Callout,
+  Flex,
+  Text,
+  TextArea,
+  TextField,
+} from "@radix-ui/themes";
 import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
@@ -41,7 +48,9 @@ export function CaseTemplateCreateForm() {
     <form action={formAction} key={formKey}>
       <Flex direction="column" gap="3">
         <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium" htmlFor="name">Template name</Text>
+          <Text as="label" size="2" weight="medium" htmlFor="name">
+            Template name
+          </Text>
           <TextField.Root
             id="name"
             name="name"
@@ -50,12 +59,16 @@ export function CaseTemplateCreateForm() {
             color={state.fieldErrors?.name ? "red" : undefined}
           />
           {state.fieldErrors?.name?.map((error) => (
-            <Text size="1" color="red" key={error}>{error}</Text>
+            <Text size="1" color="red" key={error}>
+              {error}
+            </Text>
           ))}
         </Flex>
 
         <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium" htmlFor="slug">Template slug</Text>
+          <Text as="label" size="2" weight="medium" htmlFor="slug">
+            Template slug
+          </Text>
           <TextField.Root
             id="slug"
             name="slug"
@@ -64,12 +77,16 @@ export function CaseTemplateCreateForm() {
             color={state.fieldErrors?.slug ? "red" : undefined}
           />
           {state.fieldErrors?.slug?.map((error) => (
-            <Text size="1" color="red" key={error}>{error}</Text>
+            <Text size="1" color="red" key={error}>
+              {error}
+            </Text>
           ))}
         </Flex>
 
         <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium" htmlFor="summary">Summary</Text>
+          <Text as="label" size="2" weight="medium" htmlFor="summary">
+            Summary
+          </Text>
           <TextArea
             id="summary"
             name="summary"
@@ -78,12 +95,16 @@ export function CaseTemplateCreateForm() {
             color={state.fieldErrors?.summary ? "red" : undefined}
           />
           {state.fieldErrors?.summary?.map((error) => (
-            <Text size="1" color="red" key={error}>{error}</Text>
+            <Text size="1" color="red" key={error}>
+              {error}
+            </Text>
           ))}
         </Flex>
 
         <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium" htmlFor="repositoryName">Repository name</Text>
+          <Text as="label" size="2" weight="medium" htmlFor="repositoryName">
+            Repository name
+          </Text>
           <TextField.Root
             id="repositoryName"
             name="repositoryName"
@@ -92,12 +113,21 @@ export function CaseTemplateCreateForm() {
             color={state.fieldErrors?.repositoryName ? "red" : undefined}
           />
           {state.fieldErrors?.repositoryName?.map((error) => (
-            <Text size="1" color="red" key={error}>{error}</Text>
+            <Text size="1" color="red" key={error}>
+              {error}
+            </Text>
           ))}
         </Flex>
 
         <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium" htmlFor="repositoryDescription">Repository description</Text>
+          <Text
+            as="label"
+            size="2"
+            weight="medium"
+            htmlFor="repositoryDescription"
+          >
+            Repository description
+          </Text>
           <TextArea
             id="repositoryDescription"
             name="repositoryDescription"
@@ -105,12 +135,16 @@ export function CaseTemplateCreateForm() {
             rows={3}
           />
           {state.fieldErrors?.repositoryDescription?.map((error) => (
-            <Text size="1" color="red" key={error}>{error}</Text>
+            <Text size="1" color="red" key={error}>
+              {error}
+            </Text>
           ))}
         </Flex>
 
         <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium" htmlFor="defaultBranch">Default branch</Text>
+          <Text as="label" size="2" weight="medium" htmlFor="defaultBranch">
+            Default branch
+          </Text>
           <TextField.Root
             id="defaultBranch"
             name="defaultBranch"
@@ -119,14 +153,17 @@ export function CaseTemplateCreateForm() {
             color={state.fieldErrors?.defaultBranch ? "red" : undefined}
           />
           {state.fieldErrors?.defaultBranch?.map((error) => (
-            <Text size="1" color="red" key={error}>{error}</Text>
+            <Text size="1" color="red" key={error}>
+              {error}
+            </Text>
           ))}
         </Flex>
 
         <Callout.Root color="gray" size="1">
           <Callout.Text>
-            The repository is created first in Gitea. If the local database write
-            fails afterwards, the repository creation is rolled back automatically.
+            The repository is created first in Gitea. If the local database
+            write fails afterwards, the repository creation is rolled back
+            automatically.
           </Callout.Text>
         </Callout.Root>
 

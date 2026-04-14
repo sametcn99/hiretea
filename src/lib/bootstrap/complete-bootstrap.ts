@@ -45,7 +45,7 @@ async function applyWorkspaceBootstrap(
   const settingsData = {
     companyName: input.companyName,
     defaultBranch: input.defaultBranch,
-    manualInviteMode: input.manualInviteMode,
+    manualInviteMode: true,
     giteaBaseUrl: input.giteaBaseUrl,
     giteaOrganization: input.giteaOrganization,
   };
@@ -85,7 +85,7 @@ async function applyWorkspaceBootstrap(
         giteaBaseUrl: workspaceSettings.giteaBaseUrl,
         giteaOrganization: workspaceSettings.giteaOrganization,
         defaultBranch: input.defaultBranch,
-        manualInviteMode: input.manualInviteMode,
+        manualInviteMode: true,
       },
     },
   });

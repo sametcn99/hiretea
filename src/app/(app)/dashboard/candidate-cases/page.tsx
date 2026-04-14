@@ -18,7 +18,11 @@ export default async function CandidateCasesPage() {
   ]);
 
   return (
-    <Grid columns={{ initial: "1fr", lg: "minmax(320px, 400px) minmax(0, 1fr)" }} gap="4" align="start">
+    <Grid
+      columns={{ initial: "1fr", lg: "minmax(320px, 400px) minmax(0, 1fr)" }}
+      gap="4"
+      align="start"
+    >
       <SectionCard
         style={{ position: "sticky", top: 28 }}
         title="Assign a candidate case"

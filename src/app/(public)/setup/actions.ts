@@ -57,7 +57,7 @@ export async function completeBootstrapSetupAction(
     giteaBaseUrl: formData.get("giteaBaseUrl"),
     giteaOrganization: formData.get("giteaOrganization"),
     defaultBranch: formData.get("defaultBranch"),
-    manualInviteMode: formData.get("manualInviteMode") === "on",
+    manualInviteMode: true,
   });
 
   if (!parsedInput.success) {

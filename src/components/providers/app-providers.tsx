@@ -6,7 +6,13 @@ import type { PropsWithChildren } from "react";
 
 export function AppProviders({ children }: PropsWithChildren) {
   return (
-    <Theme appearance="dark" accentColor="blue" grayColor="slate" radius="medium" scaling="100%">
+    <Theme
+      appearance="dark"
+      accentColor="blue"
+      grayColor="slate"
+      radius="medium"
+      scaling="100%"
+    >
       <SessionProvider>{children}</SessionProvider>
     </Theme>
   );

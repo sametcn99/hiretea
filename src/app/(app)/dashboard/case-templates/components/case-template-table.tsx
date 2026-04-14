@@ -37,29 +37,41 @@ export function CaseTemplateTable({ templates }: CaseTemplateTableProps) {
             <Table.Cell>
               <Flex direction="column" gap="1">
                 <Text weight="bold">{template.name}</Text>
-                <Text size="1" color="gray">Slug: {template.slug}</Text>
-                <Text size="1" color="gray">{template.summary}</Text>
+                <Text size="1" color="gray">
+                  Slug: {template.slug}
+                </Text>
+                <Text size="1" color="gray">
+                  {template.summary}
+                </Text>
               </Flex>
             </Table.Cell>
             <Table.Cell>
               <Flex direction="column" gap="1">
                 <StatusBadge label={template.defaultBranch} tone="info" />
-                <Text size="1" color="gray">{template.repositoryName}</Text>
+                <Text size="1" color="gray">
+                  {template.repositoryName}
+                </Text>
                 {template.repositoryDescription ? (
-                  <Text size="1" color="gray">{template.repositoryDescription}</Text>
+                  <Text size="1" color="gray">
+                    {template.repositoryDescription}
+                  </Text>
                 ) : null}
               </Flex>
             </Table.Cell>
             <Table.Cell>
               <Flex direction="column" gap="1">
                 <Text>{template.candidateCaseCount}</Text>
-                <Text size="1" color="gray">Assigned candidate cases</Text>
+                <Text size="1" color="gray">
+                  Assigned candidate cases
+                </Text>
               </Flex>
             </Table.Cell>
             <Table.Cell>
               <Flex direction="column" gap="1">
                 <Text>{dateFormatter.format(template.createdAt)}</Text>
-                <Text size="1" color="gray">Owner: {template.createdByName}</Text>
+                <Text size="1" color="gray">
+                  Owner: {template.createdByName}
+                </Text>
               </Flex>
             </Table.Cell>
           </Table.Row>

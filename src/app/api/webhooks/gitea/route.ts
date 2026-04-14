@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
-import { createAuditLog } from "@/lib/audit/log";
-import { env } from "@/lib/env";
+import { env, hasWebhookConfiguration } from "@/lib/env";
+import { processGiteaWebhookDelivery } from "@/lib/gitea/webhooks";
 
 export const runtime = "nodejs";
 
@@ -24,29 +24,45 @@ function isValidSignature(payload: string, signature: string | null) {
 }
 
 export async function POST(request: Request) {
+  if (!hasWebhookConfiguration()) {
+    return NextResponse.json(
+      { error: "Webhook runtime configuration is incomplete." },
+      { status: 503 },
+    );
+  }
+
   const rawBody = await request.text();
   const eventName = request.headers.get("x-gitea-event") ?? "unknown";
   const deliveryId = request.headers.get("x-gitea-delivery");
   const signature = request.headers.get("x-gitea-signature");
 
-  if (env.GITEA_WEBHOOK_SECRET && !isValidSignature(rawBody, signature)) {
+  if (!signature || !isValidSignature(rawBody, signature)) {
     return NextResponse.json(
       { error: "Invalid webhook signature." },
       { status: 401 },
     );
   }
 
-  const payload = JSON.parse(rawBody) as unknown;
+  let payload: unknown;
 
-  await createAuditLog({
-    action: "gitea.webhook.received",
-    resourceType: "WebhookDelivery",
-    resourceId: deliveryId,
-    detail: {
-      eventName,
-      payload,
-    },
+  try {
+    payload = JSON.parse(rawBody) as unknown;
+  } catch {
+    return NextResponse.json(
+      { error: "Webhook payload is not valid JSON." },
+      { status: 400 },
+    );
+  }
+
+  const result = await processGiteaWebhookDelivery({
+    deliveryId,
+    eventName,
+    payload,
   });
 
-  return NextResponse.json({ ok: true, eventName });
+  return NextResponse.json({
+    ok: true,
+    eventName,
+    candidateCaseId: result.candidateCaseId,
+  });
 }

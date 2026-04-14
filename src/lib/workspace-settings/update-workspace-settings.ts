@@ -36,7 +36,7 @@ export async function updateWorkspaceSettings(
     data: {
       companyName: input.companyName,
       defaultBranch: input.defaultBranch,
-      manualInviteMode: input.manualInviteMode,
+      manualInviteMode: true,
       giteaBaseUrl: input.giteaBaseUrl,
       giteaOrganization: input.giteaOrganization,
     },
@@ -61,7 +61,7 @@ export async function updateWorkspaceSettings(
       next: {
         companyName: nextSettings.companyName,
         defaultBranch: nextSettings.defaultBranch,
-        manualInviteMode: nextSettings.manualInviteMode,
+        manualInviteMode: true,
         giteaBaseUrl: nextSettings.giteaBaseUrl,
         giteaOrganization: nextSettings.giteaOrganization,
       },

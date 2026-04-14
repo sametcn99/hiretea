@@ -1,7 +1,7 @@
 "use client";
 
-import { Flex } from "@radix-ui/themes";
 import type { UserRole } from "@prisma/client";
+import { Flex } from "@radix-ui/themes";
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -16,6 +16,11 @@ type NavigationItem = {
 };
 
 const baseItems: NavigationItem[] = [{ href: "/dashboard", label: "Overview" }];
+
+const candidateItems: NavigationItem[] = [
+  ...baseItems,
+  { href: "/dashboard/my-cases", label: "My cases" },
+];
 
 const managementItems: NavigationItem[] = [
   { href: "/dashboard/candidates", label: "Candidates" },
@@ -33,7 +38,7 @@ export function AppNavigation({ role }: AppNavigationProps) {
   const pathname = usePathname();
   const items =
     role === "CANDIDATE"
-      ? baseItems
+      ? candidateItems
       : role === "ADMIN"
         ? [...baseItems, ...managementItems, ...adminItems]
         : [...baseItems, ...managementItems];

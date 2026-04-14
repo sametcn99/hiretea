@@ -64,9 +64,15 @@ export function ReviewCaseTable({ reviewCases }: ReviewCaseTableProps) {
             <Table.Cell>
               <Flex direction="column" gap="1">
                 <Text weight="bold">{reviewCase.candidateDisplayName}</Text>
-                <Text size="1" color="gray">{reviewCase.candidateEmail}</Text>
-                <Text size="1" color="gray">{reviewCase.templateName}</Text>
-                <Text size="1" color="gray">Slug: {reviewCase.templateSlug}</Text>
+                <Text size="1" color="gray">
+                  {reviewCase.candidateEmail}
+                </Text>
+                <Text size="1" color="gray">
+                  {reviewCase.templateName}
+                </Text>
+                <Text size="1" color="gray">
+                  Slug: {reviewCase.templateSlug}
+                </Text>
               </Flex>
             </Table.Cell>
             <Table.Cell>
@@ -81,7 +87,9 @@ export function ReviewCaseTable({ reviewCases }: ReviewCaseTableProps) {
                     {reviewCase.workingRepository ?? "Open repository"}
                   </RadixLink>
                 ) : (
-                  <Text weight="bold">{reviewCase.workingRepository ?? "Pending"}</Text>
+                  <Text weight="bold">
+                    {reviewCase.workingRepository ?? "Pending"}
+                  </Text>
                 )}
                 <Text size="1" color="gray">
                   Candidate login: {reviewCase.candidateLogin ?? "Not linked"}
@@ -115,7 +123,8 @@ export function ReviewCaseTable({ reviewCases }: ReviewCaseTableProps) {
                   <Text weight="bold">No score yet</Text>
                 )}
                 <Text size="1" color="gray">
-                  {reviewCase.latestSummary ?? "No review summary recorded yet."}
+                  {reviewCase.latestSummary ??
+                    "No review summary recorded yet."}
                 </Text>
                 <Text size="1" color="gray">
                   Reviewer: {reviewCase.latestReviewerName ?? "Not reviewed"}

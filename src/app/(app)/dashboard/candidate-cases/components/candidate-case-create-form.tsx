@@ -1,6 +1,13 @@
 "use client";
 
-import { Button, Callout, Flex, Link as RadixLink, Select, Text } from "@radix-ui/themes";
+import {
+  Button,
+  Callout,
+  Flex,
+  Link as RadixLink,
+  Select,
+  Text,
+} from "@radix-ui/themes";
 import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
@@ -51,7 +58,9 @@ export function CandidateCaseCreateForm({
     <form action={formAction} key={formKey}>
       <Flex direction="column" gap="3">
         <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium">Candidate</Text>
+          <Text as="label" size="2" weight="medium">
+            Candidate
+          </Text>
           <Select.Root name="candidateId">
             <Select.Trigger placeholder="Select a candidate" />
             <Select.Content>
@@ -63,12 +72,16 @@ export function CandidateCaseCreateForm({
             </Select.Content>
           </Select.Root>
           {state.fieldErrors?.candidateId?.map((error) => (
-            <Text size="1" color="red" key={error}>{error}</Text>
+            <Text size="1" color="red" key={error}>
+              {error}
+            </Text>
           ))}
         </Flex>
 
         <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium">Case template</Text>
+          <Text as="label" size="2" weight="medium">
+            Case template
+          </Text>
           <Select.Root name="caseTemplateId">
             <Select.Trigger placeholder="Select a template" />
             <Select.Content>
@@ -80,21 +93,28 @@ export function CandidateCaseCreateForm({
             </Select.Content>
           </Select.Root>
           {state.fieldErrors?.caseTemplateId?.map((error) => (
-            <Text size="1" color="red" key={error}>{error}</Text>
+            <Text size="1" color="red" key={error}>
+              {error}
+            </Text>
           ))}
         </Flex>
 
         <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium" htmlFor="dueAt">Due date</Text>
+          <Text as="label" size="2" weight="medium" htmlFor="dueAt">
+            Due date
+          </Text>
           <input id="dueAt" name="dueAt" type="date" />
           {state.fieldErrors?.dueAt?.map((error) => (
-            <Text size="1" color="red" key={error}>{error}</Text>
+            <Text size="1" color="red" key={error}>
+              {error}
+            </Text>
           ))}
         </Flex>
 
         <Callout.Root color="gray" size="1">
           <Callout.Text>
-            The working repository is generated from the selected template inside{" "}
+            The working repository is generated from the selected template
+            inside{" "}
             {assignmentOptions.workspaceOrganization ??
               "the configured workspace organization"}
             . The candidate receives direct write access immediately after
@@ -121,10 +141,18 @@ export function CandidateCaseCreateForm({
           <Callout.Root color="green" size="1">
             <Callout.Text>{state.message}</Callout.Text>
             {state.repositoryName ? (
-              <Text size="1" color="gray" mt="1">Repository: {state.repositoryName}</Text>
+              <Text size="1" color="gray" mt="1">
+                Repository: {state.repositoryName}
+              </Text>
             ) : null}
             {state.repositoryUrl ? (
-              <RadixLink href={state.repositoryUrl} target="_blank" rel="noreferrer" size="2" mt="1">
+              <RadixLink
+                href={state.repositoryUrl}
+                target="_blank"
+                rel="noreferrer"
+                size="2"
+                mt="1"
+              >
                 Open generated repository
               </RadixLink>
             ) : null}

@@ -56,7 +56,9 @@ export function CandidateCaseTable({
             <Table.Cell>
               <Flex direction="column" gap="1">
                 <Text weight="bold">{candidateCase.candidateDisplayName}</Text>
-                <Text size="1" color="gray">{candidateCase.candidateEmail}</Text>
+                <Text size="1" color="gray">
+                  {candidateCase.candidateEmail}
+                </Text>
                 <Text size="1" color="gray">
                   {candidateCase.candidateLogin
                     ? `Gitea: ${candidateCase.candidateLogin}`
@@ -67,7 +69,9 @@ export function CandidateCaseTable({
             <Table.Cell>
               <Flex direction="column" gap="1">
                 <Text weight="bold">{candidateCase.templateName}</Text>
-                <Text size="1" color="gray">Slug: {candidateCase.templateSlug}</Text>
+                <Text size="1" color="gray">
+                  Slug: {candidateCase.templateSlug}
+                </Text>
               </Flex>
             </Table.Cell>
             <Table.Cell>

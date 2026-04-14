@@ -37,7 +37,9 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
             <Table.Cell>
               <Flex direction="column" gap="1">
                 <Text weight="bold">{candidate.displayName}</Text>
-                <Text size="1" color="gray">{candidate.email}</Text>
+                <Text size="1" color="gray">
+                  {candidate.email}
+                </Text>
                 <Text size="1" color="gray">
                   {candidate.giteaLogin
                     ? `Gitea: ${candidate.giteaLogin}`

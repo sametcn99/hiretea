@@ -4,7 +4,12 @@ import { WorkspaceSettingsForm } from "@/app/(app)/dashboard/settings/components
 import { SectionCard } from "@/components/ui/section-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { requireRole } from "@/lib/auth/session";
-import { hasAuthConfiguration, hasGiteaAdminConfiguration } from "@/lib/env";
+import {
+  hasAuthConfiguration,
+  hasGiteaAdminConfiguration,
+  hasWebhookConfiguration,
+} from "@/lib/env";
+import { getGiteaWorkspaceValidationResult } from "@/lib/gitea/validation";
 import { getWorkspaceSettingsOrThrow } from "@/lib/workspace-settings/queries";
 
 const dateFormatter = new Intl.DateTimeFormat("en", {
@@ -15,9 +20,17 @@ const dateFormatter = new Intl.DateTimeFormat("en", {
 export default async function SettingsPage() {
   await requireRole(UserRole.ADMIN);
   const settings = await getWorkspaceSettingsOrThrow();
+  const giteaValidation = await getGiteaWorkspaceValidationResult({
+    giteaBaseUrl: settings.giteaBaseUrl,
+    giteaOrganization: settings.giteaOrganization,
+  });
 
   return (
-    <Grid columns={{ initial: "1fr", lg: "minmax(340px, 440px) minmax(0, 1fr)" }} gap="4" align="start">
+    <Grid
+      columns={{ initial: "1fr", lg: "minmax(340px, 440px) minmax(0, 1fr)" }}
+      gap="4"
+      align="start"
+    >
       <SectionCard
         style={{ position: "sticky", top: 28 }}
         title="Workspace settings"
@@ -36,17 +49,23 @@ export default async function SettingsPage() {
           <Flex direction="column" gap="3">
             <Flex justify="between" align="center" gap="3">
               <Text size="2">Company name</Text>
-              <Text size="2" weight="bold">{settings.companyName}</Text>
+              <Text size="2" weight="bold">
+                {settings.companyName}
+              </Text>
             </Flex>
             <Flex justify="between" align="center" gap="3">
               <Text size="2">Default branch</Text>
               <StatusBadge label={settings.defaultBranch} tone="info" />
             </Flex>
             <Flex justify="between" align="center" gap="3">
-              <Text size="2">Manual invites</Text>
+              <Text size="2">Candidate onboarding</Text>
               <StatusBadge
-                label={settings.manualInviteMode ? "Enabled" : "Disabled"}
-                tone={settings.manualInviteMode ? "positive" : "warning"}
+                label={
+                  settings.manualInviteMode
+                    ? "Manual handoff only"
+                    : "Will reset to manual"
+                }
+                tone={settings.manualInviteMode ? "info" : "warning"}
               />
             </Flex>
             <Flex justify="between" align="center" gap="3">
@@ -63,6 +82,32 @@ export default async function SettingsPage() {
                 tone={hasGiteaAdminConfiguration() ? "positive" : "warning"}
               />
             </Flex>
+            <Flex justify="between" align="center" gap="3">
+              <Text size="2">Webhook runtime</Text>
+              <StatusBadge
+                label={hasWebhookConfiguration() ? "Ready" : "Missing"}
+                tone={hasWebhookConfiguration() ? "positive" : "warning"}
+              />
+            </Flex>
+            <Flex justify="between" align="center" gap="3">
+              <Text size="2">Live Gitea validation</Text>
+              <StatusBadge
+                label={
+                  giteaValidation.status === "ready"
+                    ? "Validated"
+                    : giteaValidation.status === "warning"
+                      ? "Validated with warning"
+                      : "Failed"
+                }
+                tone={
+                  giteaValidation.status === "ready"
+                    ? "positive"
+                    : giteaValidation.status === "warning"
+                      ? "warning"
+                      : "warning"
+                }
+              />
+            </Flex>
           </Flex>
 
           <Text size="1" color="gray" mt="2">
@@ -74,6 +119,19 @@ export default async function SettingsPage() {
           <Text size="1" color="gray">
             Last updated: {dateFormatter.format(settings.updatedAt)}
           </Text>
+          <Text size="1" color="gray">
+            {giteaValidation.message}
+          </Text>
+          {giteaValidation.organizationLabel ? (
+            <Text size="1" color="gray">
+              Validated organization: {giteaValidation.organizationLabel}
+            </Text>
+          ) : null}
+          {giteaValidation.adminLogin ? (
+            <Text size="1" color="gray">
+              Admin token owner: {giteaValidation.adminLogin}
+            </Text>
+          ) : null}
         </SectionCard>
 
         <SectionCard
@@ -88,12 +146,12 @@ export default async function SettingsPage() {
                 repositories.
               </li>
               <li>
-                Changing the default branch affects future templates and candidate
-                case assignments, not existing repositories.
+                Changing the default branch affects future templates and
+                candidate case assignments, not existing repositories.
               </li>
               <li>
-                Disabling manual invites is a product decision only; email
-                delivery is still not implemented.
+                Candidate credentials are still shared manually. Saving settings
+                keeps the workspace aligned with that MVP operating model.
               </li>
             </ol>
           </Flex>

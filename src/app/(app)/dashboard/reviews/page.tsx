@@ -11,7 +11,11 @@ export default async function ReviewsPage() {
   const reviewCases = await listReviewCases();
 
   return (
-    <Grid columns={{ initial: "1fr", lg: "minmax(340px, 420px) minmax(0, 1fr)" }} gap="4" align="start">
+    <Grid
+      columns={{ initial: "1fr", lg: "minmax(340px, 420px) minmax(0, 1fr)" }}
+      gap="4"
+      align="start"
+    >
       <SectionCard
         style={{ position: "sticky", top: 28 }}
         title="Record a review"

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Callout, Checkbox, Flex, Grid, Text, TextField } from "@radix-ui/themes";
+import { Button, Callout, Flex, Grid, Text, TextField } from "@radix-ui/themes";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect } from "react";
 import { useFormStatus } from "react-dom";
@@ -57,9 +57,12 @@ export function WorkspaceSettingsForm({
 
   return (
     <form action={formAction}>
+      <input type="hidden" name="manualInviteMode" value="on" />
       <Flex direction="column" gap="3">
         <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium" htmlFor="companyName">Company name</Text>
+          <Text as="label" size="2" weight="medium" htmlFor="companyName">
+            Company name
+          </Text>
           <TextField.Root
             id="companyName"
             name="companyName"
@@ -67,13 +70,17 @@ export function WorkspaceSettingsForm({
             color={state.fieldErrors?.companyName ? "red" : undefined}
           />
           {state.fieldErrors?.companyName?.map((error) => (
-            <Text size="1" color="red" key={error}>{error}</Text>
+            <Text size="1" color="red" key={error}>
+              {error}
+            </Text>
           ))}
         </Flex>
 
         <Grid columns="2" gap="3">
           <Flex direction="column" gap="1">
-            <Text as="label" size="2" weight="medium" htmlFor="giteaBaseUrl">Gitea base URL</Text>
+            <Text as="label" size="2" weight="medium" htmlFor="giteaBaseUrl">
+              Gitea base URL
+            </Text>
             <TextField.Root
               id="giteaBaseUrl"
               name="giteaBaseUrl"
@@ -82,12 +89,21 @@ export function WorkspaceSettingsForm({
               color={state.fieldErrors?.giteaBaseUrl ? "red" : undefined}
             />
             {state.fieldErrors?.giteaBaseUrl?.map((error) => (
-              <Text size="1" color="red" key={error}>{error}</Text>
+              <Text size="1" color="red" key={error}>
+                {error}
+              </Text>
             ))}
           </Flex>
 
           <Flex direction="column" gap="1">
-            <Text as="label" size="2" weight="medium" htmlFor="giteaOrganization">Gitea organization</Text>
+            <Text
+              as="label"
+              size="2"
+              weight="medium"
+              htmlFor="giteaOrganization"
+            >
+              Gitea organization
+            </Text>
             <TextField.Root
               id="giteaOrganization"
               name="giteaOrganization"
@@ -95,13 +111,17 @@ export function WorkspaceSettingsForm({
               color={state.fieldErrors?.giteaOrganization ? "red" : undefined}
             />
             {state.fieldErrors?.giteaOrganization?.map((error) => (
-              <Text size="1" color="red" key={error}>{error}</Text>
+              <Text size="1" color="red" key={error}>
+                {error}
+              </Text>
             ))}
           </Flex>
         </Grid>
 
         <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium" htmlFor="defaultBranch">Default branch</Text>
+          <Text as="label" size="2" weight="medium" htmlFor="defaultBranch">
+            Default branch
+          </Text>
           <TextField.Root
             id="defaultBranch"
             name="defaultBranch"
@@ -109,26 +129,21 @@ export function WorkspaceSettingsForm({
             color={state.fieldErrors?.defaultBranch ? "red" : undefined}
           />
           {state.fieldErrors?.defaultBranch?.map((error) => (
-            <Text size="1" color="red" key={error}>{error}</Text>
+            <Text size="1" color="red" key={error}>
+              {error}
+            </Text>
           ))}
         </Flex>
 
-        <Flex gap="3" align="start">
-          <Checkbox
-            name="manualInviteMode"
-            id="manualInviteMode"
-            defaultChecked={settings.manualInviteMode}
-          />
-          <Flex direction="column" gap="1">
-            <Text as="label" htmlFor="manualInviteMode" size="2" weight="bold">
-              Keep manual invites enabled
-            </Text>
-            <Text size="1" color="gray">
-              Manual invites remain the current MVP onboarding path for
-              candidate provisioning.
-            </Text>
-          </Flex>
-        </Flex>
+        <Callout.Root color="blue" size="1">
+          <Callout.Text>
+            Candidate onboarding is fixed to manual credential handoff in the
+            current MVP.{" "}
+            {settings.manualInviteMode
+              ? "Automatic delivery is not available yet."
+              : "Saving these settings will restore the manual handoff mode."}
+          </Callout.Text>
+        </Callout.Root>
 
         {state.status === "error" && state.message ? (
           <Callout.Root color="red" size="1">

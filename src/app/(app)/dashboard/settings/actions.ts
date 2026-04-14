@@ -4,6 +4,7 @@ import { UserRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import type { ZodIssue } from "zod";
 import { requireRole } from "@/lib/auth/session";
+import { validateGiteaWorkspaceSettings } from "@/lib/gitea/validation";
 import {
   type WorkspaceSettingsUpdateInput,
   workspaceSettingsUpdateSchema,
@@ -56,7 +57,7 @@ export async function updateWorkspaceSettingsAction(
     giteaBaseUrl: formData.get("giteaBaseUrl"),
     giteaOrganization: formData.get("giteaOrganization"),
     defaultBranch: formData.get("defaultBranch"),
-    manualInviteMode: formData.get("manualInviteMode") === "on",
+    manualInviteMode: true,
   });
 
   if (!parsedInput.success) {
@@ -68,6 +69,8 @@ export async function updateWorkspaceSettingsAction(
   }
 
   try {
+    await validateGiteaWorkspaceSettings(parsedInput.data);
+
     const nextSettings = await updateWorkspaceSettings({
       actorId: session.user.id,
       ...parsedInput.data,

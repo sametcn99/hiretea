@@ -3,8 +3,8 @@ import type { Route } from "next";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { SignInPanel } from "@/app/(auth)/sign-in/components/sign-in-panel";
-import { getBootstrapStatus } from "@/lib/bootstrap/status";
 import { getServerAuthSession } from "@/lib/auth/session";
+import { getBootstrapStatus } from "@/lib/bootstrap/status";
 import { hasAuthConfiguration } from "@/lib/env";
 
 export default async function SignInPage() {
@@ -25,7 +25,15 @@ export default async function SignInPage() {
   const isConfigured = hasAuthConfiguration();
 
   return (
-    <Box style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "center", padding: "48px 24px" }}>
+    <Box
+      style={{
+        display: "flex",
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "48px 24px",
+      }}
+    >
       <Box style={{ width: "min(100%, 460px)" }}>
         <SignInPanel isConfigured={isConfigured} />
       </Box>

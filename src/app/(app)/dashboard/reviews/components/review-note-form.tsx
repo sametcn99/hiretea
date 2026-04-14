@@ -1,6 +1,15 @@
 "use client";
 
-import { Button, Callout, Checkbox, Flex, Select, Text, TextArea, TextField } from "@radix-ui/themes";
+import {
+  Button,
+  Callout,
+  Checkbox,
+  Flex,
+  Select,
+  Text,
+  TextArea,
+  TextField,
+} from "@radix-ui/themes";
 import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
@@ -47,24 +56,31 @@ export function ReviewNoteForm({ reviewCases }: ReviewNoteFormProps) {
     <form action={formAction} key={formKey}>
       <Flex direction="column" gap="3">
         <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium">Candidate case</Text>
+          <Text as="label" size="2" weight="medium">
+            Candidate case
+          </Text>
           <Select.Root name="candidateCaseId">
             <Select.Trigger placeholder="Select a candidate case" />
             <Select.Content>
               {reviewCases.map((reviewCase) => (
                 <Select.Item key={reviewCase.id} value={reviewCase.id}>
-                  {reviewCase.candidateDisplayName} / {reviewCase.templateName} ({reviewCase.status.toLowerCase().replace(/_/g, " ")})
+                  {reviewCase.candidateDisplayName} / {reviewCase.templateName}{" "}
+                  ({reviewCase.status.toLowerCase().replace(/_/g, " ")})
                 </Select.Item>
               ))}
             </Select.Content>
           </Select.Root>
           {state.fieldErrors?.candidateCaseId?.map((error) => (
-            <Text size="1" color="red" key={error}>{error}</Text>
+            <Text size="1" color="red" key={error}>
+              {error}
+            </Text>
           ))}
         </Flex>
 
         <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium" htmlFor="score">Score (1-10)</Text>
+          <Text as="label" size="2" weight="medium" htmlFor="score">
+            Score (1-10)
+          </Text>
           <TextField.Root
             id="score"
             name="score"
@@ -76,12 +92,16 @@ export function ReviewNoteForm({ reviewCases }: ReviewNoteFormProps) {
             color={state.fieldErrors?.score ? "red" : undefined}
           />
           {state.fieldErrors?.score?.map((error) => (
-            <Text size="1" color="red" key={error}>{error}</Text>
+            <Text size="1" color="red" key={error}>
+              {error}
+            </Text>
           ))}
         </Flex>
 
         <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium" htmlFor="summary">Summary</Text>
+          <Text as="label" size="2" weight="medium" htmlFor="summary">
+            Summary
+          </Text>
           <TextArea
             id="summary"
             name="summary"
@@ -90,12 +110,16 @@ export function ReviewNoteForm({ reviewCases }: ReviewNoteFormProps) {
             color={state.fieldErrors?.summary ? "red" : undefined}
           />
           {state.fieldErrors?.summary?.map((error) => (
-            <Text size="1" color="red" key={error}>{error}</Text>
+            <Text size="1" color="red" key={error}>
+              {error}
+            </Text>
           ))}
         </Flex>
 
         <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium" htmlFor="note">Detailed note</Text>
+          <Text as="label" size="2" weight="medium" htmlFor="note">
+            Detailed note
+          </Text>
           <TextArea
             id="note"
             name="note"
@@ -103,12 +127,16 @@ export function ReviewNoteForm({ reviewCases }: ReviewNoteFormProps) {
             rows={6}
           />
           {state.fieldErrors?.note?.map((error) => (
-            <Text size="1" color="red" key={error}>{error}</Text>
+            <Text size="1" color="red" key={error}>
+              {error}
+            </Text>
           ))}
         </Flex>
 
         <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium">Decision</Text>
+          <Text as="label" size="2" weight="medium">
+            Decision
+          </Text>
           <Select.Root name="decision">
             <Select.Trigger placeholder="No final decision yet" />
             <Select.Content>
@@ -118,14 +146,18 @@ export function ReviewNoteForm({ reviewCases }: ReviewNoteFormProps) {
             </Select.Content>
           </Select.Root>
           {state.fieldErrors?.decision?.map((error) => (
-            <Text size="1" color="red" key={error}>{error}</Text>
+            <Text size="1" color="red" key={error}>
+              {error}
+            </Text>
           ))}
         </Flex>
 
         <Flex gap="3" align="start">
           <Checkbox name="finalizeReview" id="finalizeReview" />
           <Flex direction="column" gap="1">
-            <Text as="label" htmlFor="finalizeReview" size="2" weight="bold">Mark this review as complete</Text>
+            <Text as="label" htmlFor="finalizeReview" size="2" weight="bold">
+              Mark this review as complete
+            </Text>
             <Text size="1" color="gray">
               Completing the review moves the case to completed status and
               requires a final decision.

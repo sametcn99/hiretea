@@ -11,7 +11,11 @@ export default async function CandidatesPage() {
   const candidates = await listCandidates();
 
   return (
-    <Grid columns={{ initial: "1fr", lg: "minmax(320px, 380px) minmax(0, 1fr)" }} gap="4" align="start">
+    <Grid
+      columns={{ initial: "1fr", lg: "minmax(320px, 380px) minmax(0, 1fr)" }}
+      gap="4"
+      align="start"
+    >
       <SectionCard
         style={{ position: "sticky", top: 28 }}
         title="Provision a candidate"

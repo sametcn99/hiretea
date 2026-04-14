@@ -58,3 +58,7 @@ export function hasGiteaAdminConfiguration() {
       env.GITEA_ORGANIZATION_NAME,
   );
 }
+
+export function hasWebhookConfiguration() {
+  return Boolean(env.NEXTAUTH_URL && env.GITEA_WEBHOOK_SECRET);
+}

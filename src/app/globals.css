@@ -54,10 +54,10 @@ body {
   --gray-a5: rgba(255, 255, 255, 0.09);
   --gray-a6: rgba(255, 255, 255, 0.14);
   --gray-a7: rgba(255, 255, 255, 0.22);
-  --gray-a8: rgba(255, 255, 255, 0.30);
-  --gray-a9: rgba(255, 255, 255, 0.40);
+  --gray-a8: rgba(255, 255, 255, 0.3);
+  --gray-a9: rgba(255, 255, 255, 0.4);
   --gray-a10: rgba(255, 255, 255, 0.47);
-  --gray-a11: rgba(255, 255, 255, 0.80);
+  --gray-a11: rgba(255, 255, 255, 0.8);
   --gray-a12: rgba(255, 255, 255, 0.96);
 
   --accent-1: #14191e;
@@ -74,15 +74,15 @@ body {
   --accent-12: #d4e7f7;
 
   --accent-a1: rgba(65, 131, 196, 0.05);
-  --accent-a2: rgba(65, 131, 196, 0.10);
-  --accent-a3: rgba(65, 131, 196, 0.20);
-  --accent-a4: rgba(65, 131, 196, 0.30);
+  --accent-a2: rgba(65, 131, 196, 0.1);
+  --accent-a3: rgba(65, 131, 196, 0.2);
+  --accent-a4: rgba(65, 131, 196, 0.3);
   --accent-a5: rgba(65, 131, 196, 0.38);
   --accent-a6: rgba(65, 131, 196, 0.48);
-  --accent-a7: rgba(65, 131, 196, 0.60);
+  --accent-a7: rgba(65, 131, 196, 0.6);
   --accent-a8: rgba(65, 131, 196, 0.75);
   --accent-a9: rgba(65, 131, 196, 0.75);
-  --accent-a10: rgba(65, 131, 196, 0.80);
+  --accent-a10: rgba(65, 131, 196, 0.8);
   --accent-a11: rgba(125, 180, 224, 0.85);
   --accent-a12: rgba(212, 231, 247, 0.96);
 }
@@ -133,7 +133,9 @@ body {
   font-size: var(--font-size-2);
   font-weight: 500;
   text-decoration: none;
-  transition: background 120ms, color 120ms;
+  transition:
+    background 120ms,
+    color 120ms;
 }
 
 .ht-nav-link:hover {

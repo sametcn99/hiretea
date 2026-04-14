@@ -1,6 +1,14 @@
 "use client";
 
-import { Box, Button, Callout, Code, Flex, Text, TextField } from "@radix-ui/themes";
+import {
+  Box,
+  Button,
+  Callout,
+  Code,
+  Flex,
+  Text,
+  TextField,
+} from "@radix-ui/themes";
 import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
@@ -41,7 +49,9 @@ export function CandidateProvisionForm() {
     <form action={formAction} key={formKey}>
       <Flex direction="column" gap="3">
         <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium" htmlFor="displayName">Display name</Text>
+          <Text as="label" size="2" weight="medium" htmlFor="displayName">
+            Display name
+          </Text>
           <TextField.Root
             id="displayName"
             name="displayName"
@@ -50,12 +60,16 @@ export function CandidateProvisionForm() {
             color={state.fieldErrors?.displayName ? "red" : undefined}
           />
           {state.fieldErrors?.displayName?.map((error) => (
-            <Text size="1" color="red" key={error}>{error}</Text>
+            <Text size="1" color="red" key={error}>
+              {error}
+            </Text>
           ))}
         </Flex>
 
         <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium" htmlFor="email">Email address</Text>
+          <Text as="label" size="2" weight="medium" htmlFor="email">
+            Email address
+          </Text>
           <TextField.Root
             id="email"
             name="email"
@@ -64,12 +78,16 @@ export function CandidateProvisionForm() {
             color={state.fieldErrors?.email ? "red" : undefined}
           />
           {state.fieldErrors?.email?.map((error) => (
-            <Text size="1" color="red" key={error}>{error}</Text>
+            <Text size="1" color="red" key={error}>
+              {error}
+            </Text>
           ))}
         </Flex>
 
         <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium" htmlFor="username">Gitea username</Text>
+          <Text as="label" size="2" weight="medium" htmlFor="username">
+            Gitea username
+          </Text>
           <TextField.Root
             id="username"
             name="username"
@@ -78,7 +96,9 @@ export function CandidateProvisionForm() {
             color={state.fieldErrors?.username ? "red" : undefined}
           />
           {state.fieldErrors?.username?.map((error) => (
-            <Text size="1" color="red" key={error}>{error}</Text>
+            <Text size="1" color="red" key={error}>
+              {error}
+            </Text>
           ))}
         </Flex>
 
@@ -99,10 +119,21 @@ export function CandidateProvisionForm() {
           <Callout.Root color="green" size="1">
             <Callout.Text>{state.message}</Callout.Text>
             {state.temporaryPassword ? (
-              <Box mt="2" p="3" style={{ borderRadius: "var(--radius-2)", background: "var(--gray-a2)" }}>
+              <Box
+                mt="2"
+                p="3"
+                style={{
+                  borderRadius: "var(--radius-2)",
+                  background: "var(--gray-a2)",
+                }}
+              >
                 <Flex direction="column" gap="1">
-                  <Text size="1" color="gray">Temporary password</Text>
-                  <Code size="3" style={{ wordBreak: "break-all" }}>{state.temporaryPassword}</Code>
+                  <Text size="1" color="gray">
+                    Temporary password
+                  </Text>
+                  <Code size="3" style={{ wordBreak: "break-all" }}>
+                    {state.temporaryPassword}
+                  </Code>
                 </Flex>
               </Box>
             ) : null}

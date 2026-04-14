@@ -3,6 +3,7 @@ import { CandidateCaseStatus, UserRole } from "@prisma/client";
 import { createAuditLog } from "@/lib/audit/log";
 import type { CandidateCaseCreateInput } from "@/lib/candidate-cases/schemas";
 import { db } from "@/lib/db";
+import { hasWebhookConfiguration } from "@/lib/env";
 import {
   grantRepositoryAccess,
   revokeRepositoryAccess,
@@ -11,6 +12,7 @@ import {
   deleteCaseRepository,
   generateCaseRepositoryFromTemplate,
 } from "@/lib/gitea/repositories";
+import { ensureRepositoryWebhook } from "@/lib/gitea/webhooks";
 import { getWorkspaceSettingsOrThrow } from "@/lib/workspace-settings/queries";
 
 type CreateCandidateCaseParams = CandidateCaseCreateInput & {
@@ -136,6 +138,24 @@ export async function createCandidateCase(input: CreateCandidateCaseParams) {
   });
 
   try {
+    if (hasWebhookConfiguration()) {
+      await ensureRepositoryWebhook({
+        actorId: input.actorId,
+        owner: workspaceSettings.giteaOrganization,
+        repositoryName,
+      });
+    } else {
+      await createAuditLog({
+        action: "candidate.case.repository.webhook.skipped",
+        actorId: input.actorId,
+        resourceType: "GiteaRepository",
+        resourceId: `${workspaceSettings.giteaOrganization}/${repositoryName}`,
+        detail: {
+          reason: "Webhook runtime configuration is incomplete.",
+        },
+      });
+    }
+
     await grantRepositoryAccess({
       actorId: input.actorId,
       owner: workspaceSettings.giteaOrganization,

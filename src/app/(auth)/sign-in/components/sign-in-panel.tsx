@@ -30,7 +30,12 @@ export function SignInPanel({ isConfigured }: SignInPanelProps) {
 
         <Flex direction="column" gap="3">
           <Box>
-            <Text size="1" weight="bold" color="blue" style={{ letterSpacing: "0.16em", textTransform: "uppercase" }}>
+            <Text
+              size="1"
+              weight="bold"
+              color="blue"
+              style={{ letterSpacing: "0.16em", textTransform: "uppercase" }}
+            >
               Access control
             </Text>
             <Heading as="h1" size="6" mt="1" style={{ lineHeight: 0.98 }}>

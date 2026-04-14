@@ -1,6 +1,7 @@
 import {
   type CandidateCaseDecision,
   type CandidateCaseStatus,
+  CandidateCaseStatus as CandidateCaseStatusValue,
   UserRole,
 } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -44,6 +45,27 @@ export type CandidateCaseAssignmentOptions = {
   candidates: CandidateCaseAssignmentCandidateOption[];
   templates: CandidateCaseAssignmentTemplateOption[];
   workspaceOrganization: string | null;
+};
+
+export type CandidateWorkspaceCaseListItem = {
+  id: string;
+  status: CandidateCaseStatus;
+  decision: CandidateCaseDecision | null;
+  workingRepository: string | null;
+  workingRepositoryUrl: string | null;
+  branchName: string | null;
+  dueAt: Date | null;
+  createdAt: Date;
+  reviewedAt: Date | null;
+  templateName: string;
+  templateSlug: string;
+  templateSummary: string;
+  createdByName: string;
+  latestScore: number | null;
+  latestSummary: string | null;
+  latestReviewedAt: Date | null;
+  latestReviewerName: string | null;
+  notesCount: number;
 };
 
 export async function listCandidateCases() {
@@ -162,4 +184,84 @@ export async function getCandidateCaseAssignmentOptions(): Promise<CandidateCase
     ),
     workspaceOrganization: workspaceSettings?.giteaOrganization ?? null,
   };
+}
+
+export async function listCandidateWorkspaceCases(
+  candidateId: string,
+): Promise<CandidateWorkspaceCaseListItem[]> {
+  const candidateCases = await db.candidateCase.findMany({
+    where: {
+      candidateId,
+      status: {
+        not: CandidateCaseStatusValue.ARCHIVED,
+      },
+    },
+    include: {
+      caseTemplate: {
+        select: {
+          name: true,
+          slug: true,
+          summary: true,
+        },
+      },
+      createdBy: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
+      evaluationNotes: {
+        take: 1,
+        orderBy: {
+          createdAt: "desc",
+        },
+        select: {
+          score: true,
+          summary: true,
+          createdAt: true,
+          author: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
+      _count: {
+        select: {
+          evaluationNotes: true,
+        },
+      },
+    },
+    orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+  });
+
+  return candidateCases.map<CandidateWorkspaceCaseListItem>((candidateCase) => {
+    const latestNote = candidateCase.evaluationNotes[0];
+
+    return {
+      id: candidateCase.id,
+      status: candidateCase.status,
+      decision: candidateCase.decision ?? null,
+      workingRepository: candidateCase.workingRepository ?? null,
+      workingRepositoryUrl: candidateCase.workingRepositoryUrl ?? null,
+      branchName: candidateCase.branchName ?? null,
+      dueAt: candidateCase.dueAt ?? null,
+      createdAt: candidateCase.createdAt,
+      reviewedAt: candidateCase.reviewedAt ?? null,
+      templateName: candidateCase.caseTemplate.name,
+      templateSlug: candidateCase.caseTemplate.slug,
+      templateSummary: candidateCase.caseTemplate.summary,
+      createdByName:
+        candidateCase.createdBy.name ??
+        candidateCase.createdBy.email ??
+        "Unknown owner",
+      latestScore: latestNote?.score ?? null,
+      latestSummary: latestNote?.summary ?? null,
+      latestReviewedAt: latestNote?.createdAt ?? null,
+      latestReviewerName:
+        latestNote?.author.name ?? latestNote?.author.email ?? null,
+      notesCount: candidateCase._count.evaluationNotes,
+    };
+  });
 }
