@@ -5,10 +5,14 @@ import { CaseTemplateTable } from "@/app/(app)/dashboard/case-templates/componen
 import { SectionCard } from "@/components/ui/section-card";
 import { requireRole } from "@/lib/auth/session";
 import { listCaseTemplates } from "@/lib/case-templates/queries";
+import { getWorkspaceSettings } from "@/lib/workspace-settings/queries";
 
 export default async function CaseTemplatesPage() {
   await requireRole(UserRole.ADMIN, UserRole.RECRUITER);
-  const templates = await listCaseTemplates();
+  const [templates, settings] = await Promise.all([
+    listCaseTemplates(),
+    getWorkspaceSettings(),
+  ]);
 
   return (
     <Grid
@@ -30,7 +34,11 @@ export default async function CaseTemplatesPage() {
         description="Templates are the reusable source of truth for engineering challenges. Future assignment flows will fan out from this list."
         eyebrow="Current templates"
       >
-        <CaseTemplateTable templates={templates} />
+        <CaseTemplateTable
+          templates={templates}
+          workspaceBaseUrl={settings?.giteaBaseUrl ?? null}
+          workspaceOrganization={settings?.giteaOrganization ?? null}
+        />
       </SectionCard>
     </Grid>
   );

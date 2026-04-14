@@ -1,7 +1,15 @@
-FROM oven/bun:latest AS base
+FROM oven/bun:1.3.12 AS base
 WORKDIR /app
 COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile
+RUN set -eu; \
+		attempt=0; \
+		until bun install --frozen-lockfile; do \
+			attempt=$((attempt + 1)); \
+			if [ "$attempt" -ge 3 ]; then \
+				exit 1; \
+			fi; \
+			rm -rf /root/.bun/install/cache/*; \
+		done
 
 FROM base AS development
 COPY . .
@@ -12,7 +20,7 @@ FROM base AS builder
 COPY . .
 RUN bun run db:generate && bun run build
 
-FROM oven/bun:latest AS production
+FROM oven/bun:1.3.12 AS production
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=builder /app/node_modules ./node_modules

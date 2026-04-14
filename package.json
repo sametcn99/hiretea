@@ -7,6 +7,10 @@
     "build": "next build",
     "start": "next start",
     "docker:auto-bootstrap": "bun run scripts/docker/bootstrap-app.ts",
+    "docker:down": "docker compose down --volumes --remove-orphans",
+    "docker:nuke": "docker compose down --volumes --remove-orphans --rmi all",
+    "docker:up": "docker compose up --build -d",
+    "docker:watch": "docker compose up --build --watch",
     "lint": "biome lint --write --unsafe",
     "check": "biome check --write --unsafe && bun run typecheck",
     "format": "biome format --write .",
@@ -30,7 +34,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.11",
+    "@biomejs/biome": "2.4.12",
     "@types/node": "^25.6.0",
     "@types/pg": "^8.20.0",
     "@types/react": "^19.2.14",
