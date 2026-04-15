@@ -1,11 +1,11 @@
 import { UserRole, WorkspaceGiteaMode } from "@prisma/client";
-import { getBootstrapStatus } from "../../src/lib/bootstrap/status";
-import { db } from "../../src/lib/db";
-import { createGiteaAdminClient } from "../../src/lib/gitea/client";
+import { getBootstrapStatus } from "../src/lib/bootstrap/status";
+import { db } from "../src/lib/db";
+import { createGiteaAdminClient } from "../src/lib/gitea/client";
 import {
   getGiteaRuntimeConfig,
   getGiteaRuntimeReadiness,
-} from "../../src/lib/gitea/runtime-config";
+} from "../src/lib/gitea/runtime-config";
 
 type Phase = "bundled-ready" | "external-pre-setup" | "external-post-setup";
 
@@ -97,7 +97,8 @@ async function assertGiteaConnectivity(
   if (expectedAuthClientId) {
     assert(
       oauthApplications?.some(
-        (application) => application.client_id === expectedAuthClientId,
+        (application: GiteaOAuthApplicationResponse) =>
+          application.client_id === expectedAuthClientId,
       ),
       `Expected OAuth client ${expectedAuthClientId} to exist in Gitea.`,
     );
@@ -285,7 +286,8 @@ async function main() {
       );
 
       const bundledAuditLog = auditLogs.find(
-        (auditLog) => auditLog.action === "workspace.bootstrap.auto.completed",
+        (auditLog: { action: string; detail: unknown }) =>
+          auditLog.action === "workspace.bootstrap.auto.completed",
       );
 
       assert(bundledAuditLog, "Missing bundled bootstrap audit log.");
@@ -536,7 +538,8 @@ async function main() {
       );
 
       const externalAuditLog = auditLogs.find(
-        (auditLog) => auditLog.action === "workspace.bootstrap.completed",
+        (auditLog: { action: string; detail: unknown }) =>
+          auditLog.action === "workspace.bootstrap.completed",
       );
 
       assert(externalAuditLog, "Missing external bootstrap audit log.");

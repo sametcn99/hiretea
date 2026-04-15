@@ -1,6 +1,6 @@
-import { completeBootstrapSetup } from "../../src/lib/bootstrap/complete-bootstrap";
-import { db } from "../../src/lib/db";
-import { validateGiteaWorkspaceSettings } from "../../src/lib/gitea/validation";
+import { completeBootstrapSetup } from "../src/lib/bootstrap/complete-bootstrap";
+import { db } from "../src/lib/db";
+import { validateGiteaWorkspaceSettings } from "../src/lib/gitea/validation";
 
 function requireEnv(name: string) {
   const value = process.env[name]?.trim();

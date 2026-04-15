@@ -3,7 +3,7 @@ services:
     build:
       context: .
       target: ${HIRETEA_APP_BUILD_TARGET:-production}
-    command: ["/bin/sh", "/app/scripts/docker/start-app.sh", "${HIRETEA_APP_MODE:-start}"]
+    command: ["/bin/sh", "/app/docker/scripts/start-app.sh", "${HIRETEA_APP_MODE:-start}"]
     develop:
       watch:
         - action: sync

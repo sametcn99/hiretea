@@ -261,7 +261,7 @@ run_bundled_mode() {
   assert_header_contains "$mode_dir/setup.headers.txt" "location: /sign-in"
   assert_header_contains "$mode_dir/dashboard.headers.txt" "location: /sign-in"
 
-  run_in_app "set -a && . /runtime/gitea/hiretea.generated.env && set +a && bun scripts/smoke/assert-state.ts --phase bundled-ready" \
+  run_in_app "set -a && . /runtime/gitea/hiretea.generated.env && set +a && bun tests/assert-state.ts --phase bundled-ready" \
     > "$mode_dir/assertions.txt"
 
   save_logs bundled "$mode_dir/compose.log"
@@ -294,26 +294,26 @@ run_external_mode() {
   assert_contains "$mode_dir/setup-pre-bootstrap.html" "Webhook secret"
   assert_header_contains "$mode_dir/dashboard-pre-bootstrap.headers.txt" "location: /sign-in"
 
-  run_in_external_app "bun scripts/smoke/assert-state.ts --phase external-pre-setup" \
+  run_in_external_app "bun tests/assert-state.ts --phase external-pre-setup" \
     > "$mode_dir/pre-setup-assertions.txt"
 
-  run_in_external_app "bun scripts/smoke/complete-external-bootstrap.ts --expect-invalid-token" \
+  run_in_external_app "bun tests/complete-external-bootstrap.ts --expect-invalid-token" \
     > "$mode_dir/invalid-token-check.txt"
 
-  run_in_external_app "bun scripts/smoke/assert-state.ts --phase external-pre-setup" \
+  run_in_external_app "bun tests/assert-state.ts --phase external-pre-setup" \
     > "$mode_dir/pre-setup-after-invalid-token-assertions.txt"
 
-  run_in_external_app "bun scripts/smoke/complete-external-bootstrap.ts" \
+  run_in_external_app "bun tests/complete-external-bootstrap.ts" \
     > "$mode_dir/bootstrap.txt"
 
   capture_response "$APP_URL/sign-in" "$mode_dir/sign-in-post-bootstrap.html" "$mode_dir/sign-in-post-bootstrap.headers.txt"
-  capture_headers "$APP_URL/setup" "$mode_dir/setup-post-bootstrap.headers.txt"
+  capture_headers "$APP_URL/setup" "$post-bootstrap.headers.txt"
 
   assert_contains "$mode_dir/sign-in-post-bootstrap.html" "Sign in with your Gitea identity"
   assert_contains "$mode_dir/sign-in-post-bootstrap.html" "Ready"
   assert_header_contains "$mode_dir/setup-post-bootstrap.headers.txt" "location: /sign-in"
 
-  run_in_external_app "bun scripts/smoke/assert-state.ts --phase external-post-setup" \
+  run_in_external_app "bun tests/assert-state.ts --phase external-post-setup" \
     > "$mode_dir/post-setup-assertions.txt"
 
   save_logs all "$mode_dir/compose.log"
