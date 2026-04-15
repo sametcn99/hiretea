@@ -13,7 +13,6 @@
     "docker:up": "bun run docker:up:bundled",
     "docker:up:bundled": "docker compose -p hiretea-bundled -f docker-compose.bundled.yml up --build -d",
     "docker:up:external": "docker compose -p hiretea-external -f docker-compose.external.yml up --build -d",
-    "docker:watch": "bun run docker:watch:bundled",
     "docker:watch:bundled": "HIRETEA_APP_BUILD_TARGET=development HIRETEA_APP_MODE=dev docker compose -p hiretea-bundled -f docker-compose.bundled.yml up --build --watch",
     "docker:watch:external": "HIRETEA_APP_BUILD_TARGET=development HIRETEA_APP_MODE=dev docker compose -p hiretea-external -f docker-compose.external.yml up --build --watch",
     "lint": "biome lint --write --unsafe",

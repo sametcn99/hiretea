@@ -12,7 +12,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
     <Grid
       columns={{ initial: "1fr", md: "280px minmax(0, 1fr)" }}
-      style={{ minHeight: "100vh" }}
+      style={{ minHeight: "100dvh" }}
     >
       <Flex
         direction="column"
@@ -24,7 +24,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           background: "#16191d",
           position: "sticky",
           top: 0,
-          height: "100vh",
+          height: "100dvh",
+          boxSizing: "border-box",
           overflowY: "auto",
         }}
       >
