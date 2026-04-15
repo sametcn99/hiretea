@@ -1,6 +1,18 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { createAuditLog } from "@/lib/audit/log";
+import {
+  type RunGitCommandInput,
+  runGitCommand,
+} from "@/lib/git/run-git-command";
 import { getGiteaAdminClient } from "@/lib/gitea/client";
 import { getResolvedGiteaAdminConfig } from "@/lib/gitea/runtime-config";
+
+const defaultRepositorySyncGitOptions = {
+  errorContext: "Repository content sync failed.",
+  timeoutMs: 300_000,
+} satisfies Pick<RunGitCommandInput, "errorContext" | "timeoutMs">;
 
 type CreateCaseRepositoryInput = {
   actorId: string;
@@ -24,7 +36,89 @@ type GenerateCaseRepositoryFromTemplateInput = {
   repositoryName: string;
   description: string;
   ownerName?: string;
+  defaultBranch?: string;
 };
+
+type GiteaCurrentUserResponse = {
+  login: string;
+};
+
+function buildRepositoryGitUrl(input: {
+  baseUrl: string;
+  owner: string;
+  repositoryName: string;
+}) {
+  return new URL(
+    `${input.owner}/${input.repositoryName}.git`,
+    `${input.baseUrl.replace(/\/$/, "")}/`,
+  ).toString();
+}
+
+function createRepositorySyncGitCommandInput(
+  input: {
+    args: string[];
+    authHeader: string;
+    gitDir?: string;
+  } & Partial<Pick<RunGitCommandInput, "cwd" | "errorContext" | "timeoutMs">>,
+): RunGitCommandInput {
+  return {
+    ...defaultRepositorySyncGitOptions,
+    ...input,
+    config: [
+      {
+        key: "http.extraHeader",
+        value: input.authHeader,
+      },
+    ],
+  };
+}
+
+async function syncRepositoryContents(input: {
+  sourceOwner: string;
+  sourceRepositoryName: string;
+  destinationOwner: string;
+  destinationRepositoryName: string;
+}) {
+  const client = await getGiteaAdminClient();
+  const adminConfig = await getResolvedGiteaAdminConfig();
+  const currentUser = await client.request<GiteaCurrentUserResponse>("/user");
+  const authHeader = `Authorization: Basic ${Buffer.from(
+    `${currentUser.login}:${adminConfig.token}`,
+  ).toString("base64")}`;
+  const sourceRepositoryUrl = buildRepositoryGitUrl({
+    baseUrl: adminConfig.baseUrl,
+    owner: input.sourceOwner,
+    repositoryName: input.sourceRepositoryName,
+  });
+  const destinationRepositoryUrl = buildRepositoryGitUrl({
+    baseUrl: adminConfig.baseUrl,
+    owner: input.destinationOwner,
+    repositoryName: input.destinationRepositoryName,
+  });
+  const tempDirectory = await mkdtemp(join(tmpdir(), "hiretea-template-"));
+  const mirrorDirectory = join(
+    tempDirectory,
+    `${input.destinationRepositoryName}.git`,
+  );
+
+  try {
+    await runGitCommand(
+      createRepositorySyncGitCommandInput({
+        args: ["clone", "--mirror", sourceRepositoryUrl, mirrorDirectory],
+        authHeader,
+      }),
+    );
+    await runGitCommand(
+      createRepositorySyncGitCommandInput({
+        args: ["push", "--mirror", destinationRepositoryUrl],
+        gitDir: mirrorDirectory,
+        authHeader,
+      }),
+    );
+  } finally {
+    await rm(tempDirectory, { recursive: true, force: true });
+  }
+}
 
 export async function createCaseRepository(input: CreateCaseRepositoryInput) {
   const client = await getGiteaAdminClient();
@@ -68,7 +162,6 @@ export async function createCaseRepository(input: CreateCaseRepositoryInput) {
 export async function generateCaseRepositoryFromTemplate(
   input: GenerateCaseRepositoryFromTemplateInput,
 ) {
-  const client = await getGiteaAdminClient();
   const adminConfig = await getResolvedGiteaAdminConfig();
   const ownerName = input.ownerName ?? adminConfig.organization;
 
@@ -78,24 +171,31 @@ export async function generateCaseRepositoryFromTemplate(
     );
   }
 
-  const repository = await client.request<GiteaRepositoryResponse>(
-    `/repos/${input.templateOwner}/${input.templateRepositoryName}/generate`,
-    {
-      method: "POST",
-      body: JSON.stringify({
-        owner: ownerName,
-        name: input.repositoryName,
-        description: input.description,
-        private: true,
-        git_content: true,
-        avatar: false,
-        git_hooks: false,
-        labels: false,
-        topics: false,
-        webhooks: false,
-      }),
-    },
-  );
+  const repository = await createCaseRepository({
+    actorId: input.actorId,
+    name: input.repositoryName,
+    description: input.description,
+    defaultBranch: input.defaultBranch,
+    organizationName: ownerName,
+  });
+
+  try {
+    await syncRepositoryContents({
+      sourceOwner: input.templateOwner,
+      sourceRepositoryName: input.templateRepositoryName,
+      destinationOwner: ownerName,
+      destinationRepositoryName: input.repositoryName,
+    });
+  } catch (error) {
+    await deleteCaseRepository({
+      actorId: input.actorId,
+      organizationName: ownerName,
+      repositoryName: input.repositoryName,
+      reason: "candidate.case.repository.rollback",
+    });
+
+    throw error;
+  }
 
   await createAuditLog({
     action: "candidate.case.repository.generated",

@@ -1,6 +1,7 @@
 FROM oven/bun:1.3.12 AS base
 WORKDIR /app
 COPY package.json bun.lock ./
+RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
 RUN set -eu; \
 		attempt=0; \
 		until bun install --frozen-lockfile; do \
@@ -23,6 +24,7 @@ RUN bun run db:generate && bun run build
 FROM oven/bun:1.3.12 AS production
 WORKDIR /app
 ENV NODE_ENV=production
+RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/.next/standalone/server.js ./server.js

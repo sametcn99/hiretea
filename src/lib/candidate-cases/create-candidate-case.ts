@@ -139,6 +139,7 @@ export async function createCandidateCase(input: CreateCandidateCaseParams) {
     repositoryName,
     description: repositoryDescription,
     ownerName: workspaceSettings.giteaOrganization,
+    defaultBranch: template.defaultBranch,
   });
 
   try {

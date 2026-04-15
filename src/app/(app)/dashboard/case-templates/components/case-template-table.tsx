@@ -1,7 +1,7 @@
 "use client";
 
-import { Code, Flex, Table, Text } from "@radix-ui/themes";
-import type { KeyboardEvent } from "react";
+import { Button, Code, Flex, Table, Text } from "@radix-ui/themes";
+import { useToast } from "@/components/providers/toast-provider";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { CaseTemplateListItem } from "@/lib/case-templates/queries";
 
@@ -35,24 +35,24 @@ function buildCloneCommand(repositoryUrl: string | null) {
   return repositoryUrl ? `git clone ${repositoryUrl}.git` : null;
 }
 
-function openRepository(repositoryUrl: string | null) {
-  if (!repositoryUrl) {
-    return;
+async function copyCloneCommand(input: {
+  cloneCommand: string;
+  showToast: ReturnType<typeof useToast>["showToast"];
+}) {
+  try {
+    await navigator.clipboard.writeText(input.cloneCommand);
+    input.showToast({
+      tone: "success",
+      title: "Clone command copied",
+      description: "The repository clone command is now in your clipboard.",
+    });
+  } catch {
+    input.showToast({
+      tone: "error",
+      title: "Clipboard copy failed",
+      description: "Copy the clone command manually from the template library.",
+    });
   }
-
-  window.open(repositoryUrl, "_blank", "noopener,noreferrer");
-}
-
-function handleRowKeyDown(
-  event: KeyboardEvent<HTMLTableRowElement>,
-  repositoryUrl: string | null,
-) {
-  if (event.key !== "Enter" && event.key !== " ") {
-    return;
-  }
-
-  event.preventDefault();
-  openRepository(repositoryUrl);
 }
 
 export function CaseTemplateTable({
@@ -60,6 +60,8 @@ export function CaseTemplateTable({
   workspaceBaseUrl,
   workspaceOrganization,
 }: CaseTemplateTableProps) {
+  const { showToast } = useToast();
+
   if (templates.length === 0) {
     return (
       <Text as="p" size="2" color="gray">
@@ -89,15 +91,7 @@ export function CaseTemplateTable({
           const cloneCommand = buildCloneCommand(repositoryUrl);
 
           return (
-            <Table.Row
-              key={template.id}
-              onClick={() => openRepository(repositoryUrl)}
-              onKeyDown={(event) => handleRowKeyDown(event, repositoryUrl)}
-              tabIndex={repositoryUrl ? 0 : -1}
-              style={{
-                cursor: repositoryUrl ? "pointer" : "default",
-              }}
-            >
+            <Table.Row key={template.id}>
               <Table.Cell>
                 <Flex direction="column" gap="1">
                   <Text weight="bold">{template.name}</Text>
@@ -108,8 +102,10 @@ export function CaseTemplateTable({
                     {template.summary}
                   </Text>
                   {repositoryUrl ? (
-                    <Text size="1" color="blue">
-                      Open in Gitea
+                    <Text asChild size="1" color="blue">
+                      <a href={repositoryUrl} target="_blank" rel="noreferrer">
+                        Open in Gitea
+                      </a>
                     </Text>
                   ) : null}
                 </Flex>
@@ -126,17 +122,35 @@ export function CaseTemplateTable({
                     </Text>
                   ) : null}
                   {cloneCommand ? (
-                    <Code
-                      size="1"
+                    <Button
+                      type="button"
                       variant="soft"
+                      color="gray"
+                      size="1"
+                      onClick={() =>
+                        copyCloneCommand({ cloneCommand, showToast })
+                      }
                       style={{
-                        display: "block",
-                        overflowWrap: "anywhere",
-                        whiteSpace: "pre-wrap",
+                        justifyContent: "flex-start",
+                        maxWidth: "100%",
+                        paddingInline: 0,
+                        paddingBlock: 0,
                       }}
                     >
-                      {cloneCommand}
-                    </Code>
+                      <Code
+                        size="1"
+                        variant="soft"
+                        style={{
+                          display: "block",
+                          overflowWrap: "anywhere",
+                          whiteSpace: "pre-wrap",
+                          width: "100%",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {cloneCommand}
+                      </Code>
+                    </Button>
                   ) : null}
                 </Flex>
               </Table.Cell>
