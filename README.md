@@ -23,7 +23,7 @@ cp .env.bundled.example .env
 
 ```bash
 bun run docker:up:bundled
-# or: docker compose -p hiretea-bundled -f docker-compose.bundled.yml up --build
+# or: docker compose -p hiretea-bundled -f docker-compose.bundled.yml up --build -d && bun run docker:wait:bundled
 ```
 
 1. Open `http://localhost:3000` for Hiretea.
@@ -65,7 +65,7 @@ NEXTAUTH_URL="http://localhost:3000"
 
 ```bash
 bun run docker:up:external
-# or: docker compose -p hiretea-external -f docker-compose.external.yml up --build
+# or: docker compose -p hiretea-external -f docker-compose.external.yml up --build -d && bun run docker:wait:external
 ```
 
 1. Open `http://localhost:3000/setup`.
@@ -129,6 +129,8 @@ If you change the public ports, keep the matching public URLs in sync. In bundle
 ```bash
 bun run docker:up:bundled
 bun run docker:up:external
+bun run docker:wait:bundled
+bun run docker:wait:external
 bun run docker:watch:bundled
 bun run docker:watch:external
 bun run docker:down

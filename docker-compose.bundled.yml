@@ -57,6 +57,18 @@ services:
       hiretea_APP_HOST: 0.0.0.0
       hiretea_APP_PORT: "3000"
       hiretea_RUNTIME_ENV_FILE: /runtime/gitea/hiretea.generated.env
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "bun",
+          "--eval",
+          "fetch('http://127.0.0.1:3000/api/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 10s
     ports:
       - "${APP_HTTP_PORT:-3000}:3000"
     volumes:
