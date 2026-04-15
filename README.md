@@ -5,6 +5,8 @@ Hiretea is a self-hosted technical hiring workspace that supports two Gitea oper
 - Bundled mode: Docker Compose starts Hiretea, PostgreSQL, and a local Gitea instance together.
 - External mode: Docker Compose starts only Hiretea and PostgreSQL locally, and Hiretea connects to an existing Gitea instance that you already manage elsewhere.
 
+The repository now ships separate compose files for each mode. There is no default `docker-compose.yml`, so every compose command must target either `docker-compose.bundled.yml` or `docker-compose.external.yml` explicitly.
+
 ## Setup Modes
 
 ### Bundled Gitea
@@ -17,17 +19,11 @@ This is the default local development path.
 cp .env.example .env
 ```
 
-1. Keep these defaults in `.env`:
-
-```bash
-COMPOSE_PROFILES="bundled-gitea"
-HIRETEA_GITEA_MODE="bundled"
-```
-
 1. Start the full stack.
 
 ```bash
-docker compose up --build
+bun run docker:up:bundled
+# or: docker compose -p hiretea-bundled -f docker-compose.bundled.yml up --build
 ```
 
 1. Open `http://localhost:3000` for Hiretea.
@@ -59,8 +55,6 @@ cp .env.example .env
 1. Update `.env` so bundled Gitea does not start:
 
 ```bash
-COMPOSE_PROFILES=""
-HIRETEA_GITEA_MODE="external"
 HIRETEA_CONFIG_ENCRYPTION_KEY="replace-with-a-long-random-app-encryption-key"
 NEXTAUTH_SECRET="replace-with-a-long-random-string"
 BOOTSTRAP_TOKEN="replace-with-a-bootstrap-token"
@@ -70,7 +64,8 @@ NEXTAUTH_URL="http://localhost:3000"
 1. Start the local stack.
 
 ```bash
-docker compose up --build
+bun run docker:up:external
+# or: docker compose -p hiretea-external -f docker-compose.external.yml up --build
 ```
 
 1. Open `http://localhost:3000/setup`.
@@ -110,10 +105,10 @@ Before using external mode, prepare the following in your existing Gitea instanc
 
 The runtime env contract is generated only in bundled mode.
 
-The bundled compose stack writes the generated runtime contract into the shared Gitea config volume. You can inspect the current values from the running app container:
+The bundled compose stack writes the generated runtime contract into the bundled Gitea config volume. You can inspect the current values from the running app container:
 
 ```bash
-docker compose exec app /bin/sh -lc '. /runtime/gitea/hiretea.generated.env && env | grep -E "^(AUTH_GITEA_|GITEA_ADMIN_|NEXTAUTH_SECRET|GITEA_WEBHOOK_SECRET|hiretea_)"'
+docker compose -p hiretea-bundled -f docker-compose.bundled.yml exec app /bin/sh -lc '. /runtime/gitea/hiretea.generated.env && env | grep -E "^(AUTH_GITEA_|GITEA_ADMIN_|NEXTAUTH_SECRET|GITEA_WEBHOOK_SECRET|hiretea_)"'
 ```
 
 If `GITEA_ADMIN_PASSWORD`, `NEXTAUTH_SECRET`, or `GITEA_WEBHOOK_SECRET` are set in `.env`, the bundled stack reapplies those exact values on every startup. If they are left unset, the runtime env file is the place to inspect the generated values.
@@ -122,8 +117,8 @@ If `GITEA_ADMIN_PASSWORD`, `NEXTAUTH_SECRET`, or `GITEA_WEBHOOK_SECRET` are set 
 
 The sample environment file exposes the main knobs for both modes:
 
-- Deployment mode: `COMPOSE_PROFILES`, `HIRETEA_GITEA_MODE`, `HIRETEA_CONFIG_ENCRYPTION_KEY`.
-- Public ports and URLs: `APP_HTTP_PORT`, `GITEA_HTTP_PORT`, `GITEA_SSH_PORT`, `NEXTAUTH_URL`, `GITEA_PUBLIC_URL`.
+- Application encryption and auth: `HIRETEA_CONFIG_ENCRYPTION_KEY`, `NEXTAUTH_SECRET`, `BOOTSTRAP_TOKEN`.
+- Public ports and URLs: `APP_HTTP_PORT`, `DB_PORT`, `GITEA_HTTP_PORT`, `GITEA_SSH_PORT`, `NEXTAUTH_URL`, `GITEA_PUBLIC_URL`.
 - Database names and credentials: `HT_DB_*`, `GITEA_DB_*`.
 - Bootstrap identity and workspace defaults: `GITEA_ADMIN_*`, `hiretea_*`, `GITEA_ORGANIZATION_NAME`.
 - Stable secrets for repeatable environments: `NEXTAUTH_SECRET`, `GITEA_SECRET_KEY`, `GITEA_INTERNAL_TOKEN`, `GITEA_WEBHOOK_SECRET`.
@@ -137,15 +132,17 @@ bun run docker:up:bundled
 bun run docker:up:external
 bun run docker:watch:bundled
 bun run docker:watch:external
-docker compose down
-docker compose down -v
+bun run docker:down
+bun run docker:nuke
 bun run smoke:test
 bun run lint
 bun run typecheck
 bun run build
 ```
 
-Use `docker compose down -v` when you want a completely fresh Hiretea and PostgreSQL state. In bundled mode that also removes the local Gitea state.
+Use `bun run docker:down` when you want a completely fresh Hiretea state for both compose modes. Use `bun run docker:nuke` when you also want Docker images removed.
+
+The npm scripts pin distinct compose project names, `hiretea-bundled` and `hiretea-external`, so the two modes do not reuse the same containers, networks, or default resource names.
 
 ## Manual Setup Page
 

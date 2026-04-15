@@ -39,7 +39,7 @@ services:
       db-init:
         condition: service_completed_successfully
     environment:
-      HIRETEA_GITEA_MODE: ${HIRETEA_GITEA_MODE:-bundled}
+      HIRETEA_GITEA_MODE: bundled
       HIRETEA_CONFIG_ENCRYPTION_KEY: ${HIRETEA_CONFIG_ENCRYPTION_KEY:-}
       DATABASE_URL: postgresql://${HT_DB_USER:-hiretea}:${HT_DB_PASSWORD:-hiretea}@db:5432/${HT_DB_NAME:-hiretea}?schema=public
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
@@ -60,13 +60,14 @@ services:
     ports:
       - "${APP_HTTP_PORT:-3000}:3000"
     volumes:
-      - gitea-config:/runtime/gitea:ro
+      - bundled-gitea-config:/runtime/gitea:ro
 
   db:
     image: postgres:16-alpine
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     environment:
+      HIRETEA_GITEA_MODE: bundled
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -82,7 +83,7 @@ services:
       timeout: 5s
       retries: 10
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - bundled-postgres-data:/var/lib/postgresql/data
       - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
 
   db-init:
@@ -92,7 +93,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      HIRETEA_GITEA_MODE: ${HIRETEA_GITEA_MODE:-bundled}
+      HIRETEA_GITEA_MODE: bundled
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -109,7 +110,6 @@ services:
 
   gitea:
     image: docker.gitea.com/gitea:1.25.5-rootless
-    profiles: ["bundled-gitea"]
     depends_on:
       db:
         condition: service_healthy
@@ -142,14 +142,13 @@ services:
       - "${GITEA_HTTP_PORT:-3001}:3000"
       - "${GITEA_SSH_PORT:-2221}:2222"
     volumes:
-      - gitea-data:/var/lib/gitea
-      - gitea-config:/etc/gitea
+      - bundled-gitea-data:/var/lib/gitea
+      - bundled-gitea-config:/etc/gitea
 
   gitea-init:
     build:
       context: .
       dockerfile: docker/gitea-init/Dockerfile
-    profiles: ["bundled-gitea"]
     depends_on:
       db:
         condition: service_healthy
@@ -175,10 +174,10 @@ services:
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
     restart: "no"
     volumes:
-      - gitea-config:/etc/gitea
-      - gitea-data:/var/lib/gitea
+      - bundled-gitea-config:/etc/gitea
+      - bundled-gitea-data:/var/lib/gitea
 
 volumes:
-  postgres-data:
-  gitea-data:
-  gitea-config:
+  bundled-postgres-data:
+  bundled-gitea-data:
+  bundled-gitea-config:

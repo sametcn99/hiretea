@@ -4,4 +4,4 @@ node_modules
 npm-debug.log
 bun.lockb
 Dockerfile*
-docker-compose.yml
+docker-compose*.yml
