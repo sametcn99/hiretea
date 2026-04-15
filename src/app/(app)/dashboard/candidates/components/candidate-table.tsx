@@ -1,4 +1,5 @@
 import { Flex, Table, Text } from "@radix-ui/themes";
+import { CandidateCredentialCell } from "@/app/(app)/dashboard/candidates/components/candidate-credential-cell";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { CandidateListItem } from "@/lib/candidates/queries";
 import { CandidateActions } from "./candidate-actions";
@@ -67,13 +68,10 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
               </Flex>
             </Table.Cell>
             <Table.Cell>
-              {candidate.hasLinkedSignIn ? (
-                <StatusBadge label="Password Changed" tone="positive" />
-              ) : (
-                <Text size="2" color="gray">
-                  Temporary password is shown only once during provisioning.
-                </Text>
-              )}
+              <CandidateCredentialCell
+                temporaryPassword={candidate.defaultPassword}
+                hasLinkedSignIn={candidate.hasLinkedSignIn}
+              />
             </Table.Cell>
             <Table.Cell>{candidate.caseCount}</Table.Cell>
             <Table.Cell>{dateFormatter.format(candidate.createdAt)}</Table.Cell>

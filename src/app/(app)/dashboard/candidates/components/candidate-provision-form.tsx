@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  Box,
-  Button,
-  Callout,
-  Code,
-  Flex,
-  Text,
-  TextField,
-} from "@radix-ui/themes";
+import { Button, Callout, Flex, Text, TextField } from "@radix-ui/themes";
 import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
@@ -108,10 +100,10 @@ export function CandidateProvisionForm() {
 
         <Callout.Root color="gray" size="1">
           <Callout.Text>
-            The default password is generated automatically and must be shared
-            manually with the candidate during the MVP phase. The password is
-            shown only once after provisioning, so it should be copied into your
-            secure handoff channel immediately.
+            The temporary password is generated automatically and must be shared
+            manually with the candidate during the MVP phase. After
+            provisioning, it is available from the current roster until the
+            candidate completes their first sign-in.
           </Callout.Text>
         </Callout.Root>
 
@@ -124,25 +116,6 @@ export function CandidateProvisionForm() {
         {state.status === "success" && state.message ? (
           <Callout.Root color="green" size="1">
             <Callout.Text>{state.message}</Callout.Text>
-            {state.temporaryPassword ? (
-              <Box
-                mt="2"
-                p="3"
-                style={{
-                  borderRadius: "var(--radius-2)",
-                  background: "var(--gray-a2)",
-                }}
-              >
-                <Flex direction="column" gap="1">
-                  <Text size="1" color="gray">
-                    Default password
-                  </Text>
-                  <Code size="3" style={{ wordBreak: "break-all" }}>
-                    {state.temporaryPassword}
-                  </Code>
-                </Flex>
-              </Box>
-            ) : null}
           </Callout.Root>
         ) : null}
 

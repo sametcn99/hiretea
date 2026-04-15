@@ -17,7 +17,6 @@ type ProvisionCandidateField = keyof CandidateProvisionInput;
 export type ProvisionCandidateActionState = {
   status: "idle" | "success" | "error";
   message?: string;
-  temporaryPassword?: string;
   fieldErrors?: Partial<Record<ProvisionCandidateField, string[]>>;
 };
 
@@ -77,7 +76,6 @@ export async function provisionCandidateAction(
     return {
       status: "success",
       message: `${result.candidate.name ?? result.candidate.email} was provisioned successfully.`,
-      temporaryPassword: result.temporaryPassword,
     };
   } catch (error) {
     return {

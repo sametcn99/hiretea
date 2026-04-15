@@ -9,6 +9,7 @@ import {
   IconButton,
 } from "@radix-ui/themes";
 import { useState } from "react";
+import { useToast } from "@/components/providers/toast-provider";
 import { deleteCandidateAction } from "../actions";
 
 type CandidateActionsProps = {
@@ -20,6 +21,7 @@ export function CandidateActions({
   candidateId,
   candidateName,
 }: CandidateActionsProps) {
+  const { showToast } = useToast();
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -27,9 +29,18 @@ export function CandidateActions({
     setIsDeleting(true);
     const result = await deleteCandidateAction(candidateId);
     if (result.status === "error") {
-      alert(result.message); // Should ideally use a toast, but this serves MVP
+      showToast({
+        tone: "error",
+        title: "Candidate archive failed",
+        description: result.message,
+      });
       setIsDeleting(false);
     } else {
+      showToast({
+        tone: "success",
+        title: "Candidate archived",
+        description: `${candidateName} was archived successfully.`,
+      });
       setIsDeleteAlertOpen(false);
     }
   }

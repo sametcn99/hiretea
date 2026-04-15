@@ -3,6 +3,7 @@
 import { Theme } from "@radix-ui/themes";
 import { SessionProvider } from "next-auth/react";
 import type { PropsWithChildren } from "react";
+import { ToastProvider } from "@/components/providers/toast-provider";
 
 export function AppProviders({ children }: PropsWithChildren) {
   return (
@@ -13,7 +14,9 @@ export function AppProviders({ children }: PropsWithChildren) {
       radius="medium"
       scaling="100%"
     >
-      <SessionProvider>{children}</SessionProvider>
+      <SessionProvider>
+        <ToastProvider>{children}</ToastProvider>
+      </SessionProvider>
     </Theme>
   );
 }
