@@ -165,18 +165,26 @@ wait_for_url() {
   local destination="$2"
   local label="$3"
   local attempt=0
+  local error_file="$RESULTS_DIR/${label}-wait-error.txt"
 
-  until curl --silent --show-error --fail --location "$url" -o "$destination"; do
+  : > "$error_file"
+
+  until curl --silent --show-error --fail --location "$url" -o "$destination" 2>"$error_file"; do
     attempt=$((attempt + 1))
 
     if [ "$attempt" -ge "$MAX_RETRIES" ]; then
       save_logs all "$RESULTS_DIR/${label}-timeout-logs.txt"
+      if [ -s "$error_file" ]; then
+        cat "$error_file" >&2
+      fi
       echo "Timed out waiting for $label at $url" >&2
       return 1
     fi
 
     sleep "$WAIT_SECONDS"
   done
+
+  rm -f "$error_file"
 }
 
 capture_response() {
@@ -307,7 +315,7 @@ run_external_mode() {
     > "$mode_dir/bootstrap.txt"
 
   capture_response "$APP_URL/sign-in" "$mode_dir/sign-in-post-bootstrap.html" "$mode_dir/sign-in-post-bootstrap.headers.txt"
-  capture_headers "$APP_URL/setup" "$post-bootstrap.headers.txt"
+  capture_headers "$APP_URL/setup" "$mode_dir/setup-post-bootstrap.headers.txt"
 
   assert_contains "$mode_dir/sign-in-post-bootstrap.html" "Sign in with your Gitea identity"
   assert_contains "$mode_dir/sign-in-post-bootstrap.html" "Ready"

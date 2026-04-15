@@ -16,7 +16,7 @@ This is the default local development path.
 1. Copy the sample environment file.
 
 ```bash
-cp .env.example .env
+cp .env.bundled.example .env
 ```
 
 1. Start the full stack.
@@ -49,10 +49,10 @@ Use this mode when the team cloning the repo already has a Gitea instance runnin
 1. Copy the sample environment file.
 
 ```bash
-cp .env.example .env
+cp .env.external.example .env
 ```
 
-1. Update `.env` so bundled Gitea does not start:
+1. Update `.env` with your preferred local ports and long random secrets if you do not want to use the placeholders.
 
 ```bash
 HIRETEA_CONFIG_ENCRYPTION_KEY="replace-with-a-long-random-app-encryption-key"
@@ -115,13 +115,12 @@ If `GITEA_ADMIN_PASSWORD`, `NEXTAUTH_SECRET`, or `GITEA_WEBHOOK_SECRET` are set 
 
 ## Optional Overrides
 
-The sample environment file exposes the main knobs for both modes:
+The example environment files expose the main knobs for each mode:
 
 - Application encryption and auth: `HIRETEA_CONFIG_ENCRYPTION_KEY`, `NEXTAUTH_SECRET`, `BOOTSTRAP_TOKEN`.
-- Public ports and URLs: `APP_HTTP_PORT`, `DB_PORT`, `GITEA_HTTP_PORT`, `GITEA_SSH_PORT`, `NEXTAUTH_URL`, `GITEA_PUBLIC_URL`.
-- Database names and credentials: `HT_DB_*`, `GITEA_DB_*`.
-- Bootstrap identity and workspace defaults: `GITEA_ADMIN_*`, `hiretea_*`, `GITEA_ORGANIZATION_NAME`.
-- Stable secrets for repeatable environments: `NEXTAUTH_SECRET`, `GITEA_SECRET_KEY`, `GITEA_INTERNAL_TOKEN`, `GITEA_WEBHOOK_SECRET`.
+- Shared app settings in both files: `APP_HTTP_PORT`, `DB_PORT`, `HT_DB_*`, `NEXTAUTH_URL`, `hiretea_*`, `GITEA_ORGANIZATION_NAME`.
+- Bundled-only settings in `.env.bundled.example`: `GITEA_HTTP_PORT`, `GITEA_SSH_PORT`, `GITEA_PUBLIC_URL`, `GITEA_DOMAIN`, `GITEA_DB_*`, `GITEA_ADMIN_*`, `GITEA_SECRET_KEY`, `GITEA_INTERNAL_TOKEN`, `GITEA_WEBHOOK_SECRET`.
+- Stable secrets for repeatable environments: `NEXTAUTH_SECRET`, `BOOTSTRAP_TOKEN`, `GITEA_SECRET_KEY`, `GITEA_INTERNAL_TOKEN`, `GITEA_WEBHOOK_SECRET`.
 
 If you change the public ports, keep the matching public URLs in sync. In bundled mode the app still uses `http://gitea:3000` internally while browsers must keep using the published Gitea URL.
 
