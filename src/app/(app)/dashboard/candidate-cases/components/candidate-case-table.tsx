@@ -1,3 +1,4 @@
+import type { CandidateCaseStatus } from "@prisma/client";
 import { Flex, Link as RadixLink, Table, Text } from "@radix-ui/themes";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { CandidateCaseListItem } from "@/lib/candidate-cases/queries";
@@ -5,6 +6,7 @@ import { CandidateCaseActions } from "./candidate-case-actions";
 
 type CandidateCaseTableProps = {
   candidateCases: CandidateCaseListItem[];
+  showArchived: boolean;
 };
 
 const dateFormatter = new Intl.DateTimeFormat("en", {
@@ -30,12 +32,14 @@ const decisionToneMap = {
 
 export function CandidateCaseTable({
   candidateCases,
+  showArchived,
 }: CandidateCaseTableProps) {
   if (candidateCases.length === 0) {
     return (
       <Text as="p" size="2" color="gray">
-        No candidate cases are assigned yet. Use the form on the left to create
-        the first working repository from a template.
+        {showArchived
+          ? "No candidate cases match the current filter."
+          : "No candidate cases are assigned yet. Use the form on the left to create the first working repository from a template."}
       </Text>
     );
   }
@@ -150,6 +154,7 @@ export function CandidateCaseTable({
             <Table.Cell>
               <CandidateCaseActions
                 caseId={candidateCase.id}
+                status={candidateCase.status as CandidateCaseStatus}
                 repositoryName={
                   candidateCase.workingRepository || "Pending Repository"
                 }

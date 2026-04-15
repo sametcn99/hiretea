@@ -109,9 +109,9 @@ export function CandidateProvisionForm() {
         <Callout.Root color="gray" size="1">
           <Callout.Text>
             The default password is generated automatically and must be shared
-            manually with the candidate during the MVP phase. You can view this
-            password later in the candidates list until the candidate changes
-            it.
+            manually with the candidate during the MVP phase. The password is
+            shown only once after provisioning, so it should be copied into your
+            secure handoff channel immediately.
           </Callout.Text>
         </Callout.Root>
 

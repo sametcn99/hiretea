@@ -1,31 +1,63 @@
+import { CandidateCaseStatus } from "@prisma/client";
+import { createAuditLog } from "@/lib/audit/log";
+import {
+  type AuthorizedActor,
+  assertInternalOperator,
+} from "@/lib/auth/authorization";
+import { revokeCandidateCaseAccess } from "@/lib/candidate-cases/revoke-case-access";
 import { db } from "@/lib/db";
-import { GiteaAdminClientError } from "@/lib/gitea/client";
-import { deleteCaseRepository } from "@/lib/gitea/repositories";
 
-export async function deleteCandidateCase(caseId: string, actorId: string) {
+export async function deleteCandidateCase(
+  caseId: string,
+  actor: AuthorizedActor,
+) {
+  assertInternalOperator(actor, "delete candidate cases");
+
   const caseRecord = await db.candidateCase.findUniqueOrThrow({
     where: { id: caseId },
-    include: { caseTemplate: true },
+    select: {
+      id: true,
+      candidateId: true,
+      status: true,
+      workingRepository: true,
+      caseTemplate: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
   });
 
-  if (caseRecord.workingRepository) {
-    try {
-      await deleteCaseRepository({
-        actorId,
-        repositoryName: caseRecord.workingRepository,
-      });
-    } catch (e: unknown) {
-      if (e instanceof GiteaAdminClientError && e.status === 404) {
-        // Repository already deleted or doesn't exist, ignore
-      } else {
-        throw e;
-      }
-    }
+  if (caseRecord.status === CandidateCaseStatus.ARCHIVED) {
+    throw new Error("The selected candidate case is already archived.");
   }
 
-  // Delete the case from the database
-  // Due to Cascade settings, this will also delete associated EvaluationNotes and AccessGrants
-  await db.candidateCase.delete({
+  if (caseRecord.workingRepository) {
+    await revokeCandidateCaseAccess(caseId, actor);
+  }
+
+  await db.candidateCase.update({
     where: { id: caseId },
+    data: {
+      status: CandidateCaseStatus.ARCHIVED,
+      lastSyncedAt: new Date(),
+    },
+  });
+
+  await createAuditLog({
+    action: "candidate.case.archived",
+    actorId: actor.actorId,
+    resourceType: "CandidateCase",
+    resourceId: caseRecord.id,
+    detail: {
+      candidateId: caseRecord.candidateId,
+      repositoryName: caseRecord.workingRepository,
+      previousStatus: caseRecord.status,
+      nextStatus: CandidateCaseStatus.ARCHIVED,
+      repositoryRetained: Boolean(caseRecord.workingRepository),
+      templateId: caseRecord.caseTemplate.id,
+      templateName: caseRecord.caseTemplate.name,
+    },
   });
 }

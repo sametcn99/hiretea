@@ -5,6 +5,7 @@ import {
   getResolvedGiteaWebhookConfig,
 } from "@/lib/gitea/runtime-config";
 import {
+  isSupportedWebhookEvent,
   processGiteaWebhookDelivery,
   recordFailedGiteaWebhookDelivery,
 } from "@/lib/gitea/webhooks";
@@ -47,6 +48,20 @@ export async function POST(request: Request) {
   const eventName = request.headers.get("x-gitea-event") ?? "unknown";
   const deliveryId = request.headers.get("x-gitea-delivery");
   const signature = request.headers.get("x-gitea-signature");
+
+  if (!deliveryId) {
+    return NextResponse.json(
+      { error: "Webhook delivery ID is required." },
+      { status: 400 },
+    );
+  }
+
+  if (!isSupportedWebhookEvent(eventName)) {
+    return NextResponse.json(
+      { error: `Unsupported webhook event: ${eventName}.` },
+      { status: 400 },
+    );
+  }
 
   if (!signature || !isValidSignature(rawBody, signature, secret)) {
     return NextResponse.json(

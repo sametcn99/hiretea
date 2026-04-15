@@ -1,6 +1,10 @@
 import { randomBytes } from "node:crypto";
 import { UserRole } from "@prisma/client";
 import { createAuditLog } from "@/lib/audit/log";
+import {
+  type AuthorizedActor,
+  assertInternalOperator,
+} from "@/lib/auth/authorization";
 import type { CandidateProvisionInput } from "@/lib/candidates/schemas";
 import { db } from "@/lib/db";
 import {
@@ -8,9 +12,7 @@ import {
   deleteCandidateAccount,
 } from "@/lib/gitea/accounts";
 
-type ProvisionCandidateParams = CandidateProvisionInput & {
-  actorId: string;
-};
+type ProvisionCandidateParams = CandidateProvisionInput & AuthorizedActor;
 
 function generateTemporaryPassword(length = 18) {
   const alphabet =
@@ -21,6 +23,8 @@ function generateTemporaryPassword(length = 18) {
 }
 
 export async function provisionCandidate(input: ProvisionCandidateParams) {
+  assertInternalOperator(input, "provision candidates");
+
   const existingCandidate = await db.user.findFirst({
     where: {
       OR: [

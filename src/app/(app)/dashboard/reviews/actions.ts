@@ -3,6 +3,7 @@
 import { UserRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import type { ZodIssue } from "zod";
+import type { AuthorizedActor } from "@/lib/auth/authorization";
 import { requireRole } from "@/lib/auth/session";
 import { createEvaluationNote } from "@/lib/evaluation-notes/create-evaluation-note";
 import {
@@ -47,6 +48,10 @@ export async function createEvaluationNoteAction(
   formData: FormData,
 ): Promise<CreateEvaluationNoteActionState> {
   const session = await requireRole(UserRole.ADMIN, UserRole.RECRUITER);
+  const actor: AuthorizedActor = {
+    actorId: session.user.id,
+    actorRole: session.user.role,
+  };
 
   const parsedInput = evaluationNoteCreateSchema.safeParse({
     candidateCaseId: formData.get("candidateCaseId"),
@@ -67,7 +72,7 @@ export async function createEvaluationNoteAction(
 
   try {
     const result = await createEvaluationNote({
-      actorId: session.user.id,
+      ...actor,
       ...parsedInput.data,
     });
 

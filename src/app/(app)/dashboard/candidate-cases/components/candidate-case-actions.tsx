@@ -1,5 +1,6 @@
 "use client";
 
+import type { CandidateCaseStatus } from "@prisma/client";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import {
   AlertDialog,
@@ -9,29 +10,37 @@ import {
   IconButton,
 } from "@radix-ui/themes";
 import { useState } from "react";
-import { deleteCaseAction, revokeAccessAction } from "../actions";
+import {
+  deleteCaseAction,
+  restoreCaseAction,
+  revokeAccessAction,
+} from "../actions";
 
 type CandidateCaseActionsProps = {
   caseId: string;
+  status: CandidateCaseStatus;
   repositoryName: string;
 };
 
 export function CandidateCaseActions({
   caseId,
+  status,
   repositoryName,
 }: CandidateCaseActionsProps) {
-  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+  const [isArchiveAlertOpen, setIsArchiveAlertOpen] = useState(false);
   const [isRevokeAlertOpen, setIsRevokeAlertOpen] = useState(false);
+  const [isRestoreAlertOpen, setIsRestoreAlertOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  async function handleDelete() {
+  async function handleArchive() {
     setIsLoading(true);
     const result = await deleteCaseAction(caseId);
     if (result.status === "error") {
       alert(result.message);
       setIsLoading(false);
     } else {
-      setIsDeleteAlertOpen(false);
+      setIsArchiveAlertOpen(false);
+      setIsLoading(false);
     }
   }
 
@@ -47,6 +56,18 @@ export function CandidateCaseActions({
     }
   }
 
+  async function handleRestore() {
+    setIsLoading(true);
+    const result = await restoreCaseAction(caseId);
+    if (result.status === "error") {
+      alert(result.message);
+      setIsLoading(false);
+    } else {
+      setIsRestoreAlertOpen(false);
+      setIsLoading(false);
+    }
+  }
+
   return (
     <>
       <DropdownMenu.Root>
@@ -56,15 +77,23 @@ export function CandidateCaseActions({
           </IconButton>
         </DropdownMenu.Trigger>
         <DropdownMenu.Content>
-          <DropdownMenu.Item onClick={() => setIsRevokeAlertOpen(true)}>
-            Revoke Candidate Access
-          </DropdownMenu.Item>
-          <DropdownMenu.Item
-            color="red"
-            onClick={() => setIsDeleteAlertOpen(true)}
-          >
-            Delete Case
-          </DropdownMenu.Item>
+          {status === "ARCHIVED" ? (
+            <DropdownMenu.Item onClick={() => setIsRestoreAlertOpen(true)}>
+              Restore Case
+            </DropdownMenu.Item>
+          ) : (
+            <>
+              <DropdownMenu.Item onClick={() => setIsRevokeAlertOpen(true)}>
+                Revoke Candidate Access
+              </DropdownMenu.Item>
+              <DropdownMenu.Item
+                color="red"
+                onClick={() => setIsArchiveAlertOpen(true)}
+              >
+                Archive Case
+              </DropdownMenu.Item>
+            </>
+          )}
         </DropdownMenu.Content>
       </DropdownMenu.Root>
 
@@ -101,17 +130,51 @@ export function CandidateCaseActions({
         </AlertDialog.Content>
       </AlertDialog.Root>
 
-      {/* Delete Case Alert */}
+      {/* Restore Case Alert */}
       <AlertDialog.Root
-        open={isDeleteAlertOpen}
-        onOpenChange={setIsDeleteAlertOpen}
+        open={isRestoreAlertOpen}
+        onOpenChange={setIsRestoreAlertOpen}
       >
         <AlertDialog.Content maxWidth="450px">
-          <AlertDialog.Title>Delete Candidate Case</AlertDialog.Title>
+          <AlertDialog.Title>Restore Candidate Case</AlertDialog.Title>
           <AlertDialog.Description size="2">
-            Are you sure you want to delete <strong>{repositoryName}</strong>?
-            This action cannot be undone. It will delete the repository from
-            Gitea and wipe all evaluation notes from the system.
+            Restore <strong>{repositoryName}</strong> back into the active
+            workflow. If the repository is still available, candidate access
+            will be granted again automatically.
+          </AlertDialog.Description>
+
+          <Flex gap="3" mt="4" justify="end">
+            <AlertDialog.Cancel>
+              <Button variant="soft" color="gray" disabled={isLoading}>
+                Cancel
+              </Button>
+            </AlertDialog.Cancel>
+            <AlertDialog.Action>
+              <Button
+                variant="solid"
+                color="blue"
+                onClick={handleRestore}
+                loading={isLoading}
+              >
+                Restore Case
+              </Button>
+            </AlertDialog.Action>
+          </Flex>
+        </AlertDialog.Content>
+      </AlertDialog.Root>
+
+      {/* Archive Case Alert */}
+      <AlertDialog.Root
+        open={isArchiveAlertOpen}
+        onOpenChange={setIsArchiveAlertOpen}
+      >
+        <AlertDialog.Content maxWidth="450px">
+          <AlertDialog.Title>Archive Candidate Case</AlertDialog.Title>
+          <AlertDialog.Description size="2">
+            Are you sure you want to archive <strong>{repositoryName}</strong>?
+            This will revoke candidate access and hide the case from active
+            views while keeping the repository details and evaluation history in
+            the system for possible restoration later.
           </AlertDialog.Description>
 
           <Flex gap="3" mt="4" justify="end">
@@ -124,10 +187,10 @@ export function CandidateCaseActions({
               <Button
                 variant="solid"
                 color="red"
-                onClick={handleDelete}
+                onClick={handleArchive}
                 loading={isLoading}
               >
-                Delete Case
+                Archive Case
               </Button>
             </AlertDialog.Action>
           </Flex>

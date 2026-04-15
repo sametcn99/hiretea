@@ -14,6 +14,10 @@ const submissionActions = new Set([
   "ready_for_review",
 ]);
 
+const ignoredPullRequestActions = new Set(["closed", "converted_to_draft"]);
+
+const supportedWebhookEvents = new Set(["push", "pull_request", "issues"]);
+
 type GiteaRepositoryWebhook = {
   id: number;
   config?: {
@@ -28,10 +32,20 @@ type EnsureRepositoryWebhookInput = {
 };
 
 type ProcessGiteaWebhookDeliveryInput = {
-  deliveryId: string | null;
+  deliveryId: string;
   eventName: string;
   payload: unknown;
 };
+
+type WebhookTransitionIntent = {
+  shouldMarkStarted: boolean;
+  shouldMarkSubmitted: boolean;
+  skipReason: string | null;
+};
+
+export function isSupportedWebhookEvent(eventName: string) {
+  return supportedWebhookEvents.has(eventName);
+}
 
 function getRepositoryNameFromPayload(payload: unknown) {
   if (!payload || typeof payload !== "object") {
@@ -99,39 +113,79 @@ function getNextCandidateCaseStatus(input: {
   return input.currentStatus;
 }
 
+function getWebhookTransitionIntent(input: {
+  eventName: string;
+  eventAction: string | null;
+  branchName: string | null;
+}): WebhookTransitionIntent {
+  if (input.eventName === "push") {
+    return {
+      shouldMarkStarted: Boolean(input.branchName),
+      shouldMarkSubmitted: false,
+      skipReason: input.branchName ? null : "missing-branch-name",
+    };
+  }
+
+  if (input.eventName === "pull_request") {
+    if (!input.eventAction) {
+      return {
+        shouldMarkStarted: false,
+        shouldMarkSubmitted: false,
+        skipReason: "missing-pull-request-action",
+      };
+    }
+
+    if (submissionActions.has(input.eventAction)) {
+      return {
+        shouldMarkStarted: true,
+        shouldMarkSubmitted: true,
+        skipReason: null,
+      };
+    }
+
+    if (ignoredPullRequestActions.has(input.eventAction)) {
+      return {
+        shouldMarkStarted: false,
+        shouldMarkSubmitted: false,
+        skipReason: `ignored-pull-request-action:${input.eventAction}`,
+      };
+    }
+
+    return {
+      shouldMarkStarted: false,
+      shouldMarkSubmitted: false,
+      skipReason: `unsupported-pull-request-action:${input.eventAction}`,
+    };
+  }
+
+  return {
+    shouldMarkStarted: false,
+    shouldMarkSubmitted: false,
+    skipReason: "non-stateful-event",
+  };
+}
+
 async function persistWebhookDelivery(input: {
-  deliveryId: string | null;
+  deliveryId: string;
   eventName: string;
   payload: Prisma.InputJsonValue;
   processedAt: Date;
   statusCode: number;
   errorMessage: string | null;
 }) {
-  if (input.deliveryId) {
-    return db.webhookDelivery.upsert({
-      where: {
-        deliveryId: input.deliveryId,
-      },
-      update: {
-        eventName: input.eventName,
-        payload: input.payload,
-        statusCode: input.statusCode,
-        errorMessage: input.errorMessage,
-        processedAt: input.processedAt,
-      },
-      create: {
-        deliveryId: input.deliveryId,
-        eventName: input.eventName,
-        payload: input.payload,
-        statusCode: input.statusCode,
-        errorMessage: input.errorMessage,
-        processedAt: input.processedAt,
-      },
-    });
-  }
-
-  return db.webhookDelivery.create({
-    data: {
+  return db.webhookDelivery.upsert({
+    where: {
+      deliveryId: input.deliveryId,
+    },
+    update: {
+      eventName: input.eventName,
+      payload: input.payload,
+      statusCode: input.statusCode,
+      errorMessage: input.errorMessage,
+      processedAt: input.processedAt,
+    },
+    create: {
+      deliveryId: input.deliveryId,
       eventName: input.eventName,
       payload: input.payload,
       statusCode: input.statusCode,
@@ -195,9 +249,45 @@ export async function processGiteaWebhookDelivery(
   input: ProcessGiteaWebhookDeliveryInput,
 ) {
   const processedAt = new Date();
+
+  const existingDelivery = await db.webhookDelivery.findUnique({
+    where: {
+      deliveryId: input.deliveryId,
+    },
+    select: {
+      id: true,
+      statusCode: true,
+      processedAt: true,
+    },
+  });
+
+  if (existingDelivery?.statusCode && existingDelivery.statusCode < 400) {
+    await createAuditLog({
+      action: "gitea.webhook.duplicate.ignored",
+      resourceType: "WebhookDelivery",
+      resourceId: existingDelivery.id,
+      detail: {
+        deliveryId: input.deliveryId,
+        eventName: input.eventName,
+        previousStatusCode: existingDelivery.statusCode,
+      },
+    });
+
+    return {
+      deliveryId: existingDelivery.id,
+      candidateCaseId: null,
+      duplicate: true,
+    };
+  }
+
   const repositoryName = getRepositoryNameFromPayload(input.payload);
   const eventAction = getEventAction(input.payload);
   const branchName = getBranchNameFromPayload(input.payload);
+  const transitionIntent = getWebhookTransitionIntent({
+    eventName: input.eventName,
+    eventAction,
+    branchName,
+  });
   let candidateCaseSync:
     | {
         id: string;
@@ -218,29 +308,93 @@ export async function processGiteaWebhookDelivery(
         status: true,
         startedAt: true,
         submittedAt: true,
+        accessGrants: {
+          where: {
+            revokedAt: null,
+          },
+          select: {
+            id: true,
+          },
+          take: 1,
+        },
       },
     });
 
     if (candidateCase) {
-      const shouldMarkStarted =
-        input.eventName === "push" ||
-        (input.eventName === "pull_request" &&
-          eventAction !== "closed" &&
-          eventAction !== "converted_to_draft");
-      const shouldMarkSubmitted =
-        input.eventName === "pull_request" &&
-        (eventAction == null || submissionActions.has(eventAction));
+      if (candidateCase.accessGrants.length === 0) {
+        const delivery = await persistWebhookDelivery({
+          deliveryId: input.deliveryId,
+          eventName: input.eventName,
+          payload: input.payload as Prisma.InputJsonValue,
+          processedAt,
+          statusCode: 202,
+          errorMessage:
+            "Ignored because the candidate case has no active access grant.",
+        });
+
+        await createAuditLog({
+          action: "candidate.case.sync.skipped",
+          resourceType: "CandidateCase",
+          resourceId: candidateCase.id,
+          detail: {
+            deliveryId: input.deliveryId,
+            eventName: input.eventName,
+            eventAction,
+            branchName,
+            repositoryName,
+            reason: "no-active-access-grant",
+          },
+        });
+
+        return {
+          deliveryId: delivery.id,
+          candidateCaseId: candidateCase.id,
+          duplicate: false,
+        };
+      }
+
+      if (transitionIntent.skipReason) {
+        const delivery = await persistWebhookDelivery({
+          deliveryId: input.deliveryId,
+          eventName: input.eventName,
+          payload: input.payload as Prisma.InputJsonValue,
+          processedAt,
+          statusCode: 202,
+          errorMessage: `Ignored because ${transitionIntent.skipReason}.`,
+        });
+
+        await createAuditLog({
+          action: "candidate.case.sync.skipped",
+          resourceType: "CandidateCase",
+          resourceId: candidateCase.id,
+          detail: {
+            deliveryId: input.deliveryId,
+            eventName: input.eventName,
+            eventAction,
+            branchName,
+            repositoryName,
+            reason: transitionIntent.skipReason,
+          },
+        });
+
+        return {
+          deliveryId: delivery.id,
+          candidateCaseId: candidateCase.id,
+          duplicate: false,
+        };
+      }
+
       const nextStatus = getNextCandidateCaseStatus({
         currentStatus: candidateCase.status,
-        shouldMarkStarted,
-        shouldMarkSubmitted,
+        shouldMarkStarted: transitionIntent.shouldMarkStarted,
+        shouldMarkSubmitted: transitionIntent.shouldMarkSubmitted,
       });
       const nextStartedAt =
-        shouldMarkStarted && !candidateCase.startedAt
+        transitionIntent.shouldMarkStarted && !candidateCase.startedAt
           ? processedAt
           : candidateCase.startedAt;
       const nextSubmittedAt =
-        shouldMarkSubmitted && !candidateCase.submittedAt
+        transitionIntent.shouldMarkSubmitted && !candidateCase.submittedAt
           ? processedAt
           : candidateCase.submittedAt;
 
@@ -261,10 +415,14 @@ export async function processGiteaWebhookDelivery(
         previousStatus: candidateCase.status,
         nextStatus,
         startedAtRecorded: Boolean(
-          shouldMarkStarted && !candidateCase.startedAt && nextStartedAt,
+          transitionIntent.shouldMarkStarted &&
+            !candidateCase.startedAt &&
+            nextStartedAt,
         ),
         submittedAtRecorded: Boolean(
-          shouldMarkSubmitted && !candidateCase.submittedAt && nextSubmittedAt,
+          transitionIntent.shouldMarkSubmitted &&
+            !candidateCase.submittedAt &&
+            nextSubmittedAt,
         ),
       };
     }
@@ -315,6 +473,7 @@ export async function processGiteaWebhookDelivery(
   return {
     deliveryId: delivery.id,
     candidateCaseId: candidateCaseSync?.id ?? null,
+    duplicate: false,
   };
 }
 
@@ -323,7 +482,7 @@ export async function canRegisterRepositoryWebhook() {
 }
 
 export async function recordFailedGiteaWebhookDelivery(input: {
-  deliveryId: string | null;
+  deliveryId: string;
   eventName: string;
   payload: unknown;
   errorMessage: string;

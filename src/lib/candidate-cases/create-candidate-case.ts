@@ -1,6 +1,10 @@
 import { randomBytes } from "node:crypto";
 import { CandidateCaseStatus, UserRole } from "@prisma/client";
 import { createAuditLog } from "@/lib/audit/log";
+import {
+  type AuthorizedActor,
+  assertInternalOperator,
+} from "@/lib/auth/authorization";
 import type { CandidateCaseCreateInput } from "@/lib/candidate-cases/schemas";
 import { db } from "@/lib/db";
 import {
@@ -15,9 +19,7 @@ import { hasResolvedWebhookConfiguration } from "@/lib/gitea/runtime-config";
 import { ensureRepositoryWebhook } from "@/lib/gitea/webhooks";
 import { getWorkspaceSettingsOrThrow } from "@/lib/workspace-settings/queries";
 
-type CreateCandidateCaseParams = CandidateCaseCreateInput & {
-  actorId: string;
-};
+type CreateCandidateCaseParams = CandidateCaseCreateInput & AuthorizedActor;
 
 const activeCandidateCaseStatuses = [
   CandidateCaseStatus.DRAFT,
@@ -50,6 +52,8 @@ function buildCandidateCaseRepositoryName(
 }
 
 export async function createCandidateCase(input: CreateCandidateCaseParams) {
+  assertInternalOperator(input, "assign candidate cases");
+
   const [candidate, template, workspaceSettings, existingCandidateCase] =
     await Promise.all([
       db.user.findUnique({

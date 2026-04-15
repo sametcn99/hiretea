@@ -1,15 +1,50 @@
+import { CandidateCaseStatus } from "@prisma/client";
+import { createAuditLog } from "@/lib/audit/log";
+import {
+  type AuthorizedActor,
+  assertInternalOperator,
+} from "@/lib/auth/authorization";
+import { revokeCandidateCaseAccess } from "@/lib/candidate-cases/revoke-case-access";
 import { db } from "@/lib/db";
 import { deleteCandidateAccount } from "@/lib/gitea/accounts";
 import { GiteaAdminClientError } from "@/lib/gitea/client";
 
-export async function deleteCandidate(candidateId: string, actorId: string) {
+const activeCandidateCaseStatuses = new Set<CandidateCaseStatus>([
+  CandidateCaseStatus.DRAFT,
+  CandidateCaseStatus.PROVISIONING,
+  CandidateCaseStatus.READY,
+  CandidateCaseStatus.IN_PROGRESS,
+  CandidateCaseStatus.REVIEWING,
+]);
+
+export async function deleteCandidate(
+  candidateId: string,
+  actor: AuthorizedActor,
+) {
+  assertInternalOperator(actor, "archive candidates");
+
   const candidate = await db.user.findUniqueOrThrow({
     where: { id: candidateId },
     include: {
       giteaIdentity: true,
-      candidateCases: true,
+      candidateCases: {
+        select: {
+          id: true,
+          status: true,
+        },
+      },
     },
   });
+
+  const activeCaseIds = candidate.candidateCases
+    .filter((candidateCase) =>
+      activeCandidateCaseStatuses.has(candidateCase.status),
+    )
+    .map((candidateCase) => candidateCase.id);
+
+  for (const caseId of activeCaseIds) {
+    await revokeCandidateCaseAccess(caseId, actor);
+  }
 
   // Because `candidateCases` has an onDelete: Restrict constraint on candidateId,
   // we do not physically delete the `User` from the database if cases exist.
@@ -19,7 +54,7 @@ export async function deleteCandidate(candidateId: string, actorId: string) {
   if (candidate.giteaIdentity) {
     try {
       await deleteCandidateAccount({
-        actorId,
+        actorId: actor.actorId,
         username: candidate.giteaIdentity.login,
       });
     } catch (e: unknown) {
@@ -53,4 +88,16 @@ export async function deleteCandidate(candidateId: string, actorId: string) {
       },
     }),
   ]);
+
+  await createAuditLog({
+    action: "candidate.archived",
+    actorId: actor.actorId,
+    resourceType: "Candidate",
+    resourceId: candidate.id,
+    detail: {
+      email: candidate.email,
+      giteaLogin: candidate.giteaIdentity?.login ?? null,
+      revokedActiveCaseCount: activeCaseIds.length,
+    },
+  });
 }

@@ -3,12 +3,14 @@ import {
   CandidateCaseStatus,
 } from "@prisma/client";
 import { createAuditLog } from "@/lib/audit/log";
+import {
+  type AuthorizedActor,
+  assertInternalOperator,
+} from "@/lib/auth/authorization";
 import { db } from "@/lib/db";
 import type { EvaluationNoteCreateInput } from "@/lib/evaluation-notes/schemas";
 
-type CreateEvaluationNoteParams = EvaluationNoteCreateInput & {
-  actorId: string;
-};
+type CreateEvaluationNoteParams = EvaluationNoteCreateInput & AuthorizedActor;
 
 const reviewableStatuses: CandidateCaseStatus[] = [
   CandidateCaseStatus.READY,
@@ -45,6 +47,8 @@ function getNextDecision(
 }
 
 export async function createEvaluationNote(input: CreateEvaluationNoteParams) {
+  assertInternalOperator(input, "review candidate cases");
+
   const candidateCase = await db.candidateCase.findUnique({
     where: {
       id: input.candidateCaseId,

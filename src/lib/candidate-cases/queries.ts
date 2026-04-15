@@ -27,6 +27,10 @@ export type CandidateCaseListItem = {
   createdByName: string;
 };
 
+type ListCandidateCasesOptions = {
+  includeArchived?: boolean;
+};
+
 export type CandidateCaseAssignmentCandidateOption = {
   id: string;
   displayName: string;
@@ -74,8 +78,17 @@ export type CandidateWorkspaceCaseListItem = {
   notesCount: number;
 };
 
-export async function listCandidateCases() {
+export async function listCandidateCases(
+  options: ListCandidateCasesOptions = {},
+) {
   const candidateCases = await db.candidateCase.findMany({
+    where: options.includeArchived
+      ? undefined
+      : {
+          status: {
+            not: CandidateCaseStatusValue.ARCHIVED,
+          },
+        },
     include: {
       candidate: {
         select: {

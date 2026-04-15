@@ -71,8 +71,7 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
                 <StatusBadge label="Password Changed" tone="positive" />
               ) : (
                 <Text size="2" color="gray">
-                  <Text weight="bold">Default: </Text>
-                  {candidate.initialPassword || "Not stored"}
+                  Temporary password is shown only once during provisioning.
                 </Text>
               )}
             </Table.Cell>

@@ -3,6 +3,7 @@
 import { UserRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import type { ZodIssue } from "zod";
+import type { AuthorizedActor } from "@/lib/auth/authorization";
 import { requireRole } from "@/lib/auth/session";
 import { deleteCandidate } from "@/lib/candidates/delete-candidate";
 import { provisionCandidate } from "@/lib/candidates/provision-candidate";
@@ -45,6 +46,10 @@ export async function provisionCandidateAction(
   formData: FormData,
 ): Promise<ProvisionCandidateActionState> {
   const session = await requireRole(UserRole.ADMIN, UserRole.RECRUITER);
+  const actor: AuthorizedActor = {
+    actorId: session.user.id,
+    actorRole: session.user.role,
+  };
 
   const parsedInput = candidateProvisionSchema.safeParse({
     displayName: formData.get("displayName"),
@@ -62,7 +67,7 @@ export async function provisionCandidateAction(
 
   try {
     const result = await provisionCandidate({
-      actorId: session.user.id,
+      ...actor,
       ...parsedInput.data,
     });
 
@@ -87,9 +92,13 @@ export async function provisionCandidateAction(
 
 export async function deleteCandidateAction(candidateId: string) {
   const session = await requireRole(UserRole.ADMIN, UserRole.RECRUITER);
+  const actor: AuthorizedActor = {
+    actorId: session.user.id,
+    actorRole: session.user.role,
+  };
 
   try {
-    await deleteCandidate(candidateId, session.user.id);
+    await deleteCandidate(candidateId, actor);
 
     revalidatePath("/dashboard/candidates");
     revalidatePath("/dashboard/audit-trail");

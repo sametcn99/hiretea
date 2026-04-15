@@ -1,3 +1,7 @@
+import {
+  type AuthorizedActor,
+  assertInternalOperator,
+} from "@/lib/auth/authorization";
 import { db } from "@/lib/db";
 import { GiteaAdminClientError } from "@/lib/gitea/client";
 import { revokeRepositoryAccess } from "@/lib/gitea/permissions";
@@ -5,8 +9,10 @@ import { getWorkspaceSettings } from "@/lib/workspace-settings/queries";
 
 export async function revokeCandidateCaseAccess(
   caseId: string,
-  actorId: string,
+  actor: AuthorizedActor,
 ) {
+  assertInternalOperator(actor, "revoke candidate repository access");
+
   const caseRecord = await db.candidateCase.findUniqueOrThrow({
     where: { id: caseId },
     include: {
@@ -25,7 +31,7 @@ export async function revokeCandidateCaseAccess(
 
   try {
     await revokeRepositoryAccess({
-      actorId,
+      actorId: actor.actorId,
       owner: settings.giteaOrganization,
       repositoryName: caseRecord.workingRepository,
       username: caseRecord.candidate.giteaIdentity.login,

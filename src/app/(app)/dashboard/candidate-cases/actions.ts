@@ -3,9 +3,11 @@
 import { UserRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import type { ZodIssue } from "zod";
+import type { AuthorizedActor } from "@/lib/auth/authorization";
 import { requireRole } from "@/lib/auth/session";
 import { createCandidateCase } from "@/lib/candidate-cases/create-candidate-case";
 import { deleteCandidateCase } from "@/lib/candidate-cases/delete-candidate-case";
+import { restoreCandidateCase } from "@/lib/candidate-cases/restore-candidate-case";
 import { revokeCandidateCaseAccess } from "@/lib/candidate-cases/revoke-case-access";
 import {
   type CandidateCaseCreateInput,
@@ -47,6 +49,10 @@ export async function createCandidateCaseAction(
   formData: FormData,
 ): Promise<CreateCandidateCaseActionState> {
   const session = await requireRole(UserRole.ADMIN, UserRole.RECRUITER);
+  const actor: AuthorizedActor = {
+    actorId: session.user.id,
+    actorRole: session.user.role,
+  };
 
   const parsedInput = candidateCaseCreateSchema.safeParse({
     candidateId: formData.get("candidateId"),
@@ -64,7 +70,7 @@ export async function createCandidateCaseAction(
 
   try {
     const candidateCase = await createCandidateCase({
-      actorId: session.user.id,
+      ...actor,
       ...parsedInput.data,
     });
 
@@ -92,9 +98,13 @@ export async function createCandidateCaseAction(
 
 export async function deleteCaseAction(caseId: string) {
   const session = await requireRole(UserRole.ADMIN, UserRole.RECRUITER);
+  const actor: AuthorizedActor = {
+    actorId: session.user.id,
+    actorRole: session.user.role,
+  };
 
   try {
-    await deleteCandidateCase(caseId, session.user.id);
+    await deleteCandidateCase(caseId, actor);
 
     revalidatePath("/dashboard/candidate-cases");
     revalidatePath("/dashboard/candidates");
@@ -113,9 +123,13 @@ export async function deleteCaseAction(caseId: string) {
 
 export async function revokeAccessAction(caseId: string) {
   const session = await requireRole(UserRole.ADMIN, UserRole.RECRUITER);
+  const actor: AuthorizedActor = {
+    actorId: session.user.id,
+    actorRole: session.user.role,
+  };
 
   try {
-    await revokeCandidateCaseAccess(caseId, session.user.id);
+    await revokeCandidateCaseAccess(caseId, actor);
 
     revalidatePath("/dashboard/candidate-cases");
     revalidatePath("/dashboard/audit-trail");
@@ -125,6 +139,30 @@ export async function revokeAccessAction(caseId: string) {
     return {
       status: "error",
       message: e instanceof Error ? e.message : "Failed to revoke access.",
+    };
+  }
+}
+
+export async function restoreCaseAction(caseId: string) {
+  const session = await requireRole(UserRole.ADMIN, UserRole.RECRUITER);
+  const actor: AuthorizedActor = {
+    actorId: session.user.id,
+    actorRole: session.user.role,
+  };
+
+  try {
+    await restoreCandidateCase(caseId, actor);
+
+    revalidatePath("/dashboard/candidate-cases");
+    revalidatePath("/dashboard/reviews");
+    revalidatePath("/dashboard/audit-trail");
+
+    return { status: "success" };
+  } catch (e: unknown) {
+    return {
+      status: "error",
+      message:
+        e instanceof Error ? e.message : "Failed to restore candidate case.",
     };
   }
 }

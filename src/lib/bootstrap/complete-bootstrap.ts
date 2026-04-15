@@ -1,7 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { UserRole, WorkspaceGiteaMode } from "@prisma/client";
 import type { BootstrapSetupInput } from "@/lib/bootstrap/schemas";
-import { getBootstrapStatus } from "@/lib/bootstrap/status";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { encryptExternalGiteaSecret } from "@/lib/gitea/secret-store";
@@ -191,13 +190,17 @@ export async function completeBootstrapSetup(
     throw new Error("The bootstrap token is invalid.");
   }
 
-  const status = await getBootstrapStatus();
-
-  if (!status.requiresSetup) {
-    throw new Error("The workspace is already initialized.");
-  }
-
   return db.$transaction(async (transaction) => {
+    const adminCount = await transaction.user.count({
+      where: {
+        role: UserRole.ADMIN,
+      },
+    });
+
+    if (adminCount > 0) {
+      throw new Error("The workspace is already initialized.");
+    }
+
     const existingSettings = await transaction.workspaceSettings.findFirst({
       orderBy: {
         createdAt: "asc",

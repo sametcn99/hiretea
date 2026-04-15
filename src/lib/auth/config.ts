@@ -54,6 +54,18 @@ export async function getAuthOptions(): Promise<NextAuthOptions> {
           return false;
         }
 
+        await db.giteaIdentity.updateMany({
+          where: {
+            userId: user.id,
+            initialPassword: {
+              not: null,
+            },
+          },
+          data: {
+            initialPassword: null,
+          },
+        });
+
         return existingUser.isActive;
       },
       async session({ session, user }) {
