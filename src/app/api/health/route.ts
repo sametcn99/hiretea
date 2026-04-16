@@ -22,7 +22,9 @@ export async function GET() {
         databaseReady: false,
         giteaMode: getDeploymentGiteaMode(),
         error:
-          error instanceof Error ? error.message : "Healthcheck request failed.",
+          error instanceof Error
+            ? error.message
+            : "Healthcheck request failed.",
       },
       { status: 503 },
     );

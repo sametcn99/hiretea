@@ -18,7 +18,9 @@ type StackConfig = {
 const stackMode = process.argv[2];
 
 if (stackMode !== "bundled" && stackMode !== "external") {
-  console.error("Usage: bun run docker/scripts/wait-for-stack.ts <bundled|external>");
+  console.error(
+    "Usage: bun run docker/scripts/wait-for-stack.ts <bundled|external>",
+  );
   process.exit(1);
 }
 
@@ -81,7 +83,14 @@ function parsePositiveInteger(rawValue: string | undefined, fallback: number) {
 function runCompose(args: string[]) {
   const result = spawnSync(
     "docker",
-    ["compose", "-p", stackConfig.projectName, "-f", stackConfig.composeFile, ...args],
+    [
+      "compose",
+      "-p",
+      stackConfig.projectName,
+      "-f",
+      stackConfig.composeFile,
+      ...args,
+    ],
     {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
@@ -122,7 +131,11 @@ function normalizePublishedHost(publishedAddress: string) {
 }
 
 function getPublishedUrl(target: WaitTarget) {
-  const portResult = runCompose(["port", target.service, String(target.containerPort)]);
+  const portResult = runCompose([
+    "port",
+    target.service,
+    String(target.containerPort),
+  ]);
 
   if (portResult.exitCode !== 0 || !portResult.stdout) {
     return null;
