@@ -147,3 +147,20 @@ body {
   color: var(--blue-11);
   font-weight: 500;
 }
+
+@media (min-width: 768px) {
+  .ht-app-shell {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .ht-app-sidebar {
+    align-self: start;
+  }
+
+  .ht-app-main {
+    min-height: 0;
+    height: 100dvh;
+    overflow-y: auto;
+  }
+}

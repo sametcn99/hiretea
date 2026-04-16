@@ -11,10 +11,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <Grid
+      className="ht-app-shell"
       columns={{ initial: "1fr", md: "280px minmax(0, 1fr)" }}
       style={{ minHeight: "100dvh" }}
     >
       <Flex
+        className="ht-app-sidebar"
         direction="column"
         gap="5"
         p="5"
@@ -39,6 +41,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       </Flex>
 
       <Flex
+        className="ht-app-main"
         direction="column"
         gap="5"
         p="5"
