@@ -16,6 +16,10 @@ import {
   type CreateCaseTemplateActionState,
   createCaseTemplateAction,
 } from "@/app/(app)/dashboard/case-templates/actions";
+import {
+  buildRepositoryName,
+  buildTemplateSlug,
+} from "@/app/(app)/dashboard/case-templates/components/case-template-form-helpers";
 import type { CaseTemplateReviewerOption } from "@/lib/case-templates/queries";
 
 const initialCreateCaseTemplateState: CreateCaseTemplateActionState = {
@@ -63,13 +67,41 @@ export function CaseTemplateCreateForm({
   );
   const [formValues, setFormValues] = useState(initialFormValues);
   const [selectedReviewerIds, setSelectedReviewerIds] = useState<string[]>([]);
+  const [hasManualSlugOverride, setHasManualSlugOverride] = useState(false);
+  const [hasManualRepositoryNameOverride, setHasManualRepositoryNameOverride] =
+    useState(false);
 
   useEffect(() => {
     if (state.status === "success") {
       setFormValues(initialFormValues);
       setSelectedReviewerIds([]);
+      setHasManualSlugOverride(false);
+      setHasManualRepositoryNameOverride(false);
     }
   }, [state.status]);
+
+  function handleNameChange(nextName: string) {
+    setFormValues((current) => {
+      const previousSlugSuggestion = buildTemplateSlug(current.name);
+      const previousRepositorySuggestion = buildRepositoryName(current.name);
+      const nextSlugSuggestion = buildTemplateSlug(nextName);
+      const nextRepositorySuggestion = buildRepositoryName(nextName);
+
+      return {
+        ...current,
+        name: nextName,
+        slug:
+          !hasManualSlugOverride || current.slug === previousSlugSuggestion
+            ? nextSlugSuggestion
+            : current.slug,
+        repositoryName:
+          !hasManualRepositoryNameOverride ||
+          current.repositoryName === previousRepositorySuggestion
+            ? nextRepositorySuggestion
+            : current.repositoryName,
+      };
+    });
+  }
 
   return (
     <form action={formAction}>
@@ -99,12 +131,7 @@ export function CaseTemplateCreateForm({
               placeholder="Backend API challenge"
               type="text"
               value={formValues.name}
-              onChange={(event) =>
-                setFormValues((current) => ({
-                  ...current,
-                  name: event.target.value,
-                }))
-              }
+              onChange={(event) => handleNameChange(event.target.value)}
               color={state.fieldErrors?.name ? "red" : undefined}
             />
             {state.fieldErrors?.name?.map((error) => (
@@ -127,12 +154,13 @@ export function CaseTemplateCreateForm({
               placeholder="backend-api-challenge"
               type="text"
               value={formValues.slug}
-              onChange={(event) =>
+              onChange={(event) => {
+                setHasManualSlugOverride(true);
                 setFormValues((current) => ({
                   ...current,
                   slug: event.target.value,
-                }))
-              }
+                }));
+              }}
               color={state.fieldErrors?.slug ? "red" : undefined}
             />
             {state.fieldErrors?.slug?.map((error) => (
@@ -155,12 +183,13 @@ export function CaseTemplateCreateForm({
               placeholder="backend-api-challenge"
               type="text"
               value={formValues.repositoryName}
-              onChange={(event) =>
+              onChange={(event) => {
+                setHasManualRepositoryNameOverride(true);
                 setFormValues((current) => ({
                   ...current,
                   repositoryName: event.target.value,
-                }))
-              }
+                }));
+              }}
               color={state.fieldErrors?.repositoryName ? "red" : undefined}
             />
             {state.fieldErrors?.repositoryName?.map((error) => (

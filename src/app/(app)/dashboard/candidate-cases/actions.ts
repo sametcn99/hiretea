@@ -142,6 +142,7 @@ export async function updateCandidateCaseAction(
     });
 
     revalidatePath("/dashboard/candidate-cases");
+    revalidatePath(`/dashboard/candidate-cases/${caseId}`);
     revalidatePath("/dashboard/reviews");
     revalidatePath("/dashboard/audit-trail");
 
@@ -171,6 +172,7 @@ export async function deleteCaseAction(caseId: string) {
     await deleteCandidateCase(caseId, actor);
 
     revalidatePath("/dashboard/candidate-cases");
+    revalidatePath(`/dashboard/candidate-cases/${caseId}`);
     revalidatePath("/dashboard/candidates");
     revalidatePath("/dashboard/case-templates");
     revalidatePath("/dashboard/audit-trail");
@@ -196,6 +198,7 @@ export async function revokeAccessAction(caseId: string) {
     await revokeCandidateCaseAccess(caseId, actor);
 
     revalidatePath("/dashboard/candidate-cases");
+    revalidatePath(`/dashboard/candidate-cases/${caseId}`);
     revalidatePath("/dashboard/audit-trail");
 
     return { status: "success" };
@@ -218,6 +221,7 @@ export async function restoreCaseAction(caseId: string) {
     await restoreCandidateCase(caseId, actor);
 
     revalidatePath("/dashboard/candidate-cases");
+    revalidatePath(`/dashboard/candidate-cases/${caseId}`);
     revalidatePath("/dashboard/reviews");
     revalidatePath("/dashboard/audit-trail");
 

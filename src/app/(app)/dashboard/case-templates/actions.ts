@@ -8,7 +8,9 @@ import { createCaseTemplate } from "@/lib/case-templates/create-case-template";
 import {
   type CaseTemplateCreateInput,
   caseTemplateCreateSchema,
+  caseTemplateUpdateSchema,
 } from "@/lib/case-templates/schemas";
+import { updateCaseTemplate } from "@/lib/case-templates/update-case-template";
 
 type CaseTemplateField = keyof CaseTemplateCreateInput;
 
@@ -17,6 +19,8 @@ export type CreateCaseTemplateActionState = {
   message?: string;
   fieldErrors?: Partial<Record<CaseTemplateField, string[]>>;
 };
+
+export type UpdateCaseTemplateActionState = CreateCaseTemplateActionState;
 
 function mapFieldErrors(issues: ZodIssue[]) {
   return issues.reduce<Partial<Record<CaseTemplateField, string[]>>>(
@@ -92,6 +96,59 @@ export async function createCaseTemplateAction(
         error instanceof Error
           ? error.message
           : "Case template creation failed. Review the configuration and try again.",
+    };
+  }
+}
+
+export async function updateCaseTemplateAction(
+  templateId: string,
+  _previousState: UpdateCaseTemplateActionState,
+  formData: FormData,
+): Promise<UpdateCaseTemplateActionState> {
+  const session = await requireRole(UserRole.ADMIN, UserRole.RECRUITER);
+
+  const parsedInput = caseTemplateUpdateSchema.safeParse({
+    name: formData.get("name"),
+    slug: formData.get("slug"),
+    summary: formData.get("summary"),
+    repositoryName: formData.get("repositoryName"),
+    repositoryDescription: formData.get("repositoryDescription"),
+    defaultBranch: formData.get("defaultBranch"),
+    reviewerInstructions: formData.get("reviewerInstructions"),
+    decisionGuidance: formData.get("decisionGuidance"),
+    reviewerIds: formData.getAll("reviewerIds"),
+    rubricCriteria: formData.get("rubricCriteria"),
+  });
+
+  if (!parsedInput.success) {
+    return {
+      status: "error",
+      message: "Please correct the highlighted fields and submit again.",
+      fieldErrors: mapFieldErrors(parsedInput.error.issues),
+    };
+  }
+
+  try {
+    const template = await updateCaseTemplate({
+      actorId: session.user.id,
+      templateId,
+      ...parsedInput.data,
+    });
+
+    revalidatePath("/dashboard/case-templates");
+    revalidatePath("/dashboard/audit-trail");
+
+    return {
+      status: "success",
+      message: `${template.name} was updated successfully.`,
+    };
+  } catch (error) {
+    return {
+      status: "error",
+      message:
+        error instanceof Error
+          ? error.message
+          : "Case template update failed. Review the configuration and try again.",
     };
   }
 }

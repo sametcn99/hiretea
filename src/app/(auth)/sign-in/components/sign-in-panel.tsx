@@ -1,6 +1,14 @@
 "use client";
 
-import { Box, Button, Card, Flex, Heading, Text } from "@radix-ui/themes";
+import {
+  Box,
+  Button,
+  Callout,
+  Card,
+  Flex,
+  Heading,
+  Text,
+} from "@radix-ui/themes";
 import { signIn } from "next-auth/react";
 import { startTransition, useState } from "react";
 import { AppLogo } from "@/components/ui/app-logo";
@@ -8,10 +16,22 @@ import { StatusBadge } from "@/components/ui/status-badge";
 
 type SignInPanelProps = {
   isConfigured: boolean;
+  error?: string;
+  giteaBaseUrl?: string | null;
 };
 
-export function SignInPanel({ isConfigured }: SignInPanelProps) {
+function getCandidateGiteaLoginUrl(giteaBaseUrl?: string | null) {
+  return giteaBaseUrl ? `${giteaBaseUrl.replace(/\/$/, "")}/user/login` : null;
+}
+
+export function SignInPanel({
+  isConfigured,
+  error,
+  giteaBaseUrl,
+}: SignInPanelProps) {
   const [isPending, setIsPending] = useState(false);
+  const candidateGiteaLoginUrl = getCandidateGiteaLoginUrl(giteaBaseUrl);
+  const isCandidateAccessDenied = error === "candidate-access-denied";
 
   const handleSignIn = () => {
     setIsPending(true);
@@ -49,6 +69,15 @@ export function SignInPanel({ isConfigured }: SignInPanelProps) {
           </Text>
         </Flex>
 
+        {isCandidateAccessDenied ? (
+          <Callout.Root color="amber" size="1">
+            <Callout.Text>
+              Candidate accounts cannot sign in to Hiretea. Candidates should
+              use their Gitea account directly for repository work.
+            </Callout.Text>
+          </Callout.Root>
+        ) : null}
+
         <Card variant="surface" size="2">
           <Flex direction="column" gap="3">
             <Flex justify="between" align="center" gap="3">
@@ -75,6 +104,14 @@ export function SignInPanel({ isConfigured }: SignInPanelProps) {
         >
           Continue with Gitea
         </Button>
+
+        {isCandidateAccessDenied && candidateGiteaLoginUrl ? (
+          <Button asChild size="3" variant="soft" color="gray">
+            <a href={candidateGiteaLoginUrl} target="_blank" rel="noreferrer">
+              Open Gitea sign in
+            </a>
+          </Button>
+        ) : null}
 
         {!isConfigured ? (
           <Text size="2" color="gray">

@@ -4,6 +4,7 @@ import { AppLogo } from "@/components/ui/app-logo";
 import { SectionCard } from "@/components/ui/section-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { getCandidateInviteLanding } from "@/lib/candidate-invites/claim-candidate-invite";
+import { getGiteaRuntimeConfig } from "@/lib/gitea/runtime-config";
 
 const dateFormatter = new Intl.DateTimeFormat("en", {
   dateStyle: "medium",
@@ -18,7 +19,13 @@ type InvitePageProps = {
 
 export default async function InvitePage({ params }: InvitePageProps) {
   const { token } = await params;
-  const invite = await getCandidateInviteLanding(token);
+  const [invite, runtimeConfig] = await Promise.all([
+    getCandidateInviteLanding(token),
+    getGiteaRuntimeConfig(),
+  ]);
+  const giteaLoginUrl = runtimeConfig.publicBaseUrl
+    ? `${runtimeConfig.publicBaseUrl.replace(/\/$/, "")}/user/login`
+    : null;
 
   return (
     <Container size="2" py="7">
@@ -29,10 +36,10 @@ export default async function InvitePage({ params }: InvitePageProps) {
           title={invite ? `Welcome, ${invite.displayName}` : "Invite not found"}
           description={
             invite
-              ? "Use this onboarding link to securely receive your Gitea access details before the first sign-in."
+              ? "Use this onboarding link to securely receive your Gitea access details before the first repository login."
               : "The onboarding link is invalid or no longer available. Ask the hiring team to issue a new invite."
           }
-          eyebrow="Hiretea access"
+          eyebrow="Gitea access"
         >
           {invite ? (
             <Flex direction="column" gap="3">
@@ -71,6 +78,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
                 token={token}
                 inviteStatus={invite.status}
                 passwordAvailable={invite.passwordAvailable}
+                giteaLoginUrl={giteaLoginUrl}
               />
             </Flex>
           ) : (
@@ -83,7 +91,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
 
         <SectionCard
           title="What happens next"
-          description="This onboarding link only handles first-time access delivery. Authentication still happens through your Gitea identity."
+          description="This onboarding link only handles first-time access delivery. Candidates work directly in Gitea and do not sign in to the Hiretea dashboard."
           eyebrow="Flow"
         >
           <ol
@@ -101,7 +109,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
             </li>
             <li>
               <Text color="gray">
-                Continue to the sign-in page and authenticate through Gitea.
+                Continue to Gitea and sign in with those credentials.
               </Text>
             </li>
             <li>

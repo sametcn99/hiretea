@@ -54,6 +54,19 @@ const candidateRepositoryMigrationOptions = {
   releases: true,
 } as const;
 
+function shouldFallbackToGitMirrorSync(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const message = error.message.toLowerCase();
+
+  return (
+    message.includes("migration failed: clone error") ||
+    message.includes("clone error: exit status 128")
+  );
+}
+
 function buildRepositoryGitUrl(input: {
   baseUrl: string;
   owner: string;
@@ -402,6 +415,7 @@ export async function generateCaseRepositoryFromTemplate(
   });
 
   let repository: GiteaRepository | null = null;
+  let provisioningMethod = "gitea-migration";
 
   try {
     repository = await client.migrateRepository({
@@ -424,28 +438,102 @@ export async function generateCaseRepositoryFromTemplate(
       destinationRepositoryName: input.repositoryName,
     });
   } catch (error) {
-    await deleteCaseRepository({
-      actorId: input.actorId,
-      organizationName: ownerName,
-      repositoryName: input.repositoryName,
-      reason: "candidate.case.repository.rollback",
-    }).catch(() => undefined);
+    if (shouldFallbackToGitMirrorSync(error)) {
+      await createAuditLog({
+        action: "candidate.case.repository.migration.fallback.started",
+        actorId: input.actorId,
+        resourceType: "GiteaRepository",
+        resourceId: `${ownerName}/${input.repositoryName}`,
+        detail: {
+          sourceTemplate: `${input.templateOwner}/${input.templateRepositoryName}`,
+          reason: error instanceof Error ? error.message : "Migration failed.",
+        },
+      }).catch(() => undefined);
 
-    await createAuditLog({
-      action: "candidate.case.repository.migration.failed",
-      actorId: input.actorId,
-      resourceType: "GiteaRepository",
-      resourceId: `${ownerName}/${input.repositoryName}`,
-      detail: {
-        sourceTemplate: `${input.templateOwner}/${input.templateRepositoryName}`,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Repository migration failed.",
-      },
-    }).catch(() => undefined);
+      await deleteCaseRepository({
+        actorId: input.actorId,
+        organizationName: ownerName,
+        repositoryName: input.repositoryName,
+        reason: "candidate.case.repository.rollback",
+      }).catch(() => undefined);
 
-    throw error;
+      try {
+        repository = await createCaseRepository({
+          actorId: input.actorId,
+          name: input.repositoryName,
+          description: input.description,
+          defaultBranch: input.defaultBranch,
+          organizationName: ownerName,
+        });
+
+        await syncRepositoryContents({
+          sourceOwner: input.templateOwner,
+          sourceRepositoryName: input.templateRepositoryName,
+          destinationOwner: ownerName,
+          destinationRepositoryName: input.repositoryName,
+        });
+
+        await normalizeMigratedRepository({
+          actorId: input.actorId,
+          sourceOwner: input.templateOwner,
+          sourceRepositoryName: input.templateRepositoryName,
+          destinationOwner: ownerName,
+          destinationRepositoryName: input.repositoryName,
+        });
+
+        provisioningMethod = "git-mirror-fallback";
+      } catch (fallbackError) {
+        await deleteCaseRepository({
+          actorId: input.actorId,
+          organizationName: ownerName,
+          repositoryName: input.repositoryName,
+          reason: "candidate.case.repository.rollback",
+        }).catch(() => undefined);
+
+        await createAuditLog({
+          action: "candidate.case.repository.migration.fallback.failed",
+          actorId: input.actorId,
+          resourceType: "GiteaRepository",
+          resourceId: `${ownerName}/${input.repositoryName}`,
+          detail: {
+            sourceTemplate: `${input.templateOwner}/${input.templateRepositoryName}`,
+            error:
+              fallbackError instanceof Error
+                ? fallbackError.message
+                : "Repository mirror sync failed.",
+          },
+        }).catch(() => undefined);
+
+        throw fallbackError;
+      }
+    } else {
+      await deleteCaseRepository({
+        actorId: input.actorId,
+        organizationName: ownerName,
+        repositoryName: input.repositoryName,
+        reason: "candidate.case.repository.rollback",
+      }).catch(() => undefined);
+
+      await createAuditLog({
+        action: "candidate.case.repository.migration.failed",
+        actorId: input.actorId,
+        resourceType: "GiteaRepository",
+        resourceId: `${ownerName}/${input.repositoryName}`,
+        detail: {
+          sourceTemplate: `${input.templateOwner}/${input.templateRepositoryName}`,
+          error:
+            error instanceof Error
+              ? error.message
+              : "Repository migration failed.",
+        },
+      }).catch(() => undefined);
+
+      throw error;
+    }
+  }
+
+  if (!repository) {
+    throw new Error("Repository provisioning did not return a repository.");
   }
 
   await createAuditLog({
@@ -457,7 +545,7 @@ export async function generateCaseRepositoryFromTemplate(
       name: repository.full_name,
       sourceTemplate: `${input.templateOwner}/${input.templateRepositoryName}`,
       url: repository.html_url,
-      provisioningMethod: "gitea-migration",
+      provisioningMethod,
     },
   });
 

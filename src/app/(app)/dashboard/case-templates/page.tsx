@@ -40,6 +40,7 @@ export default async function CaseTemplatesPage() {
       >
         <CaseTemplateTable
           templates={templates}
+          reviewerOptions={reviewerOptions}
           workspaceBaseUrl={settings?.giteaBaseUrl ?? null}
           workspaceOrganization={settings?.giteaOrganization ?? null}
         />

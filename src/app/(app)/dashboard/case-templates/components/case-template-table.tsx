@@ -1,12 +1,17 @@
 "use client";
 
 import { Button, Code, Flex, Table, Text } from "@radix-ui/themes";
+import { EditCaseTemplateDialog } from "@/app/(app)/dashboard/case-templates/components/edit-case-template-dialog";
 import { useToast } from "@/components/providers/toast-provider";
 import { StatusBadge } from "@/components/ui/status-badge";
-import type { CaseTemplateListItem } from "@/lib/case-templates/queries";
+import type {
+  CaseTemplateListItem,
+  CaseTemplateReviewerOption,
+} from "@/lib/case-templates/queries";
 
 type CaseTemplateTableProps = {
   templates: CaseTemplateListItem[];
+  reviewerOptions: CaseTemplateReviewerOption[];
   workspaceBaseUrl: string | null;
   workspaceOrganization: string | null;
 };
@@ -57,6 +62,7 @@ async function copyCloneCommand(input: {
 
 export function CaseTemplateTable({
   templates,
+  reviewerOptions,
   workspaceBaseUrl,
   workspaceOrganization,
 }: CaseTemplateTableProps) {
@@ -80,6 +86,7 @@ export function CaseTemplateTable({
           <Table.ColumnHeaderCell>Review kit</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Usage</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Created</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell>Actions</Table.ColumnHeaderCell>
         </Table.Row>
       </Table.Header>
       <Table.Body>
@@ -219,6 +226,12 @@ export function CaseTemplateTable({
                     Owner: {template.createdByName}
                   </Text>
                 </Flex>
+              </Table.Cell>
+              <Table.Cell>
+                <EditCaseTemplateDialog
+                  template={template}
+                  reviewerOptions={reviewerOptions}
+                />
               </Table.Cell>
             </Table.Row>
           );

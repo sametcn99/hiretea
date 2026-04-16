@@ -15,6 +15,10 @@ export async function requireAuthSession() {
     redirect("/sign-in");
   }
 
+  if (session.user.role === "CANDIDATE") {
+    redirect("/");
+  }
+
   return session;
 }
 

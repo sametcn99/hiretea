@@ -1,4 +1,6 @@
-import { Flex, Link as RadixLink, Table, Text } from "@radix-ui/themes";
+import { Button, Flex, Link as RadixLink, Table, Text } from "@radix-ui/themes";
+import type { Route } from "next";
+import Link from "next/link";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type {
   CandidateCaseAssignmentOptions,
@@ -172,10 +174,21 @@ export function CandidateCaseTable({
               </Flex>
             </Table.Cell>
             <Table.Cell>
-              <CandidateCaseActions
-                candidateCase={candidateCase}
-                assignmentOptions={assignmentOptions}
-              />
+              <Flex direction="column" gap="2" align="end">
+                <Button asChild size="1" variant="soft">
+                  <Link
+                    href={
+                      `/dashboard/candidate-cases/${candidateCase.id}` as Route
+                    }
+                  >
+                    Open case
+                  </Link>
+                </Button>
+                <CandidateCaseActions
+                  candidateCase={candidateCase}
+                  assignmentOptions={assignmentOptions}
+                />
+              </Flex>
             </Table.Cell>
           </Table.Row>
         ))}

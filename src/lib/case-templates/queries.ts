@@ -1,3 +1,4 @@
+import { formatRubricCriteriaInput } from "@/app/(app)/dashboard/case-templates/components/case-template-form-helpers";
 import { db } from "@/lib/db";
 
 export type CaseTemplateListItem = {
@@ -17,6 +18,7 @@ export type CaseTemplateListItem = {
     title: string;
     weight: number | null;
   }>;
+  rubricCriteriaInput: string;
   defaultReviewerIds: string[];
   defaultReviewerNames: string[];
   hasTemplateReviewGuide: boolean;
@@ -47,10 +49,10 @@ export async function listCaseTemplates() {
             orderBy: {
               sortOrder: "asc",
             },
-            take: 3,
             select: {
               id: true,
               title: true,
+              description: true,
               weight: true,
             },
           },
@@ -98,7 +100,11 @@ export async function listCaseTemplates() {
     reviewerInstructions: template.reviewGuide?.reviewerInstructions ?? null,
     decisionGuidance: template.reviewGuide?.decisionGuidance ?? null,
     rubricCriteriaCount: template.reviewGuide?._count.rubricCriteria ?? 0,
-    rubricCriteriaPreview: template.reviewGuide?.rubricCriteria ?? [],
+    rubricCriteriaPreview:
+      template.reviewGuide?.rubricCriteria.slice(0, 3) ?? [],
+    rubricCriteriaInput: formatRubricCriteriaInput(
+      template.reviewGuide?.rubricCriteria ?? [],
+    ),
     defaultReviewerIds: template.reviewerAssignments.map(
       (assignment) => assignment.reviewerId,
     ),

@@ -1,8 +1,6 @@
 "use client";
 
 import { Button, Callout, Code, Flex, Text } from "@radix-ui/themes";
-import type { Route } from "next";
-import Link from "next/link";
 import { useActionState } from "react";
 import {
   type ClaimCandidateInviteActionState,
@@ -13,6 +11,7 @@ type InviteClaimPanelProps = {
   token: string;
   inviteStatus: "PENDING" | "CLAIMED" | "REVOKED" | "EXPIRED";
   passwordAvailable: boolean;
+  giteaLoginUrl: string | null;
 };
 
 const initialState: ClaimCandidateInviteActionState = {
@@ -23,6 +22,7 @@ export function InviteClaimPanel({
   token,
   inviteStatus,
   passwordAvailable,
+  giteaLoginUrl,
 }: InviteClaimPanelProps) {
   const [state, formAction] = useActionState(
     claimCandidateInviteAction,
@@ -61,9 +61,13 @@ export function InviteClaimPanel({
         </Text>
 
         <Button asChild size="3">
-          <Link href={(state.signInPath ?? "/sign-in") as Route}>
-            Continue to sign in
-          </Link>
+          <a
+            href={state.signInPath ?? "/sign-in"}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Continue to Gitea
+          </a>
         </Button>
       </Flex>
     );
@@ -85,13 +89,17 @@ export function InviteClaimPanel({
               ? "This invite was revoked. Ask the hiring team for a fresh onboarding link."
               : inviteStatus === "EXPIRED"
                 ? "This invite expired. Ask the hiring team to send a new onboarding link."
-                : "This invite was already used. Continue with the sign-in flow using your Gitea credentials."}
+                : "This invite was already used. Continue in Gitea with your existing credentials."}
           </Callout.Text>
         </Callout.Root>
 
-        <Button asChild size="3" variant="soft">
-          <Link href="/sign-in">Go to sign in</Link>
-        </Button>
+        {giteaLoginUrl ? (
+          <Button asChild size="3" variant="soft">
+            <a href={giteaLoginUrl} target="_blank" rel="noreferrer">
+              Go to Gitea
+            </a>
+          </Button>
+        ) : null}
       </Flex>
     );
   }
@@ -102,8 +110,8 @@ export function InviteClaimPanel({
       <Flex direction="column" gap="3">
         <Callout.Root color="blue" size="1">
           <Callout.Text>
-            Reveal your one-time access details, then continue to the Gitea
-            sign-in flow.
+            Reveal your one-time access details, then continue directly to
+            Gitea.
           </Callout.Text>
         </Callout.Root>
 

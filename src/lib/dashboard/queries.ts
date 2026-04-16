@@ -15,12 +15,6 @@ const reviewQueueStatuses = [
   CandidateCaseStatus.REVIEWING,
 ] as const;
 
-const candidateActiveStatuses = [
-  CandidateCaseStatus.READY,
-  CandidateCaseStatus.IN_PROGRESS,
-  CandidateCaseStatus.REVIEWING,
-] as const;
-
 export type ManagementDashboardSummary = {
   kind: "management";
   candidateCount: number;
@@ -31,78 +25,12 @@ export type ManagementDashboardSummary = {
   webhookDeliveryCount: number;
 };
 
-export type CandidateDashboardSummary = {
-  kind: "candidate";
-  assignedCaseCount: number;
-  repositoryCount: number;
-  activeCaseCount: number;
-  completedCaseCount: number;
-  decidedCaseCount: number;
-};
-
-export type DashboardSummary =
-  | ManagementDashboardSummary
-  | CandidateDashboardSummary;
+export type DashboardSummary = ManagementDashboardSummary;
 
 export async function getDashboardSummary(
-  role: UserRole,
-  userId: string,
+  _role: UserRole,
+  _userId: string,
 ): Promise<DashboardSummary> {
-  if (role === UserRole.CANDIDATE) {
-    const [
-      assignedCaseCount,
-      repositoryCount,
-      activeCaseCount,
-      completedCaseCount,
-      decidedCaseCount,
-    ] = await Promise.all([
-      db.candidateCase.count({
-        where: {
-          candidateId: userId,
-        },
-      }),
-      db.candidateCase.count({
-        where: {
-          candidateId: userId,
-          workingRepositoryUrl: {
-            not: null,
-          },
-        },
-      }),
-      db.candidateCase.count({
-        where: {
-          candidateId: userId,
-          status: {
-            in: [...candidateActiveStatuses],
-          },
-        },
-      }),
-      db.candidateCase.count({
-        where: {
-          candidateId: userId,
-          status: CandidateCaseStatus.COMPLETED,
-        },
-      }),
-      db.candidateCase.count({
-        where: {
-          candidateId: userId,
-          decision: {
-            not: null,
-          },
-        },
-      }),
-    ]);
-
-    return {
-      kind: "candidate",
-      assignedCaseCount,
-      repositoryCount,
-      activeCaseCount,
-      completedCaseCount,
-      decidedCaseCount,
-    };
-  }
-
   const [
     candidateCount,
     templateCount,

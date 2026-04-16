@@ -61,6 +61,43 @@ export type GiteaRepository = {
   archived?: boolean;
 };
 
+export type GiteaUserReference = {
+  login?: string;
+  username?: string;
+  full_name?: string;
+};
+
+export type GiteaRepositoryCommit = {
+  sha: string;
+  html_url?: string;
+  author?: GiteaUserReference | null;
+  commit?: {
+    message?: string;
+    author?: {
+      name?: string;
+      email?: string;
+      date?: string;
+    };
+    committer?: {
+      name?: string;
+      email?: string;
+      date?: string;
+    };
+  };
+};
+
+export type GiteaPullRequest = {
+  number: number;
+  title: string;
+  html_url?: string;
+  state?: string;
+  draft?: boolean;
+  merged?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  user?: GiteaUserReference | null;
+};
+
 export type GiteaTeam = {
   id: number;
   name: string;
@@ -79,6 +116,7 @@ export type GiteaCreateTeamOptions = {
 };
 
 export type GiteaEditRepositoryOptions = {
+  name?: string;
   description?: string;
   website?: string;
   has_issues?: boolean;
@@ -267,6 +305,48 @@ export class GiteaAdminClient {
       method: "PATCH",
       body: JSON.stringify(options),
     });
+  }
+
+  async listRepositoryCommits(
+    owner: string,
+    repositoryName: string,
+    limit = 10,
+  ) {
+    const searchParams = new URLSearchParams();
+    searchParams.set("limit", String(limit));
+
+    return this.request<GiteaRepositoryCommit[]>(
+      `/repos/${owner}/${repositoryName}/commits`,
+      {
+        searchParams,
+      },
+    );
+  }
+
+  async listRepositoryPullRequests(
+    owner: string,
+    repositoryName: string,
+    options: {
+      state?: "open" | "closed" | "all";
+      limit?: number;
+    } = {},
+  ) {
+    const searchParams = new URLSearchParams();
+
+    if (options.state) {
+      searchParams.set("state", options.state);
+    }
+
+    if (options.limit) {
+      searchParams.set("limit", String(options.limit));
+    }
+
+    return this.request<GiteaPullRequest[]>(
+      `/repos/${owner}/${repositoryName}/pulls`,
+      {
+        searchParams,
+      },
+    );
   }
 
   async migrateRepository(options: GiteaMigrateRepositoryOptions) {

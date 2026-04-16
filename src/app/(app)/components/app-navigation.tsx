@@ -3,7 +3,6 @@
 import type { UserRole } from "@prisma/client";
 import {
   ActivityLogIcon,
-  ArchiveIcon,
   Component1Icon,
   DashboardIcon,
   GearIcon,
@@ -29,11 +28,6 @@ type NavigationItem = {
 
 const baseItems: NavigationItem[] = [
   { href: "/dashboard", label: "Overview", icon: <DashboardIcon /> },
-];
-
-const candidateItems: NavigationItem[] = [
-  ...baseItems,
-  { href: "/dashboard/my-cases", label: "My cases", icon: <ArchiveIcon /> },
 ];
 
 const managementItems: NavigationItem[] = [
@@ -77,10 +71,6 @@ export function AppNavigation({ role, user }: AppNavigationProps) {
   }
 
   const getNavSections = () => {
-    if (role === "CANDIDATE") {
-      return [{ title: "Main", items: candidateItems }];
-    }
-
     const sections = [
       { title: "Main", items: baseItems },
       { title: "Management", items: managementItems },

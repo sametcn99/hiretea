@@ -128,4 +128,7 @@ export const caseTemplateCreateSchema = z.object({
   ),
 });
 
+export const caseTemplateUpdateSchema = caseTemplateCreateSchema;
+
 export type CaseTemplateCreateInput = z.infer<typeof caseTemplateCreateSchema>;
+export type CaseTemplateUpdateInput = z.infer<typeof caseTemplateUpdateSchema>;

@@ -5,9 +5,18 @@ import { connection } from "next/server";
 import { SignInPanel } from "@/app/(auth)/sign-in/components/sign-in-panel";
 import { getServerAuthSession } from "@/lib/auth/session";
 import { getBootstrapStatus } from "@/lib/bootstrap/status";
-import { getGiteaRuntimeReadiness } from "@/lib/gitea/runtime-config";
+import {
+  getGiteaRuntimeConfig,
+  getGiteaRuntimeReadiness,
+} from "@/lib/gitea/runtime-config";
 
-export default async function SignInPage() {
+type SignInPageProps = {
+  searchParams?: Promise<{
+    error?: string;
+  }>;
+};
+
+export default async function SignInPage({ searchParams }: SignInPageProps) {
   await connection();
 
   const bootstrapStatus = await getBootstrapStatus();
@@ -19,10 +28,18 @@ export default async function SignInPage() {
   const session = await getServerAuthSession();
 
   if (session?.user?.id && session.user.isActive) {
-    redirect("/dashboard" as Route);
+    redirect(
+      session.user.role === "CANDIDATE"
+        ? ("/" as Route)
+        : ("/dashboard" as Route),
+    );
   }
 
-  const runtimeReadiness = await getGiteaRuntimeReadiness();
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const [runtimeReadiness, runtimeConfig] = await Promise.all([
+    getGiteaRuntimeReadiness(),
+    getGiteaRuntimeConfig(),
+  ]);
 
   return (
     <Box
@@ -35,7 +52,11 @@ export default async function SignInPage() {
       }}
     >
       <Box style={{ width: "min(100%, 460px)" }}>
-        <SignInPanel isConfigured={runtimeReadiness.authReady} />
+        <SignInPanel
+          isConfigured={runtimeReadiness.authReady}
+          error={resolvedSearchParams?.error}
+          giteaBaseUrl={runtimeConfig.publicBaseUrl}
+        />
       </Box>
     </Box>
   );

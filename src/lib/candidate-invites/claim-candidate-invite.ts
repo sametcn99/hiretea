@@ -5,6 +5,7 @@ import {
   hashCandidateInviteToken,
 } from "@/lib/candidate-invites/shared";
 import { db } from "@/lib/db";
+import { getGiteaRuntimeConfig } from "@/lib/gitea/runtime-config";
 
 type InviteLandingRecord = {
   id: string;
@@ -128,7 +129,7 @@ export async function claimCandidateInvite(token: string) {
 
   if (status === "CLAIMED") {
     throw new Error(
-      "This onboarding invite was already used. Continue with the sign-in flow using your Gitea credentials.",
+      "This onboarding invite was already used. Continue in Gitea using your existing credentials.",
     );
   }
 
@@ -137,9 +138,14 @@ export async function claimCandidateInvite(token: string) {
 
   if (!login || !temporaryPassword) {
     throw new Error(
-      "The temporary access details are no longer available. Continue with the sign-in flow using the password you already set in Gitea.",
+      "The temporary access details are no longer available. Continue in Gitea using the password you already set.",
     );
   }
+
+  const runtimeConfig = await getGiteaRuntimeConfig();
+  const giteaLoginUrl = runtimeConfig.publicBaseUrl
+    ? `${runtimeConfig.publicBaseUrl.replace(/\/$/, "")}/user/login`
+    : "/sign-in";
 
   await db.candidateInvite.update({
     where: {
@@ -168,6 +174,6 @@ export async function claimCandidateInvite(token: string) {
     email: invite.candidate.email ?? "No email available",
     login,
     temporaryPassword,
-    signInPath: "/sign-in",
+    signInPath: giteaLoginUrl,
   };
 }

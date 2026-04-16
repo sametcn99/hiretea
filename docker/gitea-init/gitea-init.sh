@@ -21,6 +21,7 @@ NEXTAUTH_SECRET="${NEXTAUTH_SECRET:-}"
 NEXTAUTH_URL="${NEXTAUTH_URL:-http://localhost:3000}"
 AUTH_GITEA_ID="${AUTH_GITEA_ID:-}"
 AUTH_GITEA_SECRET="${AUTH_GITEA_SECRET:-}"
+GITEA_RECRUITER_TEAM_NAME="${GITEA_RECRUITER_TEAM_NAME:-hiretea-recruiters}"
 
 CONFIG_DATABASE_URL="$DATABASE_URL"
 CONFIG_GITEA_ADMIN_EMAIL="$GITEA_ADMIN_EMAIL"
@@ -219,6 +220,35 @@ ensure_org() {
     '{username: $username, full_name: $fullName, visibility: "private"}')" >/dev/null
 }
 
+ensure_recruiter_team() {
+  local existing_team_id
+
+  existing_team_id="$(admin_api GET "/api/v1/orgs/$GITEA_ORGANIZATION_NAME/teams" \
+    | jq -r --arg name "$GITEA_RECRUITER_TEAM_NAME" 'map(select(.name == $name)) | first | .id // empty')"
+
+  if [ -n "$existing_team_id" ]; then
+    echo "Reusing recruiting team $GITEA_RECRUITER_TEAM_NAME." >&2
+    printf '%s\n' "$existing_team_id"
+    return 0
+  fi
+
+  echo "Creating recruiting team $GITEA_RECRUITER_TEAM_NAME." >&2
+  admin_api POST "/api/v1/orgs/$GITEA_ORGANIZATION_NAME/teams" "$(jq -nc \
+    --arg name "$GITEA_RECRUITER_TEAM_NAME" \
+    --arg description "Hiretea internal recruiting team members with full organization repo access." \
+    '{name: $name, description: $description, permission: "admin", can_create_org_repo: true, includes_all_repositories: true}')" \
+    | jq -r '.id'
+}
+
+ensure_admin_in_recruiter_team() {
+  local team_id
+
+  team_id="$(ensure_recruiter_team)"
+
+  echo "Ensuring $GITEA_ADMIN_USERNAME belongs to $GITEA_RECRUITER_TEAM_NAME."
+  admin_api PUT "/api/v1/teams/$team_id/members/$GITEA_ADMIN_USERNAME" >/dev/null
+}
+
 oauth_app_exists() {
   if [ -z "$AUTH_GITEA_ID" ]; then
     return 1
@@ -292,6 +322,7 @@ ensure_admin_user
 wait_for_http
 ensure_admin_token
 ensure_org
+ensure_admin_in_recruiter_team
 ensure_oauth_app
 write_runtime_env
 
