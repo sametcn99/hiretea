@@ -37,9 +37,7 @@ export type GiteaWorkspaceValidationResult = {
   webhookReady: boolean;
 };
 
-function resolveMigrationBaseUrl(
-  input: GiteaWorkspaceValidationInput,
-) {
+function resolveMigrationBaseUrl(input: GiteaWorkspaceValidationInput) {
   return input.giteaAdminBaseUrl?.trim() || null;
 }
 

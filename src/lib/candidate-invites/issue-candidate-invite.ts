@@ -119,8 +119,8 @@ export async function issueCandidateInvite(
 
       return {
         invite,
-        supersededInviteIds: supersededInvites.map((supersededInvite) =>
-          supersededInvite.id,
+        supersededInviteIds: supersededInvites.map(
+          (supersededInvite) => supersededInvite.id,
         ),
       };
     },

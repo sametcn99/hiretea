@@ -194,7 +194,8 @@ export function WorkspaceSettingsForm({
         <Callout.Root color="blue" size="1">
           <Callout.Text>
             OAuth, admin, and webhook runtime values stay in the generated
-            runtime environment. {settings.manualInviteMode
+            runtime environment.{" "}
+            {settings.manualInviteMode
               ? "Automatic delivery is not available yet."
               : "Saving these settings will restore the manual handoff mode."}
           </Callout.Text>

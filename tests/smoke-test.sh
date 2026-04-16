@@ -138,11 +138,26 @@ capture_response() {
   curl --silent --show-error --location --dump-header "$header_file" "$url" > "$body_file"
 }
 
-capture_headers() {
-  local url="$1"
-  local header_file="$2"
+assert_json_flag_true() {
+  local file="$1"
+  local path="$2"
 
-  curl --silent --show-error --head "$url" > "$header_file"
+  bun --eval '
+    const [file, path] = process.argv.slice(1);
+    const data = JSON.parse(await Bun.file(file).text());
+    const value = path.split(".").reduce((current, key) => {
+      if (current && typeof current === "object") {
+        return current[key];
+      }
+
+      return undefined;
+    }, data);
+
+    if (value !== true) {
+      console.error(`Expected ${path} to be true in ${file}. Received: ${JSON.stringify(value)}`);
+      process.exit(1);
+    }
+  ' "$file" "$path"
 }
 
 assert_contains() {
@@ -155,22 +170,6 @@ assert_contains() {
   fi
 }
 
-assert_header_contains() {
-  local file="$1"
-  local expected="$2"
-
-  if ! grep -Fiq "$expected" "$file"; then
-    echo "Expected to find header '$expected' in $file" >&2
-    return 1
-  fi
-}
-
-run_in_app() {
-  local command="$1"
-
-  compose exec -T app /bin/sh -lc "$command"
-}
-
 run_smoke() {
   log "Running smoke scenario"
   cleanup_compose
@@ -178,21 +177,17 @@ run_smoke() {
 
   compose up -d --build
 
-  wait_for_url "$APP_URL/sign-in" "$RESULTS_DIR/sign-in.html" "app"
+  wait_for_url "$APP_URL/api/health" "$RESULTS_DIR/health.json" "app"
   wait_for_url "$GITEA_URL/user/login" "$RESULTS_DIR/gitea-login.html" "gitea"
 
+  capture_response "$APP_URL/api/health" "$RESULTS_DIR/health.json" "$RESULTS_DIR/health.headers.txt"
   capture_response "$APP_URL/sign-in" "$RESULTS_DIR/sign-in.html" "$RESULTS_DIR/sign-in.headers.txt"
-  capture_headers "$APP_URL/setup" "$RESULTS_DIR/setup.headers.txt"
-  capture_headers "$APP_URL/dashboard" "$RESULTS_DIR/dashboard.headers.txt"
 
+  assert_json_flag_true "$RESULTS_DIR/health.json" "ok"
+  assert_json_flag_true "$RESULTS_DIR/health.json" "databaseReady"
   assert_contains "$RESULTS_DIR/sign-in.html" "Sign in with your Gitea identity"
   assert_contains "$RESULTS_DIR/sign-in.html" "OAuth configuration"
   assert_contains "$RESULTS_DIR/sign-in.html" "Ready"
-  assert_header_contains "$RESULTS_DIR/setup.headers.txt" "location: /sign-in"
-  assert_header_contains "$RESULTS_DIR/dashboard.headers.txt" "location: /sign-in"
-
-  run_in_app "set -a && . /runtime/gitea/hiretea.generated.env && set +a && bun tests/assert-state.ts" \
-    > "$RESULTS_DIR/assertions.txt"
 
   save_logs "$RESULTS_DIR/compose.log"
 }

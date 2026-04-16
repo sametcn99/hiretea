@@ -70,12 +70,27 @@ bun run docker:watch
 bun run docker:down
 bun run docker:nuke
 bun run smoke:test
+bun run test:unit
+bun run test:integration
+bun run test:smoke
+bun run test:ci
 bun run lint
 bun run typecheck
 bun run build
 ```
 
 Use `bun run docker:down` when you want a completely fresh Hiretea state. Use `bun run docker:nuke` when you also want Docker images removed.
+
+## Testing Workflow
+
+Hiretea now separates test layers by purpose instead of relying on a single smoke script for everything.
+
+- `bun run test:unit`: fast pure-module coverage for runtime config and other decision helpers.
+- `bun run test:integration`: real PostgreSQL-backed service tests that validate bootstrap and workspace settings behavior.
+- `bun run test:smoke`: full-stack Docker verification that the app, health endpoint, and bundled Gitea are reachable.
+- `bun run test:ci`: the pull-request gate for lint, typecheck, unit tests, and integration tests.
+
+The smoke suite is intentionally narrow. It confirms the bundled stack starts and exposes the expected public surfaces, but deeper business assertions live in the integration suite.
 
 ## Manual Setup Page
 

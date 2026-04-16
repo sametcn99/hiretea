@@ -45,7 +45,11 @@ function parseCaseTemplateRubricCriteria(
     if (weightRaw) {
       const parsedWeight = Number.parseInt(weightRaw, 10);
 
-      if (!Number.isInteger(parsedWeight) || parsedWeight < 1 || parsedWeight > 100) {
+      if (
+        !Number.isInteger(parsedWeight) ||
+        parsedWeight < 1 ||
+        parsedWeight > 100
+      ) {
         context.addIssue({
           code: z.ZodIssueCode.custom,
           message: `Rubric line ${index + 1} must use a whole-number weight between 1 and 100.`,
@@ -69,7 +73,11 @@ function parseCaseTemplateRubricCriteria(
 const optionalTemplateReviewText = (max: number) =>
   z.preprocess(
     (value) => (typeof value === "string" ? value : ""),
-    z.string().trim().max(max).transform((value) => value || undefined),
+    z
+      .string()
+      .trim()
+      .max(max)
+      .transform((value) => value || undefined),
   );
 
 export const caseTemplateCreateSchema = z.object({
@@ -94,9 +102,11 @@ export const caseTemplateCreateSchema = z.object({
   decisionGuidance: optionalTemplateReviewText(1200),
   rubricCriteria: z.preprocess(
     (value) => (typeof value === "string" ? value : ""),
-    z.string().transform((value, context) =>
-      parseCaseTemplateRubricCriteria(value, context),
-    ),
+    z
+      .string()
+      .transform((value, context) =>
+        parseCaseTemplateRubricCriteria(value, context),
+      ),
   ),
 });
 

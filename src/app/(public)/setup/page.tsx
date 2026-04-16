@@ -58,9 +58,9 @@ export default async function SetupPage() {
             color="gray"
             style={{ maxWidth: "58ch", lineHeight: 1.75 }}
           >
-            This one-time flow seeds the first admin user and writes the
-            initial workspace settings. After setup completes, all access
-            continues through your self-hosted Gitea OAuth login.
+            This one-time flow seeds the first admin user and writes the initial
+            workspace settings. After setup completes, all access continues
+            through your self-hosted Gitea OAuth login.
           </Text>
         </Flex>
 

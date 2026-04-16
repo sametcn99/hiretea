@@ -183,7 +183,8 @@ export function CaseTemplateTable({
                   ) : null}
                   {template.rubricCriteriaPreview.length > 0 ? (
                     <Text size="1" color="gray">
-                      Criteria: {template.rubricCriteriaPreview
+                      Criteria:{" "}
+                      {template.rubricCriteriaPreview
                         .map((criterion) =>
                           criterion.weight
                             ? `${criterion.title} (${criterion.weight})`

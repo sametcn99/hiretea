@@ -108,32 +108,40 @@ export function CandidateCredentialCell({
 
       <Text size="1" color="gray">
         {inviteIssueKind === "RESEND" ? "Latest resend" : "Initial invite"}
-        {inviteCreatedAt ? ` was created ${dateFormatter.format(inviteCreatedAt)}` : " is ready"}
+        {inviteCreatedAt
+          ? ` was created ${dateFormatter.format(inviteCreatedAt)}`
+          : " is ready"}
         {inviteIssuedByName ? ` by ${inviteIssuedByName}` : ""}.
       </Text>
 
       {inviteStatus === "PENDING" ? (
         <Text size="1" color="gray">
-          Expires: {inviteExpiresAt ? dateFormatter.format(inviteExpiresAt) : "Not set"}
+          Expires:{" "}
+          {inviteExpiresAt ? dateFormatter.format(inviteExpiresAt) : "Not set"}
         </Text>
       ) : null}
 
       {inviteStatus === "CLAIMED" ? (
         <Text size="1" color="gray">
           Access details were revealed
-          {inviteClaimedAt ? ` on ${dateFormatter.format(inviteClaimedAt)}` : " to the candidate"}.
+          {inviteClaimedAt
+            ? ` on ${dateFormatter.format(inviteClaimedAt)}`
+            : " to the candidate"}
+          .
         </Text>
       ) : null}
 
       {inviteStatus === "EXPIRED" ? (
         <Text size="1" color="gray">
-          Expired: {inviteExpiresAt ? dateFormatter.format(inviteExpiresAt) : "Unknown"}
+          Expired:{" "}
+          {inviteExpiresAt ? dateFormatter.format(inviteExpiresAt) : "Unknown"}
         </Text>
       ) : null}
 
       {inviteStatus === "REVOKED" ? (
         <Text size="1" color="gray">
-          Revoked: {inviteRevokedAt ? dateFormatter.format(inviteRevokedAt) : "Unknown"}
+          Revoked:{" "}
+          {inviteRevokedAt ? dateFormatter.format(inviteRevokedAt) : "Unknown"}
         </Text>
       ) : null}
 

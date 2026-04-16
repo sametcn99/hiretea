@@ -221,8 +221,8 @@ export function CaseTemplateCreateForm() {
           <Callout.Text>
             The repository is created first in Gitea. If the local database
             write fails afterwards, the repository creation is rolled back
-            automatically. Template-level review guidance stays local to
-            Hiretea and can evolve without touching the repository contents.
+            automatically. Template-level review guidance stays local to Hiretea
+            and can evolve without touching the repository contents.
           </Callout.Text>
         </Callout.Root>
 
@@ -304,9 +304,10 @@ export function CaseTemplateCreateForm() {
             color={state.fieldErrors?.rubricCriteria ? "red" : undefined}
           />
           <Text size="1" color="gray">
-            One criterion per line using <strong>Title | Guidance | Weight</strong>.
-            Guidance and weight are optional, but weight must be a whole number
-            between 1 and 100 when provided.
+            One criterion per line using{" "}
+            <strong>Title | Guidance | Weight</strong>. Guidance and weight are
+            optional, but weight must be a whole number between 1 and 100 when
+            provided.
           </Text>
           {state.fieldErrors?.rubricCriteria?.map((error) => (
             <Text size="1" color="red" key={error}>

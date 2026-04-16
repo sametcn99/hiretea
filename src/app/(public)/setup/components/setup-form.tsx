@@ -266,8 +266,8 @@ export function SetupForm({
 
         <Callout.Root color="blue" size="1">
           <Callout.Text>
-            The first admin must later authenticate through Gitea with the
-            same email address entered above.
+            The first admin must later authenticate through Gitea with the same
+            email address entered above.
           </Callout.Text>
         </Callout.Root>
 

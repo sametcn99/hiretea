@@ -22,30 +22,46 @@ export type GiteaRuntimeReadiness = {
   webhookReady: boolean;
 };
 
+export type GiteaRuntimeConfigSource = {
+  NEXTAUTH_SECRET?: string | null;
+  NEXTAUTH_URL?: string | null;
+  AUTH_GITEA_ISSUER?: string | null;
+  GITEA_ADMIN_BASE_URL?: string | null;
+  GITEA_ORGANIZATION_NAME?: string | null;
+  AUTH_GITEA_ID?: string | null;
+  AUTH_GITEA_SECRET?: string | null;
+  GITEA_ADMIN_TOKEN?: string | null;
+  GITEA_WEBHOOK_SECRET?: string | null;
+};
+
 function resolveMigrationBaseUrl(config: GiteaRuntimeConfig) {
   return config.adminBaseUrl;
 }
 
-export async function getGiteaRuntimeConfig(): Promise<GiteaRuntimeConfig> {
+export function resolveGiteaRuntimeConfig(
+  source: GiteaRuntimeConfigSource,
+): GiteaRuntimeConfig {
   return {
-    nextAuthSecret: env.NEXTAUTH_SECRET ?? null,
-    appBaseUrl: env.NEXTAUTH_URL ?? null,
-    publicBaseUrl: env.AUTH_GITEA_ISSUER ?? null,
-    adminBaseUrl: env.GITEA_ADMIN_BASE_URL ?? null,
-    organization: env.GITEA_ORGANIZATION_NAME ?? null,
-    authClientId: env.AUTH_GITEA_ID ?? null,
-    authClientSecret: env.AUTH_GITEA_SECRET ?? null,
-    adminToken: env.GITEA_ADMIN_TOKEN ?? null,
-    webhookSecret: env.GITEA_WEBHOOK_SECRET ?? null,
+    nextAuthSecret: source.NEXTAUTH_SECRET ?? null,
+    appBaseUrl: source.NEXTAUTH_URL ?? null,
+    publicBaseUrl: source.AUTH_GITEA_ISSUER ?? null,
+    adminBaseUrl: source.GITEA_ADMIN_BASE_URL ?? null,
+    organization: source.GITEA_ORGANIZATION_NAME ?? null,
+    authClientId: source.AUTH_GITEA_ID ?? null,
+    authClientSecret: source.AUTH_GITEA_SECRET ?? null,
+    adminToken: source.GITEA_ADMIN_TOKEN ?? null,
+    webhookSecret: source.GITEA_WEBHOOK_SECRET ?? null,
   };
 }
 
-export async function getGiteaRuntimeReadiness(): Promise<GiteaRuntimeReadiness> {
-  const config = await getGiteaRuntimeConfig();
+export function evaluateGiteaRuntimeReadiness(
+  config: GiteaRuntimeConfig,
+  bootstrapToken: string | null | undefined,
+): GiteaRuntimeReadiness {
   const migrationBaseUrl = resolveMigrationBaseUrl(config);
 
   return {
-    hasBootstrapToken: Boolean(env.BOOTSTRAP_TOKEN),
+    hasBootstrapToken: Boolean(bootstrapToken),
     hasNextAuthSecret: Boolean(config.nextAuthSecret),
     hasAppUrl: Boolean(config.appBaseUrl),
     authReady: Boolean(
@@ -64,9 +80,7 @@ export async function getGiteaRuntimeReadiness(): Promise<GiteaRuntimeReadiness>
   };
 }
 
-export async function getResolvedGiteaAuthConfig() {
-  const config = await getGiteaRuntimeConfig();
-
+export function resolveGiteaAuthConfig(config: GiteaRuntimeConfig) {
   if (
     !config.nextAuthSecret ||
     !config.publicBaseUrl ||
@@ -85,9 +99,7 @@ export async function getResolvedGiteaAuthConfig() {
   };
 }
 
-export async function getResolvedGiteaAdminConfig() {
-  const config = await getGiteaRuntimeConfig();
-
+export function resolveGiteaAdminConfig(config: GiteaRuntimeConfig) {
   if (!config.adminBaseUrl || !config.adminToken || !config.organization) {
     throw new Error("Gitea admin configuration is incomplete.");
   }
@@ -99,8 +111,7 @@ export async function getResolvedGiteaAdminConfig() {
   };
 }
 
-export async function getResolvedGiteaMigrationConfig() {
-  const config = await getGiteaRuntimeConfig();
+export function resolveGiteaMigrationConfig(config: GiteaRuntimeConfig) {
   const baseUrl = resolveMigrationBaseUrl(config);
 
   if (!baseUrl || !config.adminToken || !config.organization) {
@@ -114,9 +125,7 @@ export async function getResolvedGiteaMigrationConfig() {
   };
 }
 
-export async function getResolvedGiteaWebhookConfig() {
-  const config = await getGiteaRuntimeConfig();
-
+export function resolveGiteaWebhookConfig(config: GiteaRuntimeConfig) {
   if (!config.appBaseUrl || !config.webhookSecret) {
     throw new Error("Webhook runtime configuration is incomplete.");
   }
@@ -125,6 +134,43 @@ export async function getResolvedGiteaWebhookConfig() {
     callbackUrl: `${config.appBaseUrl.replace(/\/$/, "")}/api/webhooks/gitea`,
     secret: config.webhookSecret,
   };
+}
+
+export async function getGiteaRuntimeConfig(): Promise<GiteaRuntimeConfig> {
+  return resolveGiteaRuntimeConfig({
+    NEXTAUTH_SECRET: env.NEXTAUTH_SECRET,
+    NEXTAUTH_URL: env.NEXTAUTH_URL,
+    AUTH_GITEA_ISSUER: env.AUTH_GITEA_ISSUER,
+    GITEA_ADMIN_BASE_URL: env.GITEA_ADMIN_BASE_URL,
+    GITEA_ORGANIZATION_NAME: env.GITEA_ORGANIZATION_NAME,
+    AUTH_GITEA_ID: env.AUTH_GITEA_ID,
+    AUTH_GITEA_SECRET: env.AUTH_GITEA_SECRET,
+    GITEA_ADMIN_TOKEN: env.GITEA_ADMIN_TOKEN,
+    GITEA_WEBHOOK_SECRET: env.GITEA_WEBHOOK_SECRET,
+  });
+}
+
+export async function getGiteaRuntimeReadiness(): Promise<GiteaRuntimeReadiness> {
+  return evaluateGiteaRuntimeReadiness(
+    await getGiteaRuntimeConfig(),
+    env.BOOTSTRAP_TOKEN,
+  );
+}
+
+export async function getResolvedGiteaAuthConfig() {
+  return resolveGiteaAuthConfig(await getGiteaRuntimeConfig());
+}
+
+export async function getResolvedGiteaAdminConfig() {
+  return resolveGiteaAdminConfig(await getGiteaRuntimeConfig());
+}
+
+export async function getResolvedGiteaMigrationConfig() {
+  return resolveGiteaMigrationConfig(await getGiteaRuntimeConfig());
+}
+
+export async function getResolvedGiteaWebhookConfig() {
+  return resolveGiteaWebhookConfig(await getGiteaRuntimeConfig());
 }
 
 export async function hasResolvedWebhookConfiguration() {
