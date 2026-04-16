@@ -1,7 +1,5 @@
 import { spawnSync } from "node:child_process";
 
-type StackMode = "bundled" | "external";
-
 type WaitTarget = {
   service: string;
   containerPort: number;
@@ -15,15 +13,6 @@ type StackConfig = {
   targets: WaitTarget[];
 };
 
-const stackMode = process.argv[2];
-
-if (stackMode !== "bundled" && stackMode !== "external") {
-  console.error(
-    "Usage: bun run docker/scripts/wait-for-stack.ts <bundled|external>",
-  );
-  process.exit(1);
-}
-
 const waitIntervalMs = parsePositiveInteger(
   process.env.HIRETEA_DOCKER_WAIT_INTERVAL_MS,
   2_000,
@@ -33,40 +22,24 @@ const waitTimeoutMs = parsePositiveInteger(
   240_000,
 );
 
-const stackConfigs: Record<StackMode, StackConfig> = {
-  bundled: {
-    composeFile: "docker-compose.bundled.yml",
-    projectName: "hiretea-bundled",
-    targets: [
-      {
-        service: "app",
-        containerPort: 3000,
-        path: "/api/health",
-        label: "Hiretea app",
-      },
-      {
-        service: "gitea",
-        containerPort: 3000,
-        path: "/user/login",
-        label: "Bundled Gitea",
-      },
-    ],
-  },
-  external: {
-    composeFile: "docker-compose.external.yml",
-    projectName: "hiretea-external",
-    targets: [
-      {
-        service: "app",
-        containerPort: 3000,
-        path: "/api/health",
-        label: "Hiretea app",
-      },
-    ],
-  },
+const stackConfig: StackConfig = {
+  composeFile: "docker-compose.yml",
+  projectName: "hiretea",
+  targets: [
+    {
+      service: "app",
+      containerPort: 3000,
+      path: "/api/health",
+      label: "Hiretea app",
+    },
+    {
+      service: "gitea",
+      containerPort: 3000,
+      path: "/user/login",
+      label: "Gitea",
+    },
+  ],
 };
-
-const stackConfig = stackConfigs[stackMode];
 
 function parsePositiveInteger(rawValue: string | undefined, fallback: number) {
   if (!rawValue) {
@@ -221,7 +194,7 @@ async function waitForTarget(target: WaitTarget) {
 
 async function main() {
   console.log(
-    `Waiting for ${stackMode} compose services to become reachable (timeout ${Math.round(waitTimeoutMs / 1_000)}s)...`,
+    `Waiting for compose services to become reachable (timeout ${Math.round(waitTimeoutMs / 1_000)}s)...`,
   );
 
   for (const target of stackConfig.targets) {

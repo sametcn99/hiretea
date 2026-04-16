@@ -39,8 +39,6 @@ services:
       db-init:
         condition: service_completed_successfully
     environment:
-      HIRETEA_GITEA_MODE: bundled
-      HIRETEA_CONFIG_ENCRYPTION_KEY: ${HIRETEA_CONFIG_ENCRYPTION_KEY:-}
       DATABASE_URL: postgresql://${HT_DB_USER:-hiretea}:${HT_DB_PASSWORD:-hiretea}@db:5432/${HT_DB_NAME:-hiretea}?schema=public
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-}
@@ -72,14 +70,13 @@ services:
     ports:
       - "${APP_HTTP_PORT:-3000}:3000"
     volumes:
-      - bundled-gitea-config:/runtime/gitea:ro
+      - gitea-config:/runtime/gitea:ro
 
   db:
     image: postgres:16-alpine
     ports:
       - "${DB_PORT:-5432}:5432"
     environment:
-      HIRETEA_GITEA_MODE: bundled
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -95,7 +92,7 @@ services:
       timeout: 5s
       retries: 10
     volumes:
-      - bundled-postgres-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
       - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
 
   db-init:
@@ -105,7 +102,6 @@ services:
       db:
         condition: service_healthy
     environment:
-      HIRETEA_GITEA_MODE: bundled
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -156,8 +152,8 @@ services:
       - "${GITEA_HTTP_PORT:-3001}:3000"
       - "${GITEA_SSH_PORT:-2221}:2222"
     volumes:
-      - bundled-gitea-data:/var/lib/gitea
-      - bundled-gitea-config:/etc/gitea
+      - gitea-data:/var/lib/gitea
+      - gitea-config:/etc/gitea
 
   gitea-init:
     build:
@@ -188,10 +184,10 @@ services:
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
     restart: "no"
     volumes:
-      - bundled-gitea-config:/etc/gitea
-      - bundled-gitea-data:/var/lib/gitea
+      - gitea-config:/etc/gitea
+      - gitea-data:/var/lib/gitea
 
 volumes:
-  bundled-postgres-data:
-  bundled-gitea-data:
-  bundled-gitea-config:
+  postgres-data:
+  gitea-data:
+  gitea-config:

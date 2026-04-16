@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-const deploymentGiteaModeSchema = z.enum(["bundled", "external"]);
 const emptyStringToUndefined = (value: unknown) =>
   typeof value === "string" && value.trim() === "" ? undefined : value;
 
@@ -24,14 +23,10 @@ const optionalBooleanStringEnv = z.preprocess(
   z.enum(["true", "false"]).optional(),
 );
 
-export type DeploymentGiteaMode = z.infer<typeof deploymentGiteaModeSchema>;
-
 const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
     .default("development"),
-  HIRETEA_GITEA_MODE: deploymentGiteaModeSchema.default("bundled"),
-  HIRETEA_CONFIG_ENCRYPTION_KEY: optionalStringEnv,
   DATABASE_URL: optionalStringEnv,
   hiretea_ADMIN_EMAIL: optionalEmailEnv,
   hiretea_ADMIN_NAME: optionalStringEnv,
@@ -52,8 +47,6 @@ const envSchema = z.object({
 
 export const env = envSchema.parse({
   NODE_ENV: process.env.NODE_ENV,
-  HIRETEA_GITEA_MODE: process.env.HIRETEA_GITEA_MODE,
-  HIRETEA_CONFIG_ENCRYPTION_KEY: process.env.HIRETEA_CONFIG_ENCRYPTION_KEY,
   DATABASE_URL: process.env.DATABASE_URL,
   hiretea_ADMIN_EMAIL: process.env.hiretea_ADMIN_EMAIL,
   hiretea_ADMIN_NAME: process.env.hiretea_ADMIN_NAME,
@@ -71,11 +64,3 @@ export const env = envSchema.parse({
   GITEA_WEBHOOK_SECRET: process.env.GITEA_WEBHOOK_SECRET,
   BOOTSTRAP_TOKEN: process.env.BOOTSTRAP_TOKEN,
 });
-
-export function getDeploymentGiteaMode(): DeploymentGiteaMode {
-  return env.HIRETEA_GITEA_MODE;
-}
-
-export function hasConfigEncryptionKey() {
-  return Boolean(env.HIRETEA_CONFIG_ENCRYPTION_KEY);
-}

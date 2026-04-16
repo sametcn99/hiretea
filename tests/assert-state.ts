@@ -1,4 +1,4 @@
-import { UserRole, WorkspaceGiteaMode } from "@prisma/client";
+import { UserRole } from "@prisma/client";
 import { getBootstrapStatus } from "../src/lib/bootstrap/status";
 import { db } from "../src/lib/db";
 import { createGiteaAdminClient } from "../src/lib/gitea/client";
@@ -7,13 +7,9 @@ import {
   getGiteaRuntimeReadiness,
 } from "../src/lib/gitea/runtime-config";
 
-type Phase = "bundled-ready" | "external-pre-setup" | "external-post-setup";
-
 type AuditDetail = {
-  giteaMode?: string;
   adminEmail?: string;
   companyName?: string;
-  hasExternalConnectionSecrets?: boolean;
 };
 
 type GiteaAdminUserResponse = {
@@ -27,16 +23,6 @@ type GiteaOrganizationResponse = {
 type GiteaOAuthApplicationResponse = {
   client_id: string;
 };
-
-function getArg(name: string) {
-  const index = process.argv.indexOf(name);
-
-  if (index === -1 || index === process.argv.length - 1) {
-    throw new Error(`Missing required argument: ${name}`);
-  }
-
-  return process.argv[index + 1];
-}
 
 function requireEnv(name: string) {
   const value = process.env[name]?.trim();
@@ -52,14 +38,6 @@ function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {
     throw new Error(message);
   }
-}
-
-function isPhase(value: string): value is Phase {
-  return (
-    value === "bundled-ready" ||
-    value === "external-pre-setup" ||
-    value === "external-post-setup"
-  );
 }
 
 function getAuditDetail(value: unknown): AuditDetail {
@@ -106,19 +84,14 @@ async function assertGiteaConnectivity(
 }
 
 async function main() {
-  const rawPhase = getArg("--phase");
-
-  if (!isPhase(rawPhase)) {
-    throw new Error(`Unsupported smoke assertion phase: ${rawPhase}`);
-  }
-
   const expectedAdminEmail = requireEnv("hiretea_ADMIN_EMAIL");
   const expectedCompanyName = requireEnv("hiretea_COMPANY_NAME");
   const expectedDefaultBranch = requireEnv("hiretea_DEFAULT_BRANCH");
   const expectedOrganization = requireEnv("GITEA_ORGANIZATION_NAME");
   const expectedPublicBaseUrl =
     process.env.AUTH_GITEA_ISSUER?.trim() ||
-    process.env.GITEA_PUBLIC_URL?.trim();
+    process.env.GITEA_PUBLIC_URL?.trim() ||
+    null;
   const expectedAdminBaseUrl = process.env.GITEA_ADMIN_BASE_URL?.trim() || null;
   const expectedAuthClientId = process.env.AUTH_GITEA_ID?.trim() || null;
   const expectedAuthClientSecret =
@@ -154,8 +127,14 @@ async function main() {
       orderBy: {
         createdAt: "asc",
       },
-      include: {
-        giteaConfigSecret: true,
+      select: {
+        id: true,
+        companyName: true,
+        defaultBranch: true,
+        giteaBaseUrl: true,
+        giteaAdminBaseUrl: true,
+        giteaOrganization: true,
+        giteaAuthClientId: true,
       },
     }),
     db.auditLog.findMany({
@@ -172,419 +151,127 @@ async function main() {
   const adminUser = adminUsers[0] ?? null;
   const workspace = workspaceSettings[0] ?? null;
 
-  switch (rawPhase) {
-    case "bundled-ready": {
-      assert(
-        bootstrapStatus.hasAdminUser,
-        "Bundled mode should create an admin.",
-      );
-      assert(
-        bootstrapStatus.hasWorkspaceSettings,
-        "Bundled mode should create workspace settings.",
-      );
-      assert(
-        !bootstrapStatus.requiresSetup,
-        "Bundled mode should not require setup after bootstrap.",
-      );
-      assert(adminUsers.length === 1, "Expected a single bundled admin user.");
-      assert(
-        adminUser?.email === expectedAdminEmail,
-        "Bundled admin email mismatch.",
-      );
-      assert(adminUser?.isActive, "Bundled admin should be active.");
-      assert(
-        workspaceSettings.length === 1,
-        "Expected a single bundled workspace settings row.",
-      );
-      assert(workspace, "Bundled workspace settings are missing.");
-      assert(
-        workspace.giteaMode === WorkspaceGiteaMode.BUNDLED,
-        "Bundled workspace mode should be BUNDLED.",
-      );
-      assert(
-        workspace.companyName === expectedCompanyName,
-        "Bundled company name mismatch.",
-      );
-      assert(
-        workspace.defaultBranch === expectedDefaultBranch,
-        "Bundled default branch mismatch.",
-      );
-      assert(
-        workspace.giteaBaseUrl === expectedPublicBaseUrl,
-        "Bundled public Gitea URL mismatch.",
-      );
-      assert(
-        workspace.giteaAdminBaseUrl === expectedAdminBaseUrl,
-        "Bundled admin Gitea URL mismatch.",
-      );
-      assert(
-        workspace.giteaOrganization === expectedOrganization,
-        "Bundled organization mismatch.",
-      );
-      assert(
-        workspace.giteaAuthClientId === expectedAuthClientId,
-        "Bundled OAuth client ID mismatch.",
-      );
-      assert(
-        workspace.giteaConfigSecret == null,
-        "Bundled mode should not persist encrypted external secrets.",
-      );
-      assert(
-        runtimeReadiness.mode === "bundled",
-        "Expected bundled runtime mode.",
-      );
-      assert(
-        runtimeReadiness.source === "env",
-        "Bundled runtime should use env.",
-      );
-      assert(
-        runtimeReadiness.hasNextAuthSecret,
-        "Bundled NextAuth secret missing.",
-      );
-      assert(runtimeReadiness.hasAppUrl, "Bundled app URL missing.");
-      assert(
-        runtimeReadiness.authReady,
-        "Bundled auth runtime should be ready.",
-      );
-      assert(
-        runtimeReadiness.adminReady,
-        "Bundled admin runtime should be ready.",
-      );
-      assert(
-        runtimeReadiness.webhookReady,
-        "Bundled webhook runtime should be ready.",
-      );
-      assert(runtimeConfig.mode === "bundled", "Bundled config mode mismatch.");
-      assert(runtimeConfig.source === "env", "Bundled config source mismatch.");
-      assert(
-        runtimeConfig.publicBaseUrl === expectedPublicBaseUrl,
-        "Bundled runtime public base URL mismatch.",
-      );
-      assert(
-        runtimeConfig.adminBaseUrl === expectedAdminBaseUrl,
-        "Bundled runtime admin base URL mismatch.",
-      );
-      assert(
-        runtimeConfig.organization === expectedOrganization,
-        "Bundled runtime organization mismatch.",
-      );
-      assert(
-        runtimeConfig.authClientId === expectedAuthClientId,
-        "Bundled runtime OAuth client ID mismatch.",
-      );
-      assert(
-        runtimeConfig.authClientSecret === expectedAuthClientSecret,
-        "Bundled runtime OAuth client secret mismatch.",
-      );
-      assert(
-        runtimeConfig.adminToken === expectedAdminToken,
-        "Bundled runtime admin token mismatch.",
-      );
-      assert(
-        runtimeConfig.webhookSecret === expectedWebhookSecret,
-        "Bundled runtime webhook secret mismatch.",
-      );
+  assert(bootstrapStatus.hasAdminUser, "Expected an admin user.");
+  assert(
+    bootstrapStatus.hasWorkspaceSettings,
+    "Expected workspace settings.",
+  );
+  assert(
+    !bootstrapStatus.requiresSetup,
+    "Setup should be complete after bootstrap.",
+  );
+  assert(adminUsers.length === 1, "Expected a single admin user.");
+  assert(adminUser?.email === expectedAdminEmail, "Admin email mismatch.");
+  assert(adminUser?.isActive, "Admin should be active.");
+  assert(
+    workspaceSettings.length === 1,
+    "Expected a single workspace settings row.",
+  );
+  assert(workspace, "Workspace settings are missing.");
+  assert(
+    workspace.companyName === expectedCompanyName,
+    "Company name mismatch.",
+  );
+  assert(
+    workspace.defaultBranch === expectedDefaultBranch,
+    "Default branch mismatch.",
+  );
+  assert(
+    workspace.giteaBaseUrl === expectedPublicBaseUrl,
+    "Public Gitea URL mismatch.",
+  );
+  assert(
+    workspace.giteaAdminBaseUrl === expectedAdminBaseUrl,
+    "Admin Gitea URL mismatch.",
+  );
+  assert(
+    workspace.giteaOrganization === expectedOrganization,
+    "Organization mismatch.",
+  );
+  assert(
+    workspace.giteaAuthClientId === expectedAuthClientId,
+    "OAuth client ID mismatch.",
+  );
+  assert(
+    runtimeReadiness.hasNextAuthSecret,
+    "NextAuth secret is missing.",
+  );
+  assert(runtimeReadiness.hasAppUrl, "App URL is missing.");
+  assert(runtimeReadiness.authReady, "Auth runtime should be ready.");
+  assert(runtimeReadiness.adminReady, "Admin runtime should be ready.");
+  assert(
+    runtimeReadiness.migrationReady,
+    "Migration runtime should be ready.",
+  );
+  assert(
+    runtimeReadiness.webhookReady,
+    "Webhook runtime should be ready.",
+  );
+  assert(
+    runtimeConfig.publicBaseUrl === expectedPublicBaseUrl,
+    "Runtime public base URL mismatch.",
+  );
+  assert(
+    runtimeConfig.adminBaseUrl === expectedAdminBaseUrl,
+    "Runtime admin base URL mismatch.",
+  );
+  assert(
+    runtimeConfig.organization === expectedOrganization,
+    "Runtime organization mismatch.",
+  );
+  assert(
+    runtimeConfig.authClientId === expectedAuthClientId,
+    "Runtime OAuth client ID mismatch.",
+  );
+  assert(
+    runtimeConfig.authClientSecret === expectedAuthClientSecret,
+    "Runtime OAuth client secret mismatch.",
+  );
+  assert(
+    runtimeConfig.adminToken === expectedAdminToken,
+    "Runtime admin token mismatch.",
+  );
+  assert(
+    runtimeConfig.webhookSecret === expectedWebhookSecret,
+    "Runtime webhook secret mismatch.",
+  );
 
-      const bundledAuditLog = auditLogs.find(
-        (auditLog: { action: string; detail: unknown }) =>
-          auditLog.action === "workspace.bootstrap.auto.completed",
-      );
+  const bootstrapAuditLog = auditLogs.find(
+    (auditLog: { action: string; detail: unknown }) =>
+      auditLog.action === "workspace.bootstrap.auto.completed",
+  );
 
-      assert(bundledAuditLog, "Missing bundled bootstrap audit log.");
+  assert(bootstrapAuditLog, "Missing bootstrap audit log.");
 
-      const bundledAuditDetail = getAuditDetail(bundledAuditLog.detail);
+  const bootstrapAuditDetail = getAuditDetail(bootstrapAuditLog.detail);
 
-      assert(
-        bundledAuditDetail.giteaMode === "bundled",
-        "Bundled audit log mode mismatch.",
-      );
-      assert(
-        bundledAuditDetail.adminEmail === expectedAdminEmail,
-        "Bundled audit admin email mismatch.",
-      );
-      assert(
-        bundledAuditDetail.companyName === expectedCompanyName,
-        "Bundled audit company name mismatch.",
-      );
-      assert(
-        bundledAuditDetail.hasExternalConnectionSecrets === false,
-        "Bundled audit log should not flag external secrets.",
-      );
+  assert(
+    bootstrapAuditDetail.adminEmail === expectedAdminEmail,
+    "Audit admin email mismatch.",
+  );
+  assert(
+    bootstrapAuditDetail.companyName === expectedCompanyName,
+    "Audit company name mismatch.",
+  );
 
-      assert(expectedAdminBaseUrl, "Bundled admin base URL is required.");
-      assert(expectedAdminToken, "Bundled admin token is required.");
+  assert(expectedAdminBaseUrl, "Admin base URL is required.");
+  assert(expectedAdminToken, "Admin token is required.");
 
-      await assertGiteaConnectivity(
-        expectedAdminBaseUrl,
-        expectedAdminToken,
-        expectedOrganization,
-        expectedAuthClientId,
-      );
+  await assertGiteaConnectivity(
+    expectedAdminBaseUrl,
+    expectedAdminToken,
+    expectedOrganization,
+    expectedAuthClientId,
+  );
 
-      break;
-    }
-    case "external-pre-setup": {
-      assert(
-        !bootstrapStatus.hasAdminUser,
-        "External mode should not create an admin before setup.",
-      );
-      assert(
-        !bootstrapStatus.hasWorkspaceSettings,
-        "External mode should not create workspace settings before setup.",
-      );
-      assert(
-        bootstrapStatus.requiresSetup,
-        "External mode should require setup before bootstrap.",
-      );
-      assert(
-        adminUsers.length === 0,
-        "External mode should have no admin yet.",
-      );
-      assert(
-        workspaceSettings.length === 0,
-        "External mode should have no workspace settings yet.",
-      );
-      assert(
-        runtimeReadiness.mode === "external",
-        "Expected external runtime mode.",
-      );
-      assert(
-        runtimeReadiness.source === "database",
-        "External runtime should resolve from the database.",
-      );
-      assert(
-        runtimeReadiness.hasConfigEncryptionKey,
-        "External runtime should have an encryption key configured.",
-      );
-      assert(
-        runtimeReadiness.hasNextAuthSecret,
-        "External runtime should have a NextAuth secret configured.",
-      );
-      assert(
-        runtimeReadiness.hasAppUrl,
-        "External runtime should have an app URL.",
-      );
-      assert(
-        !runtimeReadiness.workspaceConfigured,
-        "External runtime should not be configured before setup.",
-      );
-      assert(
-        !runtimeReadiness.authReady,
-        "External auth should not be ready yet.",
-      );
-      assert(
-        !runtimeReadiness.adminReady,
-        "External admin should not be ready yet.",
-      );
-      assert(
-        !runtimeReadiness.webhookReady,
-        "External webhook runtime should not be ready yet.",
-      );
-      assert(
-        runtimeConfig.publicBaseUrl == null,
-        "External runtime should not expose a public URL before setup.",
-      );
-      assert(
-        runtimeConfig.adminBaseUrl == null,
-        "External runtime should not expose an admin URL before setup.",
-      );
-      assert(
-        runtimeConfig.organization == null,
-        "External runtime should not expose an organization before setup.",
-      );
-      break;
-    }
-    case "external-post-setup": {
-      assert(
-        bootstrapStatus.hasAdminUser,
-        "External mode should create an admin after setup.",
-      );
-      assert(
-        bootstrapStatus.hasWorkspaceSettings,
-        "External mode should create workspace settings after setup.",
-      );
-      assert(
-        !bootstrapStatus.requiresSetup,
-        "External mode should not require setup after bootstrap.",
-      );
-      assert(adminUsers.length === 1, "Expected a single external admin user.");
-      assert(
-        adminUser?.email === expectedAdminEmail,
-        "External admin email mismatch.",
-      );
-      assert(adminUser?.isActive, "External admin should be active.");
-      assert(
-        workspaceSettings.length === 1,
-        "Expected a single external workspace settings row.",
-      );
-      assert(workspace, "External workspace settings are missing.");
-      assert(
-        workspace.giteaMode === WorkspaceGiteaMode.EXTERNAL,
-        "External workspace mode should be EXTERNAL.",
-      );
-      assert(
-        workspace.companyName === expectedCompanyName,
-        "External company name mismatch.",
-      );
-      assert(
-        workspace.defaultBranch === expectedDefaultBranch,
-        "External default branch mismatch.",
-      );
-      assert(
-        workspace.giteaBaseUrl === expectedPublicBaseUrl,
-        "External public Gitea URL mismatch.",
-      );
-      assert(
-        workspace.giteaAdminBaseUrl === expectedAdminBaseUrl,
-        "External admin Gitea URL mismatch.",
-      );
-      assert(
-        workspace.giteaOrganization === expectedOrganization,
-        "External organization mismatch.",
-      );
-      assert(
-        workspace.giteaAuthClientId === expectedAuthClientId,
-        "External OAuth client ID mismatch.",
-      );
-      assert(
-        workspace.giteaConfigSecret != null,
-        "External setup should persist encrypted connection secrets.",
-      );
-      assert(
-        workspace.giteaConfigSecret?.authClientSecretEncrypted != null,
-        "Missing encrypted OAuth client secret.",
-      );
-      assert(
-        workspace.giteaConfigSecret?.adminTokenEncrypted != null,
-        "Missing encrypted admin token.",
-      );
-      assert(
-        workspace.giteaConfigSecret?.webhookSecretEncrypted != null,
-        "Missing encrypted webhook secret.",
-      );
-      assert(
-        workspace.giteaConfigSecret?.authClientSecretEncrypted !==
-          expectedAuthClientSecret,
-        "OAuth client secret should be encrypted at rest.",
-      );
-      assert(
-        workspace.giteaConfigSecret?.adminTokenEncrypted !== expectedAdminToken,
-        "Admin token should be encrypted at rest.",
-      );
-      assert(
-        workspace.giteaConfigSecret?.webhookSecretEncrypted !==
-          expectedWebhookSecret,
-        "Webhook secret should be encrypted at rest.",
-      );
-      assert(
-        runtimeReadiness.mode === "external",
-        "Expected external runtime mode.",
-      );
-      assert(
-        runtimeReadiness.source === "database",
-        "External runtime should use database-backed settings.",
-      );
-      assert(
-        runtimeReadiness.workspaceConfigured,
-        "External workspace should be configured after setup.",
-      );
-      assert(
-        runtimeReadiness.authReady,
-        "External auth runtime should be ready after setup.",
-      );
-      assert(
-        runtimeReadiness.adminReady,
-        "External admin runtime should be ready after setup.",
-      );
-      assert(
-        runtimeReadiness.webhookReady,
-        "External webhook runtime should be ready after setup.",
-      );
-      assert(
-        runtimeConfig.mode === "external",
-        "External config mode mismatch.",
-      );
-      assert(
-        runtimeConfig.workspaceSettingsId === workspace.id,
-        "External runtime should point at the stored workspace settings row.",
-      );
-      assert(
-        runtimeConfig.publicBaseUrl === expectedPublicBaseUrl,
-        "External runtime public base URL mismatch.",
-      );
-      assert(
-        runtimeConfig.adminBaseUrl === expectedAdminBaseUrl,
-        "External runtime admin base URL mismatch.",
-      );
-      assert(
-        runtimeConfig.organization === expectedOrganization,
-        "External runtime organization mismatch.",
-      );
-      assert(
-        runtimeConfig.authClientId === expectedAuthClientId,
-        "External runtime OAuth client ID mismatch.",
-      );
-      assert(
-        runtimeConfig.authClientSecret === expectedAuthClientSecret,
-        "External runtime OAuth client secret mismatch.",
-      );
-      assert(
-        runtimeConfig.adminToken === expectedAdminToken,
-        "External runtime admin token mismatch.",
-      );
-      assert(
-        runtimeConfig.webhookSecret === expectedWebhookSecret,
-        "External runtime webhook secret mismatch.",
-      );
-
-      const externalAuditLog = auditLogs.find(
-        (auditLog: { action: string; detail: unknown }) =>
-          auditLog.action === "workspace.bootstrap.completed",
-      );
-
-      assert(externalAuditLog, "Missing external bootstrap audit log.");
-
-      const externalAuditDetail = getAuditDetail(externalAuditLog.detail);
-
-      assert(
-        externalAuditDetail.giteaMode === "external",
-        "External audit log mode mismatch.",
-      );
-      assert(
-        externalAuditDetail.adminEmail === expectedAdminEmail,
-        "External audit admin email mismatch.",
-      );
-      assert(
-        externalAuditDetail.companyName === expectedCompanyName,
-        "External audit company name mismatch.",
-      );
-      assert(
-        externalAuditDetail.hasExternalConnectionSecrets === true,
-        "External audit log should flag encrypted connection secrets.",
-      );
-
-      assert(expectedAdminBaseUrl, "External admin base URL is required.");
-      assert(expectedAdminToken, "External admin token is required.");
-
-      await assertGiteaConnectivity(
-        expectedAdminBaseUrl,
-        expectedAdminToken,
-        expectedOrganization,
-        expectedAuthClientId,
-      );
-
-      break;
-    }
-  }
-
-  console.log(`Smoke assertions passed for ${rawPhase}.`);
+  console.log("Smoke assertions passed.");
 }
 
-main()
-  .catch((error) => {
-    console.error(error);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    await db.$disconnect();
-  });
+try {
+  await main();
+} catch (error) {
+  console.error(error);
+  process.exitCode = 1;
+} finally {
+  await db.$disconnect();
+}

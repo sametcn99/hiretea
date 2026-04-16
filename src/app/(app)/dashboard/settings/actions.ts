@@ -5,7 +5,6 @@ import { revalidatePath } from "next/cache";
 import type { ZodIssue } from "zod";
 import { requireRole } from "@/lib/auth/session";
 import { validateGiteaWorkspaceSettings } from "@/lib/gitea/validation";
-import { getWorkspaceSettingsOrThrow } from "@/lib/workspace-settings/queries";
 import {
   type WorkspaceSettingsUpdateInput,
   workspaceSettingsUpdateSchema,
@@ -27,14 +26,10 @@ function mapFieldErrors(issues: ZodIssue[]) {
 
       if (
         field === "companyName" ||
-        field === "giteaMode" ||
         field === "giteaBaseUrl" ||
         field === "giteaAdminBaseUrl" ||
         field === "giteaOrganization" ||
         field === "giteaAuthClientId" ||
-        field === "giteaAuthClientSecret" ||
-        field === "giteaAdminToken" ||
-        field === "giteaWebhookSecret" ||
         field === "defaultBranch" ||
         field === "manualInviteMode"
       ) {
@@ -53,18 +48,13 @@ export async function updateWorkspaceSettingsAction(
   formData: FormData,
 ): Promise<UpdateWorkspaceSettingsActionState> {
   const session = await requireRole(UserRole.ADMIN);
-  const currentSettings = await getWorkspaceSettingsOrThrow();
 
   const parsedInput = workspaceSettingsUpdateSchema.safeParse({
     companyName: formData.get("companyName"),
-    giteaMode: formData.get("giteaMode"),
     giteaBaseUrl: formData.get("giteaBaseUrl"),
     giteaAdminBaseUrl: formData.get("giteaAdminBaseUrl"),
     giteaOrganization: formData.get("giteaOrganization"),
     giteaAuthClientId: formData.get("giteaAuthClientId"),
-    giteaAuthClientSecret: formData.get("giteaAuthClientSecret"),
-    giteaAdminToken: formData.get("giteaAdminToken"),
-    giteaWebhookSecret: formData.get("giteaWebhookSecret"),
     defaultBranch: formData.get("defaultBranch"),
     manualInviteMode: true,
   });
@@ -78,24 +68,6 @@ export async function updateWorkspaceSettingsAction(
   }
 
   try {
-    if (parsedInput.data.giteaMode !== currentSettings.giteaMode) {
-      throw new Error(
-        "Switching between bundled and external Gitea modes is not supported after bootstrap.",
-      );
-    }
-
-    if (
-      parsedInput.data.giteaMode === "external" &&
-      currentSettings.giteaAuthClientId &&
-      parsedInput.data.giteaAuthClientId !==
-        currentSettings.giteaAuthClientId &&
-      !parsedInput.data.giteaAuthClientSecret
-    ) {
-      throw new Error(
-        "Enter the replacement OAuth client secret when changing the external OAuth client ID.",
-      );
-    }
-
     await validateGiteaWorkspaceSettings(parsedInput.data);
 
     const nextSettings = await updateWorkspaceSettings({

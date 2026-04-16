@@ -35,10 +35,7 @@ export default async function SignInPage() {
       }}
     >
       <Box style={{ width: "min(100%, 460px)" }}>
-        <SignInPanel
-          isConfigured={runtimeReadiness.authReady}
-          mode={runtimeReadiness.mode}
-        />
+        <SignInPanel isConfigured={runtimeReadiness.authReady} />
       </Box>
     </Box>
   );

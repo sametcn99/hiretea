@@ -39,13 +39,8 @@ export type GiteaWorkspaceValidationResult = {
 
 function resolveMigrationBaseUrl(
   input: GiteaWorkspaceValidationInput,
-  mode: string,
 ) {
-  if (mode === "bundled") {
-    return input.giteaAdminBaseUrl?.trim() || null;
-  }
-
-  return input.giteaAdminBaseUrl?.trim() || input.giteaBaseUrl;
+  return input.giteaAdminBaseUrl?.trim() || null;
 }
 
 export async function validateGiteaWorkspaceSettings(
@@ -63,10 +58,7 @@ export async function validateGiteaWorkspaceSettings(
   const webhookSecret =
     input.giteaWebhookSecret?.trim() || runtimeConfig.webhookSecret || null;
   const migrationBaseUrl =
-    resolveMigrationBaseUrl(input, runtimeConfig.mode) ||
-    (runtimeConfig.mode === "bundled"
-      ? runtimeConfig.adminBaseUrl
-      : runtimeConfig.adminBaseUrl || runtimeConfig.publicBaseUrl);
+    resolveMigrationBaseUrl(input) || runtimeConfig.adminBaseUrl;
 
   if (!adminToken) {
     throw new Error(

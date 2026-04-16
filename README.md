@@ -1,85 +1,37 @@
 # Hiretea
 
-Hiretea is a self-hosted technical hiring workspace that supports two Gitea operating modes:
+Hiretea is a self-hosted technical hiring workspace. Docker Compose starts Hiretea, PostgreSQL, and Gitea together.
 
-- Bundled mode: Docker Compose starts Hiretea, PostgreSQL, and a local Gitea instance together.
-- External mode: Docker Compose starts only Hiretea and PostgreSQL locally, and Hiretea connects to an existing Gitea instance that you already manage elsewhere.
-
-The repository now ships separate compose files for each mode. There is no default `docker-compose.yml`, so every compose command must target either `docker-compose.bundled.yml` or `docker-compose.external.yml` explicitly.
-
-## Setup Modes
-
-### Bundled Gitea
-
-This is the default local development path.
+## Setup
 
 1. Copy the sample environment file.
 
 ```bash
-cp .env.bundled.example .env
+cp .env.example .env
 ```
 
-1. Start the full stack.
+1. Start the stack.
 
 ```bash
-bun run docker:up:bundled
-# or: docker compose -p hiretea-bundled -f docker-compose.bundled.yml up --build -d && bun run docker:wait:bundled
+bun run docker:up
+# or: docker compose -p hiretea -f docker-compose.yml up --build -d && bun run docker:wait
 ```
 
 1. Open `http://localhost:3000` for Hiretea.
 
-1. Open `http://localhost:3001` for the bundled Gitea instance.
+1. Open `http://localhost:3001` for Gitea.
 
-Bundled startup does all of the following automatically:
+Startup does all of the following automatically:
 
 - Boots PostgreSQL with separate application and Gitea databases.
 - Starts a production-style Next.js container instead of `next dev`.
-- Starts a bundled rootless Gitea instance on its own HTTP and SSH ports.
+- Starts a rootless Gitea instance on its own HTTP and SSH ports.
 - Creates the first Gitea admin user if one does not exist.
 - Generates or reuses a Gitea admin API token.
 - Creates or reuses the default Gitea organization.
 - Creates a dedicated OAuth application for Hiretea.
 - Writes the runtime env contract that the app needs.
-- Applies the Prisma schema and seeds the first internal admin/workspace settings.
-
-### External Gitea
-
-Use this mode when the team cloning the repo already has a Gitea instance running somewhere else.
-
-1. Copy the sample environment file.
-
-```bash
-cp .env.external.example .env
-```
-
-1. Update `.env` with your preferred local ports and long random secrets if you do not want to use the placeholders.
-
-```bash
-HIRETEA_CONFIG_ENCRYPTION_KEY="replace-with-a-long-random-app-encryption-key"
-NEXTAUTH_SECRET="replace-with-a-long-random-string"
-BOOTSTRAP_TOKEN="replace-with-a-bootstrap-token"
-NEXTAUTH_URL="http://localhost:3000"
-```
-
-1. Start the local stack.
-
-```bash
-bun run docker:up:external
-# or: docker compose -p hiretea-external -f docker-compose.external.yml up --build -d && bun run docker:wait:external
-```
-
-1. Open `http://localhost:3000/setup`.
-
-1. Complete the setup form with your existing Gitea details:
-
-- Public Gitea URL.
-- Admin API URL if it differs from the public URL.
-- Organization slug that should own generated repositories.
-- OAuth client ID and client secret.
-- Admin token with permission to manage users, repositories, collaborators, and webhooks.
-- Webhook secret shared between Gitea and Hiretea.
-
-External mode stores the Gitea admin token, OAuth client secret, and webhook secret encrypted in PostgreSQL. The application-level encryption key always stays in `HIRETEA_CONFIG_ENCRYPTION_KEY` and is never written into the database.
+- Applies the Prisma schema and seeds the first internal admin and workspace settings.
 
 ## Default Ports
 
@@ -89,50 +41,32 @@ External mode stores the Gitea admin token, OAuth client secret, and webhook sec
 | Gitea HTTP | `http://localhost:3001` |
 | Gitea SSH | `ssh://git@localhost:2221` |
 
-In external mode, only the Hiretea HTTP port is used locally.
-
-## External Gitea Prerequisites
-
-Before using external mode, prepare the following in your existing Gitea instance:
-
-- An admin token that can create candidate users, repositories, collaborator grants, and repository webhooks.
-- An OAuth application whose redirect URI matches `${NEXTAUTH_URL}/api/auth/callback/gitea`.
-- A target organization that Hiretea can use for generated repositories.
-- Network reachability from Gitea to `POST ${NEXTAUTH_URL}/api/webhooks/gitea`.
-- A webhook secret that you will also enter into the Hiretea setup form.
-
 ## Runtime Credentials
 
-The runtime env contract is generated only in bundled mode.
-
-The bundled compose stack writes the generated runtime contract into the bundled Gitea config volume. You can inspect the current values from the running app container:
+The compose stack writes the generated runtime contract into the Gitea config volume. You can inspect the current values from the running app container:
 
 ```bash
-docker compose -p hiretea-bundled -f docker-compose.bundled.yml exec app /bin/sh -lc '. /runtime/gitea/hiretea.generated.env && env | grep -E "^(AUTH_GITEA_|GITEA_ADMIN_|NEXTAUTH_SECRET|GITEA_WEBHOOK_SECRET|hiretea_)"'
+docker compose -p hiretea -f docker-compose.yml exec app /bin/sh -lc '. /runtime/gitea/hiretea.generated.env && env | grep -E "^(AUTH_GITEA_|GITEA_ADMIN_|NEXTAUTH_SECRET|GITEA_WEBHOOK_SECRET|hiretea_)"'
 ```
 
-If `GITEA_ADMIN_PASSWORD`, `NEXTAUTH_SECRET`, or `GITEA_WEBHOOK_SECRET` are set in `.env`, the bundled stack reapplies those exact values on every startup. If they are left unset, the runtime env file is the place to inspect the generated values.
+If `GITEA_ADMIN_PASSWORD`, `NEXTAUTH_SECRET`, or `GITEA_WEBHOOK_SECRET` are set in `.env`, the stack reapplies those exact values on every startup. If they are left unset, the runtime env file is the place to inspect the generated values.
 
 ## Optional Overrides
 
-The example environment files expose the main knobs for each mode:
+The example environment file exposes the main knobs for the stack:
 
-- Application encryption and auth: `HIRETEA_CONFIG_ENCRYPTION_KEY`, `NEXTAUTH_SECRET`, `BOOTSTRAP_TOKEN`.
-- Shared app settings in both files: `APP_HTTP_PORT`, `DB_PORT`, `HT_DB_*`, `NEXTAUTH_URL`, `hiretea_*`, `GITEA_ORGANIZATION_NAME`.
-- Bundled-only settings in `.env.bundled.example`: `GITEA_HTTP_PORT`, `GITEA_SSH_PORT`, `GITEA_PUBLIC_URL`, `GITEA_DOMAIN`, `GITEA_DB_*`, `GITEA_ADMIN_*`, `GITEA_SECRET_KEY`, `GITEA_INTERNAL_TOKEN`, `GITEA_WEBHOOK_SECRET`.
+- Shared app settings: `APP_HTTP_PORT`, `DB_PORT`, `HT_DB_*`, `NEXTAUTH_URL`, `hiretea_*`, `GITEA_ORGANIZATION_NAME`.
+- Gitea settings: `GITEA_HTTP_PORT`, `GITEA_SSH_PORT`, `GITEA_PUBLIC_URL`, `GITEA_DOMAIN`, `GITEA_DB_*`, `GITEA_ADMIN_*`, `GITEA_SECRET_KEY`, `GITEA_INTERNAL_TOKEN`, `GITEA_WEBHOOK_SECRET`.
 - Stable secrets for repeatable environments: `NEXTAUTH_SECRET`, `BOOTSTRAP_TOKEN`, `GITEA_SECRET_KEY`, `GITEA_INTERNAL_TOKEN`, `GITEA_WEBHOOK_SECRET`.
 
-If you change the public ports, keep the matching public URLs in sync. In bundled mode the app still uses `http://gitea:3000` internally while browsers must keep using the published Gitea URL.
+If you change the public ports, keep the matching public URLs in sync. The app still uses `http://gitea:3000` internally while browsers must keep using the published Gitea URL.
 
 ## Useful Commands
 
 ```bash
-bun run docker:up:bundled
-bun run docker:up:external
-bun run docker:wait:bundled
-bun run docker:wait:external
-bun run docker:watch:bundled
-bun run docker:watch:external
+bun run docker:up
+bun run docker:wait
+bun run docker:watch
 bun run docker:down
 bun run docker:nuke
 bun run smoke:test
@@ -141,23 +75,20 @@ bun run typecheck
 bun run build
 ```
 
-Use `bun run docker:down` when you want a completely fresh Hiretea state for both compose modes. Use `bun run docker:nuke` when you also want Docker images removed.
-
-The npm scripts pin distinct compose project names, `hiretea-bundled` and `hiretea-external`, so the two modes do not reuse the same containers, networks, or default resource names.
+Use `bun run docker:down` when you want a completely fresh Hiretea state. Use `bun run docker:nuke` when you also want Docker images removed.
 
 ## Manual Setup Page
 
-The `/setup` route is now the primary entry point for external mode. In bundled mode the compose flow should still complete bootstrap automatically before you reach it.
+The `/setup` route is a fallback path if automatic bootstrap has not completed yet.
 
-- Bundled mode: `/setup` mainly acts as a fallback if auto-bootstrap has not completed yet.
-- External mode: `/setup` is required and collects the existing Gitea connection details that Hiretea needs.
+- `/setup` seeds the first internal admin and persists the workspace metadata used by candidate provisioning and template flows.
+- OAuth, admin token, and webhook values continue to come from the generated runtime contract instead of user-entered secrets.
 
 ## Troubleshooting
 
-- If OAuth stays unavailable after external setup, verify `NEXTAUTH_SECRET` is present and the Gitea OAuth redirect URI exactly matches `${NEXTAUTH_URL}/api/auth/callback/gitea`.
-- If validation fails for the admin token, confirm the token belongs to the admin user that owns the OAuth app and has repository management access for the target organization.
-- If webhook delivery stays unavailable, verify Gitea can reach `${NEXTAUTH_URL}/api/webhooks/gitea` from its own network.
-- If external mode reports missing encrypted credentials after a restart, confirm `HIRETEA_CONFIG_ENCRYPTION_KEY` is set to the same value that was used when the credentials were first stored.
+- If OAuth stays unavailable after bootstrap, verify `NEXTAUTH_SECRET` is present and the Gitea OAuth redirect URI exactly matches `${NEXTAUTH_URL}/api/auth/callback/gitea`.
+- If candidate case assignment fails during repository migration, confirm Gitea is running with `GITEA__migrations__ALLOW_LOCALNETWORKS=true` and `GITEA__server__LOCAL_ROOT_URL=http://gitea:3000/`.
+- If webhook delivery stays unavailable, verify Gitea can reach `POST ${NEXTAUTH_URL}/api/webhooks/gitea` from the Docker network.
 
 ## Architectural Rules
 

@@ -14,11 +14,9 @@ const initialSetupActionState: SetupActionState = {
 };
 
 type SetupFormProps = {
-  deploymentMode: "bundled" | "external";
   setupEnabled: boolean;
   disabledMessage?: string;
   defaultValues: {
-    giteaMode: "bundled" | "external";
     companyName: string;
     giteaBaseUrl: string;
     giteaAdminBaseUrl: string;
@@ -44,7 +42,6 @@ function SubmitButton({ disabled }: { disabled: boolean }) {
 }
 
 export function SetupForm({
-  deploymentMode,
   setupEnabled,
   disabledMessage,
   defaultValues,
@@ -56,7 +53,6 @@ export function SetupForm({
 
   return (
     <form action={formAction}>
-      <input type="hidden" name="giteaMode" value={defaultValues.giteaMode} />
       <input type="hidden" name="manualInviteMode" value="on" />
       <Flex direction="column" gap="4">
         {!setupEnabled && disabledMessage ? (
@@ -164,6 +160,32 @@ export function SetupForm({
               as="label"
               size="2"
               weight="medium"
+              htmlFor="giteaAdminBaseUrl"
+            >
+              Admin API base URL
+            </Text>
+            <TextField.Root
+              defaultValue={defaultValues.giteaAdminBaseUrl}
+              id="giteaAdminBaseUrl"
+              name="giteaAdminBaseUrl"
+              placeholder="http://gitea:3000"
+              type="url"
+              color={state.fieldErrors?.giteaAdminBaseUrl ? "red" : undefined}
+            />
+            {state.fieldErrors?.giteaAdminBaseUrl?.map((error) => (
+              <Text size="1" color="red" key={error}>
+                {error}
+              </Text>
+            ))}
+          </Flex>
+        </Grid>
+
+        <Grid columns="2" gap="3">
+          <Flex direction="column" gap="1">
+            <Text
+              as="label"
+              size="2"
+              weight="medium"
               htmlFor="giteaOrganization"
             >
               Gitea organization
@@ -182,138 +204,31 @@ export function SetupForm({
               </Text>
             ))}
           </Flex>
-        </Grid>
 
-        {deploymentMode === "external" ? (
-          <>
-            <Flex direction="column" gap="1">
-              <Text
-                as="label"
-                size="2"
-                weight="medium"
-                htmlFor="giteaAdminBaseUrl"
-              >
-                Admin API base URL
+          <Flex direction="column" gap="1">
+            <Text
+              as="label"
+              size="2"
+              weight="medium"
+              htmlFor="giteaAuthClientId"
+            >
+              OAuth client ID
+            </Text>
+            <TextField.Root
+              defaultValue={defaultValues.giteaAuthClientId}
+              id="giteaAuthClientId"
+              name="giteaAuthClientId"
+              placeholder="hiretea-client-id"
+              type="text"
+              color={state.fieldErrors?.giteaAuthClientId ? "red" : undefined}
+            />
+            {state.fieldErrors?.giteaAuthClientId?.map((error) => (
+              <Text size="1" color="red" key={error}>
+                {error}
               </Text>
-              <TextField.Root
-                defaultValue={defaultValues.giteaAdminBaseUrl}
-                id="giteaAdminBaseUrl"
-                name="giteaAdminBaseUrl"
-                placeholder="Leave empty to reuse the public URL"
-                type="url"
-                color={state.fieldErrors?.giteaAdminBaseUrl ? "red" : undefined}
-              />
-              {state.fieldErrors?.giteaAdminBaseUrl?.map((error) => (
-                <Text size="1" color="red" key={error}>
-                  {error}
-                </Text>
-              ))}
-            </Flex>
-
-            <Grid columns="2" gap="3">
-              <Flex direction="column" gap="1">
-                <Text
-                  as="label"
-                  size="2"
-                  weight="medium"
-                  htmlFor="giteaAuthClientId"
-                >
-                  OAuth client ID
-                </Text>
-                <TextField.Root
-                  defaultValue={defaultValues.giteaAuthClientId}
-                  id="giteaAuthClientId"
-                  name="giteaAuthClientId"
-                  placeholder="hiretea-client-id"
-                  type="text"
-                  color={
-                    state.fieldErrors?.giteaAuthClientId ? "red" : undefined
-                  }
-                />
-                {state.fieldErrors?.giteaAuthClientId?.map((error) => (
-                  <Text size="1" color="red" key={error}>
-                    {error}
-                  </Text>
-                ))}
-              </Flex>
-
-              <Flex direction="column" gap="1">
-                <Text
-                  as="label"
-                  size="2"
-                  weight="medium"
-                  htmlFor="giteaAuthClientSecret"
-                >
-                  OAuth client secret
-                </Text>
-                <TextField.Root
-                  id="giteaAuthClientSecret"
-                  name="giteaAuthClientSecret"
-                  placeholder="Paste the client secret"
-                  type="password"
-                  color={
-                    state.fieldErrors?.giteaAuthClientSecret ? "red" : undefined
-                  }
-                />
-                {state.fieldErrors?.giteaAuthClientSecret?.map((error) => (
-                  <Text size="1" color="red" key={error}>
-                    {error}
-                  </Text>
-                ))}
-              </Flex>
-            </Grid>
-
-            <Grid columns="2" gap="3">
-              <Flex direction="column" gap="1">
-                <Text
-                  as="label"
-                  size="2"
-                  weight="medium"
-                  htmlFor="giteaAdminToken"
-                >
-                  Admin token
-                </Text>
-                <TextField.Root
-                  id="giteaAdminToken"
-                  name="giteaAdminToken"
-                  placeholder="Paste the admin token"
-                  type="password"
-                  color={state.fieldErrors?.giteaAdminToken ? "red" : undefined}
-                />
-                {state.fieldErrors?.giteaAdminToken?.map((error) => (
-                  <Text size="1" color="red" key={error}>
-                    {error}
-                  </Text>
-                ))}
-              </Flex>
-
-              <Flex direction="column" gap="1">
-                <Text
-                  as="label"
-                  size="2"
-                  weight="medium"
-                  htmlFor="giteaWebhookSecret"
-                >
-                  Webhook secret
-                </Text>
-                <TextField.Root
-                  id="giteaWebhookSecret"
-                  name="giteaWebhookSecret"
-                  placeholder="Shared webhook secret"
-                  type="password"
-                  color={
-                    state.fieldErrors?.giteaWebhookSecret ? "red" : undefined
-                  }
-                />
-                {state.fieldErrors?.giteaWebhookSecret?.map((error) => (
-                  <Text size="1" color="red" key={error}>
-                    {error}
-                  </Text>
-                ))}
-              </Flex>
-            </Grid>
-          </>
-        ) : null}
+            ))}
+          </Flex>
+        </Grid>
 
         <Grid columns="2" gap="3">
           <Flex direction="column" gap="1">
@@ -351,9 +266,8 @@ export function SetupForm({
 
         <Callout.Root color="blue" size="1">
           <Callout.Text>
-            {deploymentMode === "external"
-              ? "The first admin must later authenticate through the external Gitea instance with the same email address entered above."
-              : "The first admin must later authenticate through Gitea with the same email address entered above."}
+            The first admin must later authenticate through Gitea with the
+            same email address entered above.
           </Callout.Text>
         </Callout.Root>
 

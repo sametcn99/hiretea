@@ -5,7 +5,7 @@ function requireEnv(name: string) {
   const value = process.env[name]?.trim();
 
   if (!value) {
-    throw new Error(`${name} is required for bundled bootstrap.`);
+    throw new Error(`${name} is required for bootstrap.`);
   }
 
   return value;
@@ -31,7 +31,6 @@ function parseBoolean(value: string | undefined, fallback: boolean) {
 
 async function main() {
   const result = await ensureWorkspaceBootstrap({
-    giteaMode: "bundled",
     adminEmail: requireEnv("hiretea_ADMIN_EMAIL"),
     adminName: process.env.hiretea_ADMIN_NAME?.trim() || undefined,
     companyName:
@@ -44,9 +43,6 @@ async function main() {
     giteaAdminBaseUrl: process.env.GITEA_ADMIN_BASE_URL?.trim() || undefined,
     giteaOrganization: requireEnv("GITEA_ORGANIZATION_NAME"),
     giteaAuthClientId: process.env.AUTH_GITEA_ID?.trim() || undefined,
-    giteaAuthClientSecret: undefined,
-    giteaAdminToken: undefined,
-    giteaWebhookSecret: undefined,
     manualInviteMode: parseBoolean(
       process.env.hiretea_MANUAL_INVITE_MODE,
       true,

@@ -2,8 +2,6 @@
 
 set -eu
 
-GITEA_MODE="${HIRETEA_GITEA_MODE:-bundled}"
-
 export PGPASSWORD="${PGPASSWORD:-${POSTGRES_PASSWORD:-}}"
 
 psql_cmd() {
@@ -46,8 +44,5 @@ create_database() {
 
 create_role "$HT_DB_USER" "$HT_DB_PASSWORD"
 create_database "$HT_DB_NAME" "$HT_DB_USER"
-
-if [ "$GITEA_MODE" = "bundled" ]; then
-  create_role "$GITEA_DB_USER" "$GITEA_DB_PASSWORD"
-  create_database "$GITEA_DB_NAME" "$GITEA_DB_USER"
-fi
+create_role "$GITEA_DB_USER" "$GITEA_DB_PASSWORD"
+create_database "$GITEA_DB_NAME" "$GITEA_DB_USER"

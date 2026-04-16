@@ -8,14 +8,13 @@ import { SectionCard } from "@/components/ui/section-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { getServerAuthSession } from "@/lib/auth/session";
 import { getBootstrapStatus } from "@/lib/bootstrap/status";
-import { env, getDeploymentGiteaMode } from "@/lib/env";
+import { env } from "@/lib/env";
 import { getGiteaRuntimeReadiness } from "@/lib/gitea/runtime-config";
 
 export default async function SetupPage() {
   await connection();
 
   const bootstrapStatus = await getBootstrapStatus();
-  const deploymentMode = getDeploymentGiteaMode();
   const runtimeReadiness = await getGiteaRuntimeReadiness();
 
   if (!bootstrapStatus.requiresSetup) {
@@ -24,22 +23,14 @@ export default async function SetupPage() {
     redirect((session?.user?.id ? "/dashboard" : "/sign-in") as Route);
   }
 
-  const setupEnabled =
-    bootstrapStatus.hasBootstrapToken &&
-    (deploymentMode === "bundled" || runtimeReadiness.hasConfigEncryptionKey);
+  const setupEnabled = bootstrapStatus.hasBootstrapToken;
 
   const defaults = {
-    giteaMode: deploymentMode,
     companyName: env.hiretea_COMPANY_NAME ?? "Hiretea Workspace",
-    giteaBaseUrl:
-      deploymentMode === "bundled"
-        ? (env.AUTH_GITEA_ISSUER ?? env.GITEA_ADMIN_BASE_URL ?? "")
-        : "",
-    giteaAdminBaseUrl:
-      deploymentMode === "bundled" ? (env.GITEA_ADMIN_BASE_URL ?? "") : "",
+    giteaBaseUrl: env.AUTH_GITEA_ISSUER ?? env.GITEA_ADMIN_BASE_URL ?? "",
+    giteaAdminBaseUrl: env.GITEA_ADMIN_BASE_URL ?? "",
     giteaOrganization: env.GITEA_ORGANIZATION_NAME ?? "",
-    giteaAuthClientId:
-      deploymentMode === "bundled" ? (env.AUTH_GITEA_ID ?? "") : "",
+    giteaAuthClientId: env.AUTH_GITEA_ID ?? "",
     defaultBranch: env.hiretea_DEFAULT_BRANCH ?? "main",
   };
 
@@ -67,9 +58,9 @@ export default async function SetupPage() {
             color="gray"
             style={{ maxWidth: "58ch", lineHeight: 1.75 }}
           >
-            {deploymentMode === "external"
-              ? "This one-time flow seeds the first admin user, stores the external Gitea connection metadata, and encrypts the admin token, OAuth secret, and webhook secret in PostgreSQL."
-              : "This one-time flow seeds the first admin user and writes the initial workspace settings. After setup completes, all access continues through your self-hosted Gitea OAuth login."}
+            This one-time flow seeds the first admin user and writes the
+            initial workspace settings. After setup completes, all access
+            continues through your self-hosted Gitea OAuth login.
           </Text>
         </Flex>
 
@@ -81,17 +72,6 @@ export default async function SetupPage() {
               eyebrow="Before you submit"
             >
               <Flex direction="column" gap="3">
-                <Flex justify="between" align="center" gap="3">
-                  <Text size="2">Deployment mode</Text>
-                  <StatusBadge
-                    label={
-                      deploymentMode === "external"
-                        ? "External Gitea"
-                        : "Bundled Gitea"
-                    }
-                    tone="info"
-                  />
-                </Flex>
                 <Flex justify="between" align="center" gap="3">
                   <Text size="2">Bootstrap token</Text>
                   <StatusBadge
@@ -116,23 +96,6 @@ export default async function SetupPage() {
                     }
                   />
                 </Flex>
-                {deploymentMode === "external" ? (
-                  <Flex justify="between" align="center" gap="3">
-                    <Text size="2">Config encryption key</Text>
-                    <StatusBadge
-                      label={
-                        runtimeReadiness.hasConfigEncryptionKey
-                          ? "Ready"
-                          : "Missing"
-                      }
-                      tone={
-                        runtimeReadiness.hasConfigEncryptionKey
-                          ? "positive"
-                          : "warning"
-                      }
-                    />
-                  </Flex>
-                ) : null}
                 <Flex justify="between" align="center" gap="3">
                   <Text size="2">Gitea OAuth variables</Text>
                   <StatusBadge
@@ -192,14 +155,12 @@ export default async function SetupPage() {
                 <li>
                   <Text color="gray">
                     The workspace settings singleton is created or refreshed for
-                    the active Gitea deployment mode.
+                    the Gitea integration used by the workspace.
                   </Text>
                 </li>
                 <li>
                   <Text color="gray">
-                    {deploymentMode === "external"
-                      ? "External connection secrets are encrypted before they are saved, and the audit event records the bootstrap without raw secret values."
-                      : "An audit event records the bootstrap completion."}
+                    An audit event records the bootstrap completion.
                   </Text>
                 </li>
               </ol>
@@ -212,14 +173,11 @@ export default async function SetupPage() {
             eyebrow="Initialize"
           >
             <SetupForm
-              deploymentMode={deploymentMode}
               defaultValues={defaults}
               disabledMessage={
                 setupEnabled
                   ? undefined
-                  : !bootstrapStatus.hasBootstrapToken
-                    ? "Add BOOTSTRAP_TOKEN to your environment before running the first setup."
-                    : "Add HIRETEA_CONFIG_ENCRYPTION_KEY before saving external Gitea credentials from the setup screen."
+                  : "Add BOOTSTRAP_TOKEN to your environment before running the first setup."
               }
               setupEnabled={setupEnabled}
             />

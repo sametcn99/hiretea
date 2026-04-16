@@ -47,17 +47,6 @@ export default async function SettingsPage() {
         >
           <Flex direction="column" gap="3">
             <Flex justify="between" align="center" gap="3">
-              <Text size="2">Connection mode</Text>
-              <StatusBadge
-                label={
-                  settings.giteaMode === "external"
-                    ? "External Gitea"
-                    : "Bundled Gitea"
-                }
-                tone="info"
-              />
-            </Flex>
-            <Flex justify="between" align="center" gap="3">
               <Text size="2">Company name</Text>
               <Text size="2" weight="bold">
                 {settings.companyName}
@@ -99,19 +88,6 @@ export default async function SettingsPage() {
                 tone={runtimeReadiness.webhookReady ? "positive" : "warning"}
               />
             </Flex>
-            {settings.giteaMode === "external" ? (
-              <Flex justify="between" align="center" gap="3">
-                <Text size="2">Encrypted secrets</Text>
-                <StatusBadge
-                  label={
-                    settings.hasStoredExternalSecrets ? "Stored" : "Missing"
-                  }
-                  tone={
-                    settings.hasStoredExternalSecrets ? "positive" : "warning"
-                  }
-                />
-              </Flex>
-            ) : null}
             <Flex justify="between" align="center" gap="3">
               <Text size="2">Live Gitea validation</Text>
               <StatusBadge
@@ -177,9 +153,8 @@ export default async function SettingsPage() {
                 repositories.
               </li>
               <li>
-                {settings.giteaMode === "external"
-                  ? "Leave the secret rotation fields empty if you only want to update metadata. Filled secret inputs replace the stored encrypted values immediately."
-                  : "Bundled mode keeps OAuth, admin, and webhook secrets in the generated runtime environment instead of the database."}
+                OAuth, admin, and webhook secrets stay in the generated runtime
+                environment instead of the database.
               </li>
               <li>
                 Changing the default branch affects future templates and

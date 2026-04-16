@@ -7,7 +7,6 @@ import {
   type BootstrapSetupInput,
   bootstrapSetupSchema,
 } from "@/lib/bootstrap/schemas";
-import { getDeploymentGiteaMode, hasConfigEncryptionKey } from "@/lib/env";
 import { validateGiteaWorkspaceSettings } from "@/lib/gitea/validation";
 
 type SetupField = keyof BootstrapSetupInput;
@@ -24,7 +23,6 @@ function mapFieldErrors(issues: ZodIssue[]) {
       const field = issue.path[0];
 
       if (
-        field === "giteaMode" ||
         field === "bootstrapToken" ||
         field === "adminName" ||
         field === "adminEmail" ||
@@ -33,9 +31,6 @@ function mapFieldErrors(issues: ZodIssue[]) {
         field === "giteaAdminBaseUrl" ||
         field === "giteaOrganization" ||
         field === "giteaAuthClientId" ||
-        field === "giteaAuthClientSecret" ||
-        field === "giteaAdminToken" ||
-        field === "giteaWebhookSecret" ||
         field === "defaultBranch" ||
         field === "manualInviteMode"
       ) {
@@ -53,10 +48,8 @@ export async function completeBootstrapSetupAction(
   _previousState: SetupActionState,
   formData: FormData,
 ): Promise<SetupActionState> {
-  const deploymentMode = getDeploymentGiteaMode();
   const parsedInput = bootstrapSetupSchema.safeParse({
     bootstrapToken: formData.get("bootstrapToken"),
-    giteaMode: formData.get("giteaMode"),
     adminName: formData.get("adminName"),
     adminEmail: formData.get("adminEmail"),
     companyName: formData.get("companyName"),
@@ -64,9 +57,6 @@ export async function completeBootstrapSetupAction(
     giteaAdminBaseUrl: formData.get("giteaAdminBaseUrl"),
     giteaOrganization: formData.get("giteaOrganization"),
     giteaAuthClientId: formData.get("giteaAuthClientId"),
-    giteaAuthClientSecret: formData.get("giteaAuthClientSecret"),
-    giteaAdminToken: formData.get("giteaAdminToken"),
-    giteaWebhookSecret: formData.get("giteaWebhookSecret"),
     defaultBranch: formData.get("defaultBranch"),
     manualInviteMode: true,
   });
@@ -80,28 +70,7 @@ export async function completeBootstrapSetupAction(
   }
 
   try {
-    if (parsedInput.data.giteaMode !== deploymentMode) {
-      throw new Error(
-        "The submitted Gitea mode does not match the current deployment mode.",
-      );
-    }
-
-    if (deploymentMode === "external") {
-      if (!hasConfigEncryptionKey()) {
-        throw new Error(
-          "HIRETEA_CONFIG_ENCRYPTION_KEY is required before saving external Gitea credentials.",
-        );
-      }
-
-      await validateGiteaWorkspaceSettings({
-        giteaBaseUrl: parsedInput.data.giteaBaseUrl,
-        giteaAdminBaseUrl: parsedInput.data.giteaAdminBaseUrl,
-        giteaOrganization: parsedInput.data.giteaOrganization,
-        giteaAuthClientId: parsedInput.data.giteaAuthClientId,
-        giteaAdminToken: parsedInput.data.giteaAdminToken,
-        giteaWebhookSecret: parsedInput.data.giteaWebhookSecret,
-      });
-    }
+    await validateGiteaWorkspaceSettings(parsedInput.data);
 
     const result = await completeBootstrapSetup(parsedInput.data);
 
