@@ -19,7 +19,7 @@ export default async function ReviewsPage() {
       <SectionCard
         style={{ position: "sticky", top: 28 }}
         title="Record a review"
-        description="Capture reviewer notes, score the submission, and optionally finalize the decision for a candidate case."
+        description="Capture reviewer notes, score the submission, and optionally finalize the decision for a candidate case while template-level review guides come online."
         eyebrow="Reviewer workflow"
       >
         <ReviewNoteForm reviewCases={reviewCases} />
@@ -27,7 +27,7 @@ export default async function ReviewsPage() {
 
       <SectionCard
         title="Review board"
-        description="Track the latest review signal, note count, and final decision across assigned candidate cases."
+        description="Track the latest review signal, note count, final decision, and template-level rubric readiness across assigned candidate cases."
         eyebrow="Current reviews"
       >
         <ReviewCaseTable reviewCases={reviewCases} />

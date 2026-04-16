@@ -10,23 +10,99 @@ import {
 } from "@radix-ui/themes";
 import { useState } from "react";
 import { useToast } from "@/components/providers/toast-provider";
-import { deleteCandidateAction } from "../actions";
+import {
+  deleteCandidateAction,
+  issueCandidateInviteAction,
+  revokeCandidateInviteAction,
+} from "../actions";
 
 type CandidateActionsProps = {
   candidateId: string;
   candidateName: string;
+  hasLinkedSignIn: boolean;
+  inviteStatus: "PENDING" | "CLAIMED" | "REVOKED" | "EXPIRED" | null;
+  inviteCount: number;
 };
 
 export function CandidateActions({
   candidateId,
   candidateName,
+  hasLinkedSignIn,
+  inviteStatus,
+  inviteCount,
 }: CandidateActionsProps) {
   const { showToast } = useToast();
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isLoadingAction, setIsLoadingAction] = useState<
+    "issue" | "revoke" | "delete" | null
+  >(null);
+
+  async function handleIssueInvite() {
+    setIsLoadingAction("issue");
+
+    const result = await issueCandidateInviteAction(candidateId);
+
+    if (result.status === "error") {
+      showToast({
+        tone: "error",
+        title: "Invite generation failed",
+        description: result.message,
+      });
+      setIsLoadingAction(null);
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(result.inviteUrl);
+      showToast({
+        tone: "success",
+        title:
+          result.issueKind === "RESEND" ? "Invite resent" : "Invite generated",
+        description:
+          result.issueKind === "RESEND"
+            ? `${candidateName} now has resend #${result.resendSequence} recorded and copied to your clipboard.`
+            : `${candidateName} now has an auditable onboarding invite copied to your clipboard.`,
+      });
+    } catch {
+      showToast({
+        tone: "error",
+        title:
+          result.issueKind === "RESEND"
+            ? "Invite resent but clipboard copy failed"
+            : "Invite generated but clipboard copy failed",
+        description:
+          "Generate the link again after checking clipboard permissions.",
+      });
+    }
+
+    setIsLoadingAction(null);
+  }
+
+  async function handleRevokeInvite() {
+    setIsLoadingAction("revoke");
+
+    const result = await revokeCandidateInviteAction(candidateId);
+
+    if (result.status === "error") {
+      showToast({
+        tone: "error",
+        title: "Invite revoke failed",
+        description: result.message,
+      });
+      setIsLoadingAction(null);
+      return;
+    }
+
+    showToast({
+      tone: "success",
+      title: "Invite revoked",
+      description: `${candidateName}'s active onboarding invite was revoked.`,
+    });
+    setIsLoadingAction(null);
+  }
 
   async function handleDelete() {
-    setIsDeleting(true);
+    setIsLoadingAction("delete");
     const result = await deleteCandidateAction(candidateId);
     if (result.status === "error") {
       showToast({
@@ -34,7 +110,7 @@ export function CandidateActions({
         title: "Candidate archive failed",
         description: result.message,
       });
-      setIsDeleting(false);
+      setIsLoadingAction(null);
     } else {
       showToast({
         tone: "success",
@@ -42,6 +118,7 @@ export function CandidateActions({
         description: `${candidateName} was archived successfully.`,
       });
       setIsDeleteAlertOpen(false);
+      setIsLoadingAction(null);
     }
   }
 
@@ -54,8 +131,27 @@ export function CandidateActions({
           </IconButton>
         </DropdownMenu.Trigger>
         <DropdownMenu.Content>
+          {!hasLinkedSignIn ? (
+            <DropdownMenu.Item
+              disabled={isLoadingAction !== null}
+              onClick={handleIssueInvite}
+            >
+              {inviteCount > 0
+                ? "Resend onboarding invite"
+                : "Generate onboarding invite"}
+            </DropdownMenu.Item>
+          ) : null}
+          {!hasLinkedSignIn && inviteStatus === "PENDING" ? (
+            <DropdownMenu.Item
+              disabled={isLoadingAction !== null}
+              onClick={handleRevokeInvite}
+            >
+              Revoke active invite
+            </DropdownMenu.Item>
+          ) : null}
           <DropdownMenu.Item
             color="red"
+            disabled={isLoadingAction !== null}
             onClick={() => setIsDeleteAlertOpen(true)}
           >
             Archive Candidate & Revoke Access
@@ -78,7 +174,11 @@ export function CandidateActions({
 
           <Flex gap="3" mt="4" justify="end">
             <AlertDialog.Cancel>
-              <Button variant="soft" color="gray" disabled={isDeleting}>
+              <Button
+                variant="soft"
+                color="gray"
+                disabled={isLoadingAction !== null}
+              >
                 Cancel
               </Button>
             </AlertDialog.Cancel>
@@ -87,7 +187,7 @@ export function CandidateActions({
                 variant="solid"
                 color="red"
                 onClick={handleDelete}
-                loading={isDeleting}
+                loading={isLoadingAction === "delete"}
               >
                 Archive
               </Button>

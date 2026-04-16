@@ -29,7 +29,10 @@ function mapFieldErrors(issues: ZodIssue[]) {
         field === "summary" ||
         field === "repositoryName" ||
         field === "repositoryDescription" ||
-        field === "defaultBranch"
+        field === "defaultBranch" ||
+        field === "reviewerInstructions" ||
+        field === "decisionGuidance" ||
+        field === "rubricCriteria"
       ) {
         const existingErrors = fieldErrors[field] ?? [];
         fieldErrors[field] = [...existingErrors, issue.message];
@@ -54,6 +57,9 @@ export async function createCaseTemplateAction(
     repositoryName: formData.get("repositoryName"),
     repositoryDescription: formData.get("repositoryDescription"),
     defaultBranch: formData.get("defaultBranch"),
+    reviewerInstructions: formData.get("reviewerInstructions"),
+    decisionGuidance: formData.get("decisionGuidance"),
+    rubricCriteria: formData.get("rubricCriteria"),
   });
 
   if (!parsedInput.success) {
@@ -75,7 +81,7 @@ export async function createCaseTemplateAction(
 
     return {
       status: "success",
-      message: `${template.name} was created and its Gitea repository is ready for future assignments.`,
+      message: `${template.name} was created and its template-level review structure is ready for future assignments.`,
     };
   } catch (error) {
     return {

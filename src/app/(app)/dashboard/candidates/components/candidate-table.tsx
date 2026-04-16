@@ -29,7 +29,7 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
         <Table.Row>
           <Table.ColumnHeaderCell>Candidate</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Access</Table.ColumnHeaderCell>
-          <Table.ColumnHeaderCell>Credentials</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell>Onboarding</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Cases</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Created</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell></Table.ColumnHeaderCell>
@@ -69,8 +69,18 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
             </Table.Cell>
             <Table.Cell>
               <CandidateCredentialCell
-                temporaryPassword={candidate.defaultPassword}
                 hasLinkedSignIn={candidate.hasLinkedSignIn}
+                inviteStatus={candidate.inviteStatus}
+                inviteIssueKind={candidate.inviteIssueKind}
+                inviteSequence={candidate.inviteSequence}
+                inviteCount={candidate.inviteCount}
+                inviteResendCount={candidate.inviteResendCount}
+                inviteIssuedByName={candidate.inviteIssuedByName}
+                inviteExpiresAt={candidate.inviteExpiresAt}
+                inviteCreatedAt={candidate.inviteCreatedAt}
+                inviteClaimedAt={candidate.inviteClaimedAt}
+                inviteRevokedAt={candidate.inviteRevokedAt}
+                inviteHistory={candidate.inviteHistory}
               />
             </Table.Cell>
             <Table.Cell>{candidate.caseCount}</Table.Cell>
@@ -81,6 +91,9 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
                 candidateName={
                   candidate.displayName || candidate.email || candidate.id
                 }
+                hasLinkedSignIn={candidate.hasLinkedSignIn}
+                inviteStatus={candidate.inviteStatus}
+                inviteCount={candidate.inviteCount}
               />
             </Table.Cell>
           </Table.Row>

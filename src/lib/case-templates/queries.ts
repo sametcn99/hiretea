@@ -9,6 +9,15 @@ export type CaseTemplateListItem = {
   repositoryDescription: string | null;
   defaultBranch: string;
   candidateCaseCount: number;
+  reviewerInstructions: string | null;
+  decisionGuidance: string | null;
+  rubricCriteriaCount: number;
+  rubricCriteriaPreview: Array<{
+    id: string;
+    title: string;
+    weight: number | null;
+  }>;
+  hasTemplateReviewGuide: boolean;
   createdAt: Date;
   createdByName: string;
 };
@@ -20,6 +29,28 @@ export async function listCaseTemplates() {
         select: {
           name: true,
           email: true,
+        },
+      },
+      reviewGuide: {
+        select: {
+          reviewerInstructions: true,
+          decisionGuidance: true,
+          rubricCriteria: {
+            orderBy: {
+              sortOrder: "asc",
+            },
+            take: 3,
+            select: {
+              id: true,
+              title: true,
+              weight: true,
+            },
+          },
+          _count: {
+            select: {
+              rubricCriteria: true,
+            },
+          },
         },
       },
       _count: {
@@ -42,6 +73,11 @@ export async function listCaseTemplates() {
     repositoryDescription: template.repositoryDescription ?? null,
     defaultBranch: template.defaultBranch,
     candidateCaseCount: template._count.candidateCases,
+    reviewerInstructions: template.reviewGuide?.reviewerInstructions ?? null,
+    decisionGuidance: template.reviewGuide?.decisionGuidance ?? null,
+    rubricCriteriaCount: template.reviewGuide?._count.rubricCriteria ?? 0,
+    rubricCriteriaPreview: template.reviewGuide?.rubricCriteria ?? [],
+    hasTemplateReviewGuide: Boolean(template.reviewGuide),
     createdAt: template.createdAt,
     createdByName:
       template.createdBy.name ?? template.createdBy.email ?? "Unknown owner",

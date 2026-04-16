@@ -224,6 +224,7 @@ export async function createCandidateCase(input: CreateCandidateCaseParams) {
         templateId: template.id,
         templateSlug: template.slug,
         repositoryName,
+        provisioningMethod: "gitea-migration",
       },
     });
 

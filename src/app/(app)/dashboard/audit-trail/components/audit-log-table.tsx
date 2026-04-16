@@ -23,7 +23,7 @@ function formatDetail(detail: AuditLog["detail"]) {
     return "No additional detail";
   }
 
-  return JSON.stringify(detail);
+  return JSON.stringify(detail, null, 2);
 }
 
 export function AuditLogTable({ auditLogs }: AuditLogTableProps) {
@@ -64,7 +64,10 @@ export function AuditLogTable({ auditLogs }: AuditLogTableProps) {
               </Text>
             </Table.Cell>
             <Table.Cell>
-              <Code size="1" style={{ wordBreak: "break-all" }}>
+              <Code
+                size="1"
+                style={{ wordBreak: "break-word", whiteSpace: "pre-wrap" }}
+              >
                 {formatDetail(auditLog.detail)}
               </Code>
             </Table.Cell>

@@ -139,6 +139,7 @@ services:
       GITEA__security__INTERNAL_TOKEN: ${GITEA_INTERNAL_TOKEN:-hiretea-dev-internal-token-change-me}
       GITEA__server__DOMAIN: ${GITEA_DOMAIN:-localhost}
       GITEA__server__ROOT_URL: ${GITEA_PUBLIC_URL:-http://localhost:3001}
+      GITEA__server__LOCAL_ROOT_URL: http://gitea:3000/
       GITEA__server__HTTP_PORT: "3000"
       GITEA__server__SSH_DOMAIN: ${GITEA_DOMAIN:-localhost}
       GITEA__server__SSH_PORT: "${GITEA_SSH_PORT:-2221}"
@@ -148,6 +149,7 @@ services:
       GITEA__service__DISABLE_REGISTRATION: "true"
       GITEA__service__REGISTER_EMAIL_CONFIRM: "false"
       GITEA__service__ENABLE_NOTIFY_MAIL: "false"
+      GITEA__migrations__ALLOW_LOCALNETWORKS: "true"
       GITEA__webhook__ALLOWED_HOST_LIST: private,loopback
       GITEA__security__SECRET_KEY: ${GITEA_SECRET_KEY:-hiretea-dev-secret-key-change-me}
     ports:

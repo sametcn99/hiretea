@@ -23,7 +23,7 @@ export default async function CaseTemplatesPage() {
       <SectionCard
         style={{ position: "sticky", top: 28 }}
         title="Create a case template"
-        description="Provision the repository in Gitea and store the reusable evaluation definition locally."
+        description="Provision the repository in Gitea and attach the reusable template-level review definition locally."
         eyebrow="Case operations"
       >
         <CaseTemplateCreateForm />
@@ -31,7 +31,7 @@ export default async function CaseTemplatesPage() {
 
       <SectionCard
         title="Case template library"
-        description="Templates are the reusable source of truth for engineering challenges. Future assignment flows will fan out from this list."
+        description="Templates are the reusable source of truth for engineering challenges, reviewer guidance, and rubric structure."
         eyebrow="Current templates"
       >
         <CaseTemplateTable

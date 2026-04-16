@@ -28,6 +28,11 @@ enum CandidateCaseDecision {
   REJECT
 }
 
+enum CandidateInviteIssueKind {
+  INITIAL
+  RESEND
+}
+
 enum WorkspaceGiteaMode {
   BUNDLED
   EXTERNAL
@@ -49,6 +54,8 @@ model User {
   caseTemplates CaseTemplate[]  @relation("CaseTemplateCreator")
   candidateCases CandidateCase[] @relation("CandidateAssignments")
   createdCases  CandidateCase[] @relation("CaseAssignmentCreator")
+  candidateInvites CandidateInvite[] @relation("CandidateInviteRecipient")
+  createdCandidateInvites CandidateInvite[] @relation("CandidateInviteCreator")
   evaluations   EvaluationNote[] @relation("EvaluationAuthor")
   auditLogs     AuditLog[]      @relation("AuditActor")
 }
@@ -106,6 +113,32 @@ model CaseTemplate {
   updatedAt             DateTime        @updatedAt
   createdBy             User            @relation("CaseTemplateCreator", fields: [createdById], references: [id], onDelete: Restrict)
   candidateCases        CandidateCase[]
+  reviewGuide           CaseTemplateReviewGuide?
+}
+
+model CaseTemplateReviewGuide {
+  id                   String                       @id @default(cuid())
+  caseTemplateId       String                       @unique
+  reviewerInstructions String?
+  decisionGuidance     String?
+  createdAt            DateTime                     @default(now())
+  updatedAt            DateTime                     @updatedAt
+  caseTemplate         CaseTemplate                 @relation(fields: [caseTemplateId], references: [id], onDelete: Cascade)
+  rubricCriteria       CaseTemplateRubricCriterion[]
+}
+
+model CaseTemplateRubricCriterion {
+  id           String                  @id @default(cuid())
+  reviewGuideId String
+  title        String
+  description  String?
+  weight       Int?
+  sortOrder    Int                     @default(0)
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+  reviewGuide  CaseTemplateReviewGuide @relation(fields: [reviewGuideId], references: [id], onDelete: Cascade)
+
+  @@index([reviewGuideId, sortOrder])
 }
 
 model CandidateCase {
@@ -144,6 +177,29 @@ model CandidateAccessGrant {
   grantedAt          DateTime      @default(now())
   revokedAt          DateTime?
   candidateCase      CandidateCase @relation(fields: [candidateCaseId], references: [id], onDelete: Cascade)
+}
+
+model CandidateInvite {
+  id              String                   @id @default(cuid())
+  candidateId     String
+  createdById     String?
+  previousInviteId String?
+  issueKind       CandidateInviteIssueKind @default(INITIAL)
+  resendSequence  Int                      @default(1)
+  tokenHash       String                   @unique
+  expiresAt       DateTime
+  claimedAt       DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  candidate       User                     @relation("CandidateInviteRecipient", fields: [candidateId], references: [id], onDelete: Cascade)
+  createdBy       User?                    @relation("CandidateInviteCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  previousInvite  CandidateInvite?         @relation("CandidateInviteChain", fields: [previousInviteId], references: [id], onDelete: SetNull)
+  resentInvites   CandidateInvite[]        @relation("CandidateInviteChain")
+
+  @@index([candidateId, createdAt])
+  @@index([candidateId, resendSequence])
+  @@unique([candidateId, resendSequence])
 }
 
 model EvaluationNote {

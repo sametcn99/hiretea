@@ -33,8 +33,20 @@ export type GiteaWorkspaceValidationResult = {
   message: string;
   adminLogin: string | null;
   organizationLabel: string | null;
+  migrationReady: boolean;
   webhookReady: boolean;
 };
+
+function resolveMigrationBaseUrl(
+  input: GiteaWorkspaceValidationInput,
+  mode: string,
+) {
+  if (mode === "bundled") {
+    return input.giteaAdminBaseUrl?.trim() || null;
+  }
+
+  return input.giteaAdminBaseUrl?.trim() || input.giteaBaseUrl;
+}
 
 export async function validateGiteaWorkspaceSettings(
   input: GiteaWorkspaceValidationInput,
@@ -50,6 +62,11 @@ export async function validateGiteaWorkspaceSettings(
     input.giteaAuthClientId?.trim() || runtimeConfig.authClientId || null;
   const webhookSecret =
     input.giteaWebhookSecret?.trim() || runtimeConfig.webhookSecret || null;
+  const migrationBaseUrl =
+    resolveMigrationBaseUrl(input, runtimeConfig.mode) ||
+    (runtimeConfig.mode === "bundled"
+      ? runtimeConfig.adminBaseUrl
+      : runtimeConfig.adminBaseUrl || runtimeConfig.publicBaseUrl);
 
   if (!adminToken) {
     throw new Error(
@@ -86,6 +103,7 @@ export async function validateGiteaWorkspaceSettings(
     return {
       adminLogin: adminUser.login,
       organizationLabel: organization.full_name || organization.username,
+      migrationReady: Boolean(migrationBaseUrl && adminToken),
       webhookReady: Boolean(runtimeConfig.appBaseUrl && webhookSecret),
     };
   } catch (error) {
@@ -102,14 +120,24 @@ export async function getGiteaWorkspaceValidationResult(
 ): Promise<GiteaWorkspaceValidationResult> {
   try {
     const result = await validateGiteaWorkspaceSettings(input);
+    const missingCapabilities = [
+      result.migrationReady
+        ? null
+        : "repository migration source configuration is still missing",
+      result.webhookReady
+        ? null
+        : "webhook runtime configuration is still missing",
+    ].filter(Boolean);
 
     return {
-      status: result.webhookReady ? "ready" : "warning",
-      message: result.webhookReady
-        ? `Validated with admin token as ${result.adminLogin}.`
-        : `Validated with admin token as ${result.adminLogin}, but webhook runtime configuration is still missing.`,
+      status: missingCapabilities.length === 0 ? "ready" : "warning",
+      message:
+        missingCapabilities.length === 0
+          ? `Validated with admin token as ${result.adminLogin}.`
+          : `Validated with admin token as ${result.adminLogin}, but ${missingCapabilities.join(" and ")}.`,
       adminLogin: result.adminLogin,
       organizationLabel: result.organizationLabel,
+      migrationReady: result.migrationReady,
       webhookReady: result.webhookReady,
     };
   } catch (error) {
@@ -121,6 +149,7 @@ export async function getGiteaWorkspaceValidationResult(
           : "Gitea validation could not be completed.",
       adminLogin: null,
       organizationLabel: null,
+      migrationReady: false,
       webhookReady: false,
     };
   }

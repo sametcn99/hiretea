@@ -70,6 +70,9 @@ export function ReviewNoteForm({ reviewCases }: ReviewNoteFormProps) {
                 <Select.Item key={reviewCase.id} value={reviewCase.id}>
                   {reviewCase.candidateDisplayName} / {reviewCase.templateName}{" "}
                   ({reviewCase.status.toLowerCase().replace(/_/g, " ")})
+                  {reviewCase.hasTemplateReviewGuide
+                    ? ` • ${reviewCase.rubricCriteriaCount} criteria`
+                    : " • no template rubric"}
                 </Select.Item>
               ))}
             </Select.Content>
@@ -79,6 +82,16 @@ export function ReviewNoteForm({ reviewCases }: ReviewNoteFormProps) {
               {error}
             </Text>
           ))}
+        </Flex>
+
+        <Flex direction="column" gap="1">
+          <Callout.Root color="gray" size="1">
+            <Callout.Text>
+              Template-level review structures are now available as guidance.
+              Scoring still remains freeform until rubric-driven note capture is
+              wired in.
+            </Callout.Text>
+          </Callout.Root>
         </Flex>
 
         <Flex direction="column" gap="1">

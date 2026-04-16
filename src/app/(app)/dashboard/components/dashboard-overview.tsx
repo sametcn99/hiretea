@@ -74,7 +74,7 @@ export function DashboardOverview({
           tone: "positive",
         },
         {
-          label: "Manual credential handoff",
+          label: "Auditable invite resend flow",
           tone: "info",
         },
         {
@@ -93,7 +93,7 @@ export function DashboardOverview({
         "Repository activity is not auto-synced yet, so status changes can lag behind what happens in Gitea.",
       ]
     : [
-        "Candidate credentials are still shared manually after provisioning.",
+        "Onboarding links are still shared manually after provisioning, but resend history is now captured locally.",
         "The totals below are computed from live workspace records instead of placeholder values.",
         "Repository activity sync is still a follow-up increment even though webhook deliveries can already be captured.",
       ];
@@ -177,7 +177,7 @@ export function DashboardOverview({
           Your current role is <strong>{role.toLowerCase()}</strong>.{" "}
           {isCandidate
             ? "Use this workspace to find the repositories your team has assigned, check what is still being reviewed, and see when a final decision has been recorded. Repository activity is not auto-synced yet, so progress still advances through internal review actions."
-            : "Candidate provisioning, template management, case assignment, and review totals below now read from live application data instead of placeholder values. Credential delivery remains manual while repository activity sync is still a follow-up increment."}
+              : "Candidate provisioning, template management, case assignment, and review totals below now read from live application data instead of placeholder values. Invite delivery remains manual-link based, but resend history is now visible while repository activity sync is still a follow-up increment."}
         </Text>
       </SectionCard>
 

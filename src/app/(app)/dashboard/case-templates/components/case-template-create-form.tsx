@@ -26,6 +26,9 @@ const initialFormValues = {
   repositoryName: "",
   repositoryDescription: "",
   defaultBranch: "main",
+  reviewerInstructions: "",
+  decisionGuidance: "",
+  rubricCriteria: "",
 };
 
 function SubmitButton() {
@@ -218,9 +221,99 @@ export function CaseTemplateCreateForm() {
           <Callout.Text>
             The repository is created first in Gitea. If the local database
             write fails afterwards, the repository creation is rolled back
-            automatically.
+            automatically. Template-level review guidance stays local to
+            Hiretea and can evolve without touching the repository contents.
           </Callout.Text>
         </Callout.Root>
+
+        <Flex direction="column" gap="1">
+          <Text
+            as="label"
+            size="2"
+            weight="medium"
+            htmlFor="reviewerInstructions"
+          >
+            Reviewer instructions
+          </Text>
+          <TextArea
+            id="reviewerInstructions"
+            name="reviewerInstructions"
+            placeholder="Describe what reviewers should verify before scoring this template."
+            rows={4}
+            value={formValues.reviewerInstructions}
+            onChange={(event) =>
+              setFormValues((current) => ({
+                ...current,
+                reviewerInstructions: event.target.value,
+              }))
+            }
+            color={state.fieldErrors?.reviewerInstructions ? "red" : undefined}
+          />
+          {state.fieldErrors?.reviewerInstructions?.map((error) => (
+            <Text size="1" color="red" key={error}>
+              {error}
+            </Text>
+          ))}
+        </Flex>
+
+        <Flex direction="column" gap="1">
+          <Text as="label" size="2" weight="medium" htmlFor="decisionGuidance">
+            Decision guidance
+          </Text>
+          <TextArea
+            id="decisionGuidance"
+            name="decisionGuidance"
+            placeholder="Document what typically leads to advance, hold, or reject outcomes."
+            rows={3}
+            value={formValues.decisionGuidance}
+            onChange={(event) =>
+              setFormValues((current) => ({
+                ...current,
+                decisionGuidance: event.target.value,
+              }))
+            }
+            color={state.fieldErrors?.decisionGuidance ? "red" : undefined}
+          />
+          {state.fieldErrors?.decisionGuidance?.map((error) => (
+            <Text size="1" color="red" key={error}>
+              {error}
+            </Text>
+          ))}
+        </Flex>
+
+        <Flex direction="column" gap="1">
+          <Text as="label" size="2" weight="medium" htmlFor="rubricCriteria">
+            Rubric criteria
+          </Text>
+          <TextArea
+            id="rubricCriteria"
+            name="rubricCriteria"
+            placeholder={[
+              "API design | Checks resource modeling and consistency | 40",
+              "Correctness | Covers tests, edge cases, and runtime behavior | 35",
+              "Communication | README, tradeoffs, and reviewer clarity | 25",
+            ].join("\n")}
+            rows={6}
+            value={formValues.rubricCriteria}
+            onChange={(event) =>
+              setFormValues((current) => ({
+                ...current,
+                rubricCriteria: event.target.value,
+              }))
+            }
+            color={state.fieldErrors?.rubricCriteria ? "red" : undefined}
+          />
+          <Text size="1" color="gray">
+            One criterion per line using <strong>Title | Guidance | Weight</strong>.
+            Guidance and weight are optional, but weight must be a whole number
+            between 1 and 100 when provided.
+          </Text>
+          {state.fieldErrors?.rubricCriteria?.map((error) => (
+            <Text size="1" color="red" key={error}>
+              {error}
+            </Text>
+          ))}
+        </Flex>
 
         {state.status === "error" && state.message ? (
           <Callout.Root color="red" size="1">

@@ -7,6 +7,7 @@ import {
   type ProvisionCandidateActionState,
   provisionCandidateAction,
 } from "@/app/(app)/dashboard/candidates/actions";
+import { useToast } from "@/components/providers/toast-provider";
 
 const initialProvisionCandidateState: ProvisionCandidateActionState = {
   status: "idle",
@@ -29,11 +30,33 @@ function SubmitButton() {
 }
 
 export function CandidateProvisionForm() {
+  const { showToast } = useToast();
   const [state, formAction] = useActionState(
     provisionCandidateAction,
     initialProvisionCandidateState,
   );
   const [formKey, setFormKey] = useState(0);
+
+  async function handleCopyInvite() {
+    if (!state.inviteUrl) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(state.inviteUrl);
+      showToast({
+        tone: "success",
+        title: "Invite link copied",
+        description: "The fresh onboarding invite is now in your clipboard.",
+      });
+    } catch {
+      showToast({
+        tone: "error",
+        title: "Clipboard copy failed",
+        description: "Regenerate the invite if you still need to share it.",
+      });
+    }
+  }
 
   useEffect(() => {
     if (state.status === "success") {
@@ -100,10 +123,11 @@ export function CandidateProvisionForm() {
 
         <Callout.Root color="gray" size="1">
           <Callout.Text>
-            The temporary password is generated automatically and must be shared
-            manually with the candidate during the MVP phase. After
-            provisioning, it is available from the current roster until the
-            candidate completes their first sign-in.
+            The candidate account is provisioned in Gitea first. When invite
+            generation is available, the workspace now issues a secure
+            onboarding link instead of exposing the temporary password directly
+            in the roster, and every resend remains visible in the admin
+            history.
           </Callout.Text>
         </Callout.Root>
 
@@ -116,6 +140,23 @@ export function CandidateProvisionForm() {
         {state.status === "success" && state.message ? (
           <Callout.Root color="green" size="1">
             <Callout.Text>{state.message}</Callout.Text>
+            {state.inviteUrl ? (
+              <Button
+                type="button"
+                size="1"
+                variant="soft"
+                color="gray"
+                mt="2"
+                onClick={handleCopyInvite}
+              >
+                Copy onboarding invite
+              </Button>
+            ) : null}
+            {state.inviteError ? (
+              <Text size="1" color="gray" mt="2">
+                {state.inviteError}
+              </Text>
+            ) : null}
           </Callout.Root>
         ) : null}
 

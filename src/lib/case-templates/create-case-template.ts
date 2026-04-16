@@ -11,6 +11,11 @@ type CreateCaseTemplateParams = CaseTemplateCreateInput & {
 };
 
 export async function createCaseTemplate(input: CreateCaseTemplateParams) {
+  const hasTemplateReviewGuide =
+    Boolean(input.reviewerInstructions) ||
+    Boolean(input.decisionGuidance) ||
+    input.rubricCriteria.length > 0;
+
   const existingTemplate = await db.caseTemplate.findFirst({
     where: {
       OR: [
@@ -50,12 +55,42 @@ export async function createCaseTemplate(input: CreateCaseTemplateParams) {
         repositoryDescription: input.repositoryDescription,
         defaultBranch: input.defaultBranch,
         createdById: input.actorId,
+        reviewGuide: hasTemplateReviewGuide
+          ? {
+              create: {
+                reviewerInstructions: input.reviewerInstructions,
+                decisionGuidance: input.decisionGuidance,
+                rubricCriteria: input.rubricCriteria.length
+                  ? {
+                      create: input.rubricCriteria.map((criterion, index) => ({
+                        title: criterion.title,
+                        description: criterion.description,
+                        weight: criterion.weight,
+                        sortOrder: index,
+                      })),
+                    }
+                  : undefined,
+              },
+            }
+          : undefined,
       },
       include: {
         createdBy: {
           select: {
             name: true,
             email: true,
+          },
+        },
+        reviewGuide: {
+          select: {
+            id: true,
+            reviewerInstructions: true,
+            decisionGuidance: true,
+            _count: {
+              select: {
+                rubricCriteria: true,
+              },
+            },
           },
         },
         _count: {
@@ -74,6 +109,8 @@ export async function createCaseTemplate(input: CreateCaseTemplateParams) {
       detail: {
         slug: template.slug,
         repositoryName: template.repositoryName,
+        hasTemplateReviewGuide,
+        rubricCriteriaCount: template.reviewGuide?._count.rubricCriteria ?? 0,
       },
     });
 

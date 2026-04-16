@@ -73,6 +73,13 @@ export function ReviewCaseTable({ reviewCases }: ReviewCaseTableProps) {
                 <Text size="1" color="gray">
                   Slug: {reviewCase.templateSlug}
                 </Text>
+                <Text size="1" color="gray">
+                  {reviewCase.hasTemplateReviewGuide
+                    ? reviewCase.rubricCriteriaCount > 0
+                      ? `${reviewCase.rubricCriteriaCount} rubric criteria ready`
+                      : "Template review guide ready"
+                    : "No template review guide yet"}
+                </Text>
               </Flex>
             </Table.Cell>
             <Table.Cell>

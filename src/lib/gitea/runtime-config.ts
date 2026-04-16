@@ -47,8 +47,17 @@ export type GiteaRuntimeReadiness = {
   hasConfigEncryptionKey: boolean;
   authReady: boolean;
   adminReady: boolean;
+  migrationReady: boolean;
   webhookReady: boolean;
 };
+
+function resolveMigrationBaseUrl(config: GiteaRuntimeConfig) {
+  if (config.mode === "bundled") {
+    return config.adminBaseUrl;
+  }
+
+  return config.adminBaseUrl ?? config.publicBaseUrl;
+}
 
 async function getPersistedWorkspaceGiteaConfig(): Promise<PersistedWorkspaceGiteaConfig | null> {
   return db.workspaceSettings.findFirst({
@@ -154,6 +163,7 @@ export async function getGiteaRuntimeConfig(): Promise<GiteaRuntimeConfig> {
 
 export async function getGiteaRuntimeReadiness(): Promise<GiteaRuntimeReadiness> {
   const config = await getGiteaRuntimeConfig();
+  const migrationBaseUrl = resolveMigrationBaseUrl(config);
 
   return {
     mode: config.mode,
@@ -172,6 +182,9 @@ export async function getGiteaRuntimeReadiness(): Promise<GiteaRuntimeReadiness>
     ),
     adminReady: Boolean(
       config.adminBaseUrl && config.adminToken && config.organization,
+    ),
+    migrationReady: Boolean(
+      migrationBaseUrl && config.adminToken && config.organization,
     ),
     webhookReady: Boolean(config.appBaseUrl && config.webhookSecret),
   };
@@ -207,6 +220,21 @@ export async function getResolvedGiteaAdminConfig() {
 
   return {
     baseUrl: config.adminBaseUrl,
+    token: config.adminToken,
+    organization: config.organization,
+  };
+}
+
+export async function getResolvedGiteaMigrationConfig() {
+  const config = await getGiteaRuntimeConfig();
+  const baseUrl = resolveMigrationBaseUrl(config);
+
+  if (!baseUrl || !config.adminToken || !config.organization) {
+    throw new Error("Gitea repository migration configuration is incomplete.");
+  }
+
+  return {
+    baseUrl,
     token: config.adminToken,
     organization: config.organization,
   };

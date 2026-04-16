@@ -27,7 +27,7 @@ export default async function CandidatesPage() {
 
       <SectionCard
         title="Provisioned candidates"
-        description="This list is backed by local application data, not by direct Gitea reads, so the app stays authoritative about the hiring workflow."
+        description="This list is backed by local application data, including invite resend history, so the app stays authoritative about the hiring workflow."
         eyebrow="Current roster"
       >
         <CandidateTable candidates={candidates} />

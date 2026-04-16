@@ -18,6 +18,8 @@ export type ReviewCaseListItem = {
   candidateLogin: string | null;
   templateName: string;
   templateSlug: string;
+  hasTemplateReviewGuide: boolean;
+  rubricCriteriaCount: number;
   latestScore: number | null;
   latestSummary: string | null;
   latestReviewedAt: Date | null;
@@ -53,6 +55,15 @@ export async function listReviewCases() {
         select: {
           name: true,
           slug: true,
+          reviewGuide: {
+            select: {
+              _count: {
+                select: {
+                  rubricCriteria: true,
+                },
+              },
+            },
+          },
         },
       },
       evaluationNotes: {
@@ -102,6 +113,9 @@ export async function listReviewCases() {
       candidateLogin: candidateCase.candidate.giteaIdentity?.login ?? null,
       templateName: candidateCase.caseTemplate.name,
       templateSlug: candidateCase.caseTemplate.slug,
+      hasTemplateReviewGuide: Boolean(candidateCase.caseTemplate.reviewGuide),
+      rubricCriteriaCount:
+        candidateCase.caseTemplate.reviewGuide?._count.rubricCriteria ?? 0,
       latestScore: latestNote?.score ?? null,
       latestSummary: latestNote?.summary ?? null,
       latestReviewedAt: latestNote?.createdAt ?? null,

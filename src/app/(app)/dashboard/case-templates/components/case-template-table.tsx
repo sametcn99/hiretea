@@ -77,6 +77,7 @@ export function CaseTemplateTable({
         <Table.Row>
           <Table.ColumnHeaderCell>Template</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Repository</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell>Review kit</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Usage</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Created</Table.ColumnHeaderCell>
         </Table.Row>
@@ -151,6 +152,49 @@ export function CaseTemplateTable({
                         {cloneCommand}
                       </Code>
                     </Button>
+                  ) : null}
+                </Flex>
+              </Table.Cell>
+              <Table.Cell>
+                <Flex direction="column" gap="1">
+                  <StatusBadge
+                    label={
+                      template.hasTemplateReviewGuide
+                        ? "Template review guide ready"
+                        : "No review guide yet"
+                    }
+                    tone={
+                      template.hasTemplateReviewGuide ? "positive" : "neutral"
+                    }
+                  />
+                  <Text size="1" color="gray">
+                    {template.rubricCriteriaCount > 0
+                      ? `${template.rubricCriteriaCount} rubric criteria configured.`
+                      : "No rubric criteria defined yet."}
+                  </Text>
+                  {template.reviewerInstructions ? (
+                    <Text size="1" color="gray">
+                      {template.reviewerInstructions}
+                    </Text>
+                  ) : template.decisionGuidance ? (
+                    <Text size="1" color="gray">
+                      {template.decisionGuidance}
+                    </Text>
+                  ) : null}
+                  {template.rubricCriteriaPreview.length > 0 ? (
+                    <Text size="1" color="gray">
+                      Criteria: {template.rubricCriteriaPreview
+                        .map((criterion) =>
+                          criterion.weight
+                            ? `${criterion.title} (${criterion.weight})`
+                            : criterion.title,
+                        )
+                        .join(", ")}
+                      {template.rubricCriteriaCount >
+                      template.rubricCriteriaPreview.length
+                        ? `, +${template.rubricCriteriaCount - template.rubricCriteriaPreview.length} more`
+                        : ""}
+                    </Text>
                   ) : null}
                 </Flex>
               </Table.Cell>
