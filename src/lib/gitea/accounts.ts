@@ -16,9 +16,11 @@ type GiteaUserResponse = {
   email?: string | null;
 };
 
-export async function createCandidateAccount(
-  input: CreateCandidateAccountInput,
-) {
+type CreateGiteaAccountInput = CreateCandidateAccountInput & {
+  auditAction: string;
+};
+
+async function createGiteaAccount(input: CreateGiteaAccountInput) {
   const client = await getGiteaAdminClient();
 
   const user = await client.request<GiteaUserResponse>("/admin/users", {
@@ -35,7 +37,7 @@ export async function createCandidateAccount(
   });
 
   await createAuditLog({
-    action: "candidate.account.created",
+    action: input.auditAction,
     actorId: input.actorId,
     resourceType: "GiteaUser",
     resourceId: String(user.id),
@@ -46,6 +48,24 @@ export async function createCandidateAccount(
   });
 
   return user;
+}
+
+export async function createCandidateAccount(
+  input: CreateCandidateAccountInput,
+) {
+  return createGiteaAccount({
+    ...input,
+    auditAction: "candidate.account.created",
+  });
+}
+
+export async function createRecruiterAccount(
+  input: CreateCandidateAccountInput,
+) {
+  return createGiteaAccount({
+    ...input,
+    auditAction: "recruiter.account.created",
+  });
 }
 
 type DeleteCandidateAccountInput = {

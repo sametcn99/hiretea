@@ -16,25 +16,47 @@ export async function createCaseTemplate(input: CreateCaseTemplateParams) {
     Boolean(input.decisionGuidance) ||
     input.rubricCriteria.length > 0;
 
-  const existingTemplate = await db.caseTemplate.findFirst({
-    where: {
-      OR: [
-        {
-          slug: input.slug,
+  const [existingTemplate, reviewers] = await Promise.all([
+    db.caseTemplate.findFirst({
+      where: {
+        OR: [
+          {
+            slug: input.slug,
+          },
+          {
+            repositoryName: input.repositoryName,
+          },
+        ],
+      },
+      select: {
+        id: true,
+      },
+    }),
+    db.user.findMany({
+      where: {
+        id: {
+          in: input.reviewerIds,
         },
-        {
-          repositoryName: input.repositoryName,
-        },
-      ],
-    },
-    select: {
-      id: true,
-    },
-  });
+        role: "RECRUITER",
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    }),
+  ]);
 
   if (existingTemplate) {
     throw new Error(
       "A case template with the same slug or repository name already exists.",
+    );
+  }
+
+  if (reviewers.length !== input.reviewerIds.length) {
+    throw new Error(
+      "One or more selected template reviewers are invalid or no longer active.",
     );
   }
 
@@ -55,6 +77,14 @@ export async function createCaseTemplate(input: CreateCaseTemplateParams) {
         repositoryDescription: input.repositoryDescription,
         defaultBranch: input.defaultBranch,
         createdById: input.actorId,
+        reviewerAssignments: input.reviewerIds.length
+          ? {
+              create: input.reviewerIds.map((reviewerId) => ({
+                reviewerId,
+                assignedById: input.actorId,
+              })),
+            }
+          : undefined,
         reviewGuide: hasTemplateReviewGuide
           ? {
               create: {
@@ -93,6 +123,19 @@ export async function createCaseTemplate(input: CreateCaseTemplateParams) {
             },
           },
         },
+        reviewerAssignments: {
+          orderBy: {
+            createdAt: "asc",
+          },
+          select: {
+            reviewer: {
+              select: {
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
         _count: {
           select: {
             candidateCases: true,
@@ -111,6 +154,12 @@ export async function createCaseTemplate(input: CreateCaseTemplateParams) {
         repositoryName: template.repositoryName,
         hasTemplateReviewGuide,
         rubricCriteriaCount: template.reviewGuide?._count.rubricCriteria ?? 0,
+        defaultReviewerNames: template.reviewerAssignments.map(
+          (assignment) =>
+            assignment.reviewer.name ??
+            assignment.reviewer.email ??
+            "Unknown reviewer",
+        ),
       },
     });
 

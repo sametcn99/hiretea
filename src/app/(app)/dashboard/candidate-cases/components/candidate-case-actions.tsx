@@ -1,6 +1,5 @@
 "use client";
 
-import type { CandidateCaseStatus } from "@prisma/client";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import {
   AlertDialog,
@@ -10,22 +9,25 @@ import {
   IconButton,
 } from "@radix-ui/themes";
 import { useState } from "react";
+import type {
+  CandidateCaseAssignmentOptions,
+  CandidateCaseListItem,
+} from "@/lib/candidate-cases/queries";
 import {
   deleteCaseAction,
   restoreCaseAction,
   revokeAccessAction,
 } from "../actions";
+import { EditCandidateCaseDialog } from "./edit-candidate-case-dialog";
 
 type CandidateCaseActionsProps = {
-  caseId: string;
-  status: CandidateCaseStatus;
-  repositoryName: string;
+  candidateCase: CandidateCaseListItem;
+  assignmentOptions: CandidateCaseAssignmentOptions;
 };
 
 export function CandidateCaseActions({
-  caseId,
-  status,
-  repositoryName,
+  candidateCase,
+  assignmentOptions,
 }: CandidateCaseActionsProps) {
   const [isArchiveAlertOpen, setIsArchiveAlertOpen] = useState(false);
   const [isRevokeAlertOpen, setIsRevokeAlertOpen] = useState(false);
@@ -34,7 +36,7 @@ export function CandidateCaseActions({
 
   async function handleArchive() {
     setIsLoading(true);
-    const result = await deleteCaseAction(caseId);
+    const result = await deleteCaseAction(candidateCase.id);
     if (result.status === "error") {
       alert(result.message);
       setIsLoading(false);
@@ -46,7 +48,7 @@ export function CandidateCaseActions({
 
   async function handleRevoke() {
     setIsLoading(true);
-    const result = await revokeAccessAction(caseId);
+    const result = await revokeAccessAction(candidateCase.id);
     if (result.status === "error") {
       alert(result.message);
       setIsLoading(false);
@@ -58,7 +60,7 @@ export function CandidateCaseActions({
 
   async function handleRestore() {
     setIsLoading(true);
-    const result = await restoreCaseAction(caseId);
+    const result = await restoreCaseAction(candidateCase.id);
     if (result.status === "error") {
       alert(result.message);
       setIsLoading(false);
@@ -70,32 +72,38 @@ export function CandidateCaseActions({
 
   return (
     <>
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger>
-          <IconButton variant="ghost" color="gray" size="2">
-            <DotsHorizontalIcon />
-          </IconButton>
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Content>
-          {status === "ARCHIVED" ? (
-            <DropdownMenu.Item onClick={() => setIsRestoreAlertOpen(true)}>
-              Restore Case
-            </DropdownMenu.Item>
-          ) : (
-            <>
-              <DropdownMenu.Item onClick={() => setIsRevokeAlertOpen(true)}>
-                Revoke Candidate Access
+      <Flex gap="2" justify="end" align="center">
+        <EditCandidateCaseDialog
+          candidateCase={candidateCase}
+          assignmentOptions={assignmentOptions}
+        />
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger>
+            <IconButton variant="ghost" color="gray" size="2">
+              <DotsHorizontalIcon />
+            </IconButton>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content>
+            {candidateCase.status === "ARCHIVED" ? (
+              <DropdownMenu.Item onClick={() => setIsRestoreAlertOpen(true)}>
+                Restore Case
               </DropdownMenu.Item>
-              <DropdownMenu.Item
-                color="red"
-                onClick={() => setIsArchiveAlertOpen(true)}
-              >
-                Archive Case
-              </DropdownMenu.Item>
-            </>
-          )}
-        </DropdownMenu.Content>
-      </DropdownMenu.Root>
+            ) : (
+              <>
+                <DropdownMenu.Item onClick={() => setIsRevokeAlertOpen(true)}>
+                  Revoke Candidate Access
+                </DropdownMenu.Item>
+                <DropdownMenu.Item
+                  color="red"
+                  onClick={() => setIsArchiveAlertOpen(true)}
+                >
+                  Archive Case
+                </DropdownMenu.Item>
+              </>
+            )}
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
+      </Flex>
 
       {/* Revoke Access Alert */}
       <AlertDialog.Root
@@ -106,8 +114,10 @@ export function CandidateCaseActions({
           <AlertDialog.Title>Revoke Access</AlertDialog.Title>
           <AlertDialog.Description size="2">
             Are you sure you want to revoke the candidate's access to{" "}
-            <strong>{repositoryName}</strong>? They will no longer be able to
-            push code or view the repository.
+            <strong>
+              {candidateCase.workingRepository || "this repository"}
+            </strong>
+            ? They will no longer be able to push code or view the repository.
           </AlertDialog.Description>
 
           <Flex gap="3" mt="4" justify="end">
@@ -138,9 +148,10 @@ export function CandidateCaseActions({
         <AlertDialog.Content maxWidth="450px">
           <AlertDialog.Title>Restore Candidate Case</AlertDialog.Title>
           <AlertDialog.Description size="2">
-            Restore <strong>{repositoryName}</strong> back into the active
-            workflow. If the repository is still available, candidate access
-            will be granted again automatically.
+            Restore{" "}
+            <strong>{candidateCase.workingRepository || "this case"}</strong>{" "}
+            back into the active workflow. If the repository is still available,
+            candidate access will be granted again automatically.
           </AlertDialog.Description>
 
           <Flex gap="3" mt="4" justify="end">
@@ -171,7 +182,8 @@ export function CandidateCaseActions({
         <AlertDialog.Content maxWidth="450px">
           <AlertDialog.Title>Archive Candidate Case</AlertDialog.Title>
           <AlertDialog.Description size="2">
-            Are you sure you want to archive <strong>{repositoryName}</strong>?
+            Are you sure you want to archive{" "}
+            <strong>{candidateCase.workingRepository || "this case"}</strong>?
             This will revoke candidate access and hide the case from active
             views while keeping the repository details and evaluation history in
             the system for possible restoration later.

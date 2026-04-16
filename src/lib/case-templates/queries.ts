@@ -17,9 +17,17 @@ export type CaseTemplateListItem = {
     title: string;
     weight: number | null;
   }>;
+  defaultReviewerIds: string[];
+  defaultReviewerNames: string[];
   hasTemplateReviewGuide: boolean;
   createdAt: Date;
   createdByName: string;
+};
+
+export type CaseTemplateReviewerOption = {
+  id: string;
+  displayName: string;
+  email: string;
 };
 
 export async function listCaseTemplates() {
@@ -53,6 +61,20 @@ export async function listCaseTemplates() {
           },
         },
       },
+      reviewerAssignments: {
+        orderBy: {
+          createdAt: "asc",
+        },
+        select: {
+          reviewerId: true,
+          reviewer: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
       _count: {
         select: {
           candidateCases: true,
@@ -77,9 +99,43 @@ export async function listCaseTemplates() {
     decisionGuidance: template.reviewGuide?.decisionGuidance ?? null,
     rubricCriteriaCount: template.reviewGuide?._count.rubricCriteria ?? 0,
     rubricCriteriaPreview: template.reviewGuide?.rubricCriteria ?? [],
+    defaultReviewerIds: template.reviewerAssignments.map(
+      (assignment) => assignment.reviewerId,
+    ),
+    defaultReviewerNames: template.reviewerAssignments.map(
+      (assignment) =>
+        assignment.reviewer.name ??
+        assignment.reviewer.email ??
+        "Unknown reviewer",
+    ),
     hasTemplateReviewGuide: Boolean(template.reviewGuide),
     createdAt: template.createdAt,
     createdByName:
       template.createdBy.name ?? template.createdBy.email ?? "Unknown owner",
+  }));
+}
+
+export async function listCaseTemplateReviewerOptions(): Promise<
+  CaseTemplateReviewerOption[]
+> {
+  const reviewers = await db.user.findMany({
+    where: {
+      role: "RECRUITER",
+      isActive: true,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return reviewers.map((reviewer) => ({
+    id: reviewer.id,
+    displayName: reviewer.name ?? reviewer.email ?? "Unnamed reviewer",
+    email: reviewer.email ?? "No email",
   }));
 }

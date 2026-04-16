@@ -23,7 +23,8 @@ const initialCreateEvaluationNoteState: CreateEvaluationNoteActionState = {
 };
 
 type ReviewNoteFormProps = {
-  reviewCases: ReviewCaseListItem[];
+  reviewCases?: ReviewCaseListItem[];
+  fixedReviewCase?: ReviewCaseListItem;
 };
 
 function SubmitButton({ disabled }: { disabled: boolean }) {
@@ -42,13 +43,16 @@ function SubmitButton({ disabled }: { disabled: boolean }) {
   );
 }
 
-export function ReviewNoteForm({ reviewCases }: ReviewNoteFormProps) {
+export function ReviewNoteForm({
+  reviewCases = [],
+  fixedReviewCase,
+}: ReviewNoteFormProps) {
   const [state, formAction] = useActionState(
     createEvaluationNoteAction,
     initialCreateEvaluationNoteState,
   );
   const [formKey, setFormKey] = useState(0);
-  const hasReviewCases = reviewCases.length > 0;
+  const hasReviewCases = fixedReviewCase ? true : reviewCases.length > 0;
 
   useEffect(() => {
     if (state.status === "success") {
@@ -59,30 +63,69 @@ export function ReviewNoteForm({ reviewCases }: ReviewNoteFormProps) {
   return (
     <form action={formAction} key={formKey}>
       <Flex direction="column" gap="3">
-        <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium">
-            Candidate case
-          </Text>
-          <Select.Root name="candidateCaseId">
-            <Select.Trigger placeholder="Select a candidate case" />
-            <Select.Content>
-              {reviewCases.map((reviewCase) => (
-                <Select.Item key={reviewCase.id} value={reviewCase.id}>
-                  {reviewCase.candidateDisplayName} / {reviewCase.templateName}{" "}
-                  ({reviewCase.status.toLowerCase().replace(/_/g, " ")})
-                  {reviewCase.hasTemplateReviewGuide
-                    ? ` • ${reviewCase.rubricCriteriaCount} criteria`
-                    : " • no template rubric"}
-                </Select.Item>
-              ))}
-            </Select.Content>
-          </Select.Root>
-          {state.fieldErrors?.candidateCaseId?.map((error) => (
-            <Text size="1" color="red" key={error}>
-              {error}
+        {fixedReviewCase ? (
+          <>
+            <input
+              type="hidden"
+              name="candidateCaseId"
+              value={fixedReviewCase.id}
+            />
+            <Flex direction="column" gap="1">
+              <Text size="2" weight="medium">
+                Reviewing now
+              </Text>
+              <Text weight="bold">
+                {fixedReviewCase.candidateDisplayName} /{" "}
+                {fixedReviewCase.templateName}
+              </Text>
+              <Text size="1" color="gray">
+                Status:{" "}
+                {fixedReviewCase.status.toLowerCase().replace(/_/g, " ")}
+              </Text>
+              <Text size="1" color="gray">
+                {fixedReviewCase.assignedReviewerNames.length > 0
+                  ? `Assigned reviewers: ${fixedReviewCase.assignedReviewerNames.join(", ")}`
+                  : "Assigned reviewers: none"}
+              </Text>
+              <Text size="1" color="gray">
+                {fixedReviewCase.hasTemplateReviewGuide
+                  ? fixedReviewCase.rubricCriteriaCount > 0
+                    ? `${fixedReviewCase.rubricCriteriaCount} rubric criteria ready`
+                    : "Template review guide ready"
+                  : "No template review guide yet"}
+              </Text>
+            </Flex>
+          </>
+        ) : (
+          <Flex direction="column" gap="1">
+            <Text as="label" size="2" weight="medium">
+              Candidate case
             </Text>
-          ))}
-        </Flex>
+            <Select.Root name="candidateCaseId">
+              <Select.Trigger placeholder="Select a candidate case" />
+              <Select.Content>
+                {reviewCases.map((reviewCase) => (
+                  <Select.Item key={reviewCase.id} value={reviewCase.id}>
+                    {reviewCase.candidateDisplayName} /{" "}
+                    {reviewCase.templateName} (
+                    {reviewCase.status.toLowerCase().replace(/_/g, " ")})
+                    {reviewCase.assignedReviewerNames.length > 0
+                      ? ` • reviewers: ${reviewCase.assignedReviewerNames.join(", ")}`
+                      : " • unassigned"}
+                    {reviewCase.hasTemplateReviewGuide
+                      ? ` • ${reviewCase.rubricCriteriaCount} criteria`
+                      : " • no template rubric"}
+                  </Select.Item>
+                ))}
+              </Select.Content>
+            </Select.Root>
+            {state.fieldErrors?.candidateCaseId?.map((error) => (
+              <Text size="1" color="red" key={error}>
+                {error}
+              </Text>
+            ))}
+          </Flex>
+        )}
 
         <Flex direction="column" gap="1">
           <Callout.Root color="gray" size="1">

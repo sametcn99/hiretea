@@ -4,13 +4,17 @@ import { CaseTemplateCreateForm } from "@/app/(app)/dashboard/case-templates/com
 import { CaseTemplateTable } from "@/app/(app)/dashboard/case-templates/components/case-template-table";
 import { SectionCard } from "@/components/ui/section-card";
 import { requireRole } from "@/lib/auth/session";
-import { listCaseTemplates } from "@/lib/case-templates/queries";
+import {
+  listCaseTemplateReviewerOptions,
+  listCaseTemplates,
+} from "@/lib/case-templates/queries";
 import { getWorkspaceSettings } from "@/lib/workspace-settings/queries";
 
 export default async function CaseTemplatesPage() {
   await requireRole(UserRole.ADMIN, UserRole.RECRUITER);
-  const [templates, settings] = await Promise.all([
+  const [templates, reviewerOptions, settings] = await Promise.all([
     listCaseTemplates(),
+    listCaseTemplateReviewerOptions(),
     getWorkspaceSettings(),
   ]);
 
@@ -26,7 +30,7 @@ export default async function CaseTemplatesPage() {
         description="Provision the repository in Gitea and attach the reusable template-level review definition locally."
         eyebrow="Case operations"
       >
-        <CaseTemplateCreateForm />
+        <CaseTemplateCreateForm reviewerOptions={reviewerOptions} />
       </SectionCard>
 
       <SectionCard

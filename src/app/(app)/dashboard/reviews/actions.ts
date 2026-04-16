@@ -77,6 +77,7 @@ export async function createEvaluationNoteAction(
     });
 
     revalidatePath("/dashboard/reviews");
+    revalidatePath(`/dashboard/reviews/${parsedInput.data.candidateCaseId}`);
     revalidatePath("/dashboard/candidate-cases");
     revalidatePath("/dashboard/audit-trail");
 

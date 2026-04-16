@@ -1,6 +1,7 @@
 import {
   type CandidateCaseDecision,
   CandidateCaseStatus,
+  UserRole,
 } from "@prisma/client";
 import { createAuditLog } from "@/lib/audit/log";
 import {
@@ -69,6 +70,11 @@ export async function createEvaluationNote(input: CreateEvaluationNoteParams) {
           name: true,
         },
       },
+      reviewerAssignments: {
+        select: {
+          reviewerId: true,
+        },
+      },
     },
   });
 
@@ -78,6 +84,18 @@ export async function createEvaluationNote(input: CreateEvaluationNoteParams) {
 
   if (!reviewableStatuses.includes(candidateCase.status)) {
     throw new Error("The selected candidate case is not ready for review yet.");
+  }
+
+  if (
+    input.actorRole === UserRole.RECRUITER &&
+    candidateCase.reviewerAssignments.length > 0 &&
+    !candidateCase.reviewerAssignments.some(
+      (assignment) => assignment.reviewerId === input.actorId,
+    )
+  ) {
+    throw new Error(
+      "You are not assigned as a reviewer for the selected candidate case.",
+    );
   }
 
   const nextStatus = getNextStatus(candidateCase.status, input.finalizeReview);

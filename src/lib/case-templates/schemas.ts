@@ -80,6 +80,23 @@ const optionalTemplateReviewText = (max: number) =>
       .transform((value) => value || undefined),
   );
 
+const reviewerIdsSchema = z.preprocess(
+  (value) => {
+    if (Array.isArray(value)) {
+      return value;
+    }
+
+    if (typeof value === "string") {
+      return value ? [value] : [];
+    }
+
+    return [];
+  },
+  z
+    .array(z.string().trim().min(1))
+    .transform((reviewerIds) => [...new Set(reviewerIds)]),
+);
+
 export const caseTemplateCreateSchema = z.object({
   name: z.string().trim().min(3).max(80),
   slug: z.string().trim().min(3).max(64).regex(slugPattern, {
@@ -100,6 +117,7 @@ export const caseTemplateCreateSchema = z.object({
   defaultBranch: z.string().trim().min(2).max(32),
   reviewerInstructions: optionalTemplateReviewText(2000),
   decisionGuidance: optionalTemplateReviewText(1200),
+  reviewerIds: reviewerIdsSchema,
   rubricCriteria: z.preprocess(
     (value) => (typeof value === "string" ? value : ""),
     z

@@ -32,6 +32,7 @@ function mapFieldErrors(issues: ZodIssue[]) {
         field === "defaultBranch" ||
         field === "reviewerInstructions" ||
         field === "decisionGuidance" ||
+        field === "reviewerIds" ||
         field === "rubricCriteria"
       ) {
         const existingErrors = fieldErrors[field] ?? [];
@@ -59,6 +60,7 @@ export async function createCaseTemplateAction(
     defaultBranch: formData.get("defaultBranch"),
     reviewerInstructions: formData.get("reviewerInstructions"),
     decisionGuidance: formData.get("decisionGuidance"),
+    reviewerIds: formData.getAll("reviewerIds"),
     rubricCriteria: formData.get("rubricCriteria"),
   });
 

@@ -11,10 +11,14 @@ import { restoreCandidateCase } from "@/lib/candidate-cases/restore-candidate-ca
 import { revokeCandidateCaseAccess } from "@/lib/candidate-cases/revoke-case-access";
 import {
   type CandidateCaseCreateInput,
+  type CandidateCaseUpdateInput,
   candidateCaseCreateSchema,
+  candidateCaseUpdateSchema,
 } from "@/lib/candidate-cases/schemas";
+import { updateCandidateCase } from "@/lib/candidate-cases/update-candidate-case";
 
 type CandidateCaseField = keyof CandidateCaseCreateInput;
+type CandidateCaseUpdateField = keyof CandidateCaseUpdateInput;
 
 export type CreateCandidateCaseActionState = {
   status: "idle" | "success" | "error";
@@ -22,6 +26,12 @@ export type CreateCandidateCaseActionState = {
   repositoryName?: string;
   repositoryUrl?: string | null;
   fieldErrors?: Partial<Record<CandidateCaseField, string[]>>;
+};
+
+export type UpdateCandidateCaseActionState = {
+  status: "idle" | "success" | "error";
+  message?: string;
+  fieldErrors?: Partial<Record<CandidateCaseUpdateField, string[]>>;
 };
 
 function mapFieldErrors(issues: ZodIssue[]) {
@@ -32,6 +42,7 @@ function mapFieldErrors(issues: ZodIssue[]) {
       if (
         field === "candidateId" ||
         field === "caseTemplateId" ||
+        field === "reviewerIds" ||
         field === "dueAt"
       ) {
         const existingErrors = fieldErrors[field] ?? [];
@@ -57,6 +68,7 @@ export async function createCandidateCaseAction(
   const parsedInput = candidateCaseCreateSchema.safeParse({
     candidateId: formData.get("candidateId"),
     caseTemplateId: formData.get("caseTemplateId"),
+    reviewerIds: formData.getAll("reviewerIds"),
     dueAt: formData.get("dueAt"),
   });
 
@@ -92,6 +104,58 @@ export async function createCandidateCaseAction(
         error instanceof Error
           ? error.message
           : "Candidate case provisioning failed. Review the configuration and try again.",
+    };
+  }
+}
+
+export async function updateCandidateCaseAction(
+  caseId: string,
+  _previousState: UpdateCandidateCaseActionState,
+  formData: FormData,
+): Promise<UpdateCandidateCaseActionState> {
+  const session = await requireRole(UserRole.ADMIN, UserRole.RECRUITER);
+  const actor: AuthorizedActor = {
+    actorId: session.user.id,
+    actorRole: session.user.role,
+  };
+
+  const parsedInput = candidateCaseUpdateSchema.safeParse({
+    candidateId: formData.get("candidateId"),
+    caseTemplateId: formData.get("caseTemplateId"),
+    reviewerIds: formData.getAll("reviewerIds"),
+    dueAt: formData.get("dueAt"),
+  });
+
+  if (!parsedInput.success) {
+    return {
+      status: "error",
+      message: "Please correct the highlighted fields and submit again.",
+      fieldErrors: mapFieldErrors(parsedInput.error.issues),
+    };
+  }
+
+  try {
+    const candidateCase = await updateCandidateCase({
+      caseId,
+      ...actor,
+      ...parsedInput.data,
+    });
+
+    revalidatePath("/dashboard/candidate-cases");
+    revalidatePath("/dashboard/reviews");
+    revalidatePath("/dashboard/audit-trail");
+
+    return {
+      status: "success",
+      message: `${candidateCase.caseTemplate.name} was updated successfully for ${candidateCase.candidate.name ?? candidateCase.candidate.email}.`,
+    };
+  } catch (error) {
+    return {
+      status: "error",
+      message:
+        error instanceof Error
+          ? error.message
+          : "Candidate case update failed. Review the configuration and try again.",
     };
   }
 }

@@ -9,6 +9,8 @@ import { getWorkspaceSettings } from "@/lib/workspace-settings/queries";
 
 export type CandidateCaseListItem = {
   id: string;
+  candidateId: string;
+  caseTemplateId: string;
   status: CandidateCaseStatus;
   decision: CandidateCaseDecision | null;
   workingRepository: string | null;
@@ -25,6 +27,8 @@ export type CandidateCaseListItem = {
   templateName: string;
   templateSlug: string;
   createdByName: string;
+  reviewerIds: string[];
+  reviewerDisplayNames: string[];
 };
 
 type ListCandidateCasesOptions = {
@@ -45,13 +49,21 @@ export type CandidateCaseAssignmentTemplateOption = {
   slug: string;
   repositoryName: string;
   defaultBranch: string;
+  defaultReviewerIds: string[];
   assignmentCount: number;
 };
 
 export type CandidateCaseAssignmentOptions = {
   candidates: CandidateCaseAssignmentCandidateOption[];
   templates: CandidateCaseAssignmentTemplateOption[];
+  reviewers: CandidateCaseAssignmentReviewerOption[];
   workspaceOrganization: string | null;
+};
+
+export type CandidateCaseAssignmentReviewerOption = {
+  id: string;
+  displayName: string;
+  email: string;
 };
 
 export type CandidateWorkspaceCaseListItem = {
@@ -113,6 +125,20 @@ export async function listCandidateCases(
           email: true,
         },
       },
+      reviewerAssignments: {
+        orderBy: {
+          createdAt: "asc",
+        },
+        select: {
+          reviewerId: true,
+          reviewer: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
     },
     orderBy: {
       createdAt: "desc",
@@ -121,6 +147,8 @@ export async function listCandidateCases(
 
   return candidateCases.map<CandidateCaseListItem>((candidateCase) => ({
     id: candidateCase.id,
+    candidateId: candidateCase.candidateId,
+    caseTemplateId: candidateCase.caseTemplateId,
     status: candidateCase.status,
     decision: candidateCase.decision ?? null,
     workingRepository: candidateCase.workingRepository ?? null,
@@ -143,46 +171,76 @@ export async function listCandidateCases(
       candidateCase.createdBy.name ??
       candidateCase.createdBy.email ??
       "Unknown owner",
+    reviewerIds: candidateCase.reviewerAssignments.map(
+      (assignment) => assignment.reviewerId,
+    ),
+    reviewerDisplayNames: candidateCase.reviewerAssignments.map(
+      (assignment) =>
+        assignment.reviewer.name ??
+        assignment.reviewer.email ??
+        "Unknown reviewer",
+    ),
   }));
 }
 
 export async function getCandidateCaseAssignmentOptions(): Promise<CandidateCaseAssignmentOptions> {
-  const [candidates, templates, workspaceSettings] = await Promise.all([
-    db.user.findMany({
-      where: {
-        role: UserRole.CANDIDATE,
-        isActive: true,
-      },
-      include: {
-        giteaIdentity: {
-          select: {
-            login: true,
+  const [candidates, templates, reviewers, workspaceSettings] =
+    await Promise.all([
+      db.user.findMany({
+        where: {
+          role: UserRole.CANDIDATE,
+          isActive: true,
+        },
+        include: {
+          giteaIdentity: {
+            select: {
+              login: true,
+            },
+          },
+          _count: {
+            select: {
+              candidateCases: true,
+            },
           },
         },
-        _count: {
-          select: {
-            candidateCases: true,
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
+      db.caseTemplate.findMany({
+        include: {
+          reviewerAssignments: {
+            orderBy: {
+              createdAt: "asc",
+            },
+            select: {
+              reviewerId: true,
+            },
+          },
+          _count: {
+            select: {
+              candidateCases: true,
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    }),
-    db.caseTemplate.findMany({
-      include: {
-        _count: {
-          select: {
-            candidateCases: true,
-          },
+        orderBy: {
+          name: "asc",
         },
-      },
-      orderBy: {
-        name: "asc",
-      },
-    }),
-    getWorkspaceSettings(),
-  ]);
+      }),
+      db.user.findMany({
+        where: {
+          role: UserRole.RECRUITER,
+          isActive: true,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+        orderBy: [{ name: "asc" }, { email: "asc" }],
+      }),
+      getWorkspaceSettings(),
+    ]);
 
   return {
     candidates: candidates
@@ -201,7 +259,17 @@ export async function getCandidateCaseAssignmentOptions(): Promise<CandidateCase
         slug: template.slug,
         repositoryName: template.repositoryName,
         defaultBranch: template.defaultBranch,
+        defaultReviewerIds: template.reviewerAssignments.map(
+          (assignment) => assignment.reviewerId,
+        ),
         assignmentCount: template._count.candidateCases,
+      }),
+    ),
+    reviewers: reviewers.map<CandidateCaseAssignmentReviewerOption>(
+      (reviewer) => ({
+        id: reviewer.id,
+        displayName: reviewer.name ?? reviewer.email ?? "Unnamed reviewer",
+        email: reviewer.email ?? "No email",
       }),
     ),
     workspaceOrganization: workspaceSettings?.giteaOrganization ?? null,

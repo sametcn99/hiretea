@@ -2,7 +2,9 @@ import type {
   CandidateCaseDecision,
   CandidateCaseStatus,
 } from "@prisma/client";
-import { Flex, Link as RadixLink, Table, Text } from "@radix-ui/themes";
+import { Button, Flex, Link as RadixLink, Table, Text } from "@radix-ui/themes";
+import type { Route } from "next";
+import Link from "next/link";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { ReviewCaseListItem } from "@/lib/evaluation-notes/queries";
 
@@ -56,6 +58,7 @@ export function ReviewCaseTable({ reviewCases }: ReviewCaseTableProps) {
           <Table.ColumnHeaderCell>Review state</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Latest note</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Dates</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell></Table.ColumnHeaderCell>
         </Table.Row>
       </Table.Header>
       <Table.Body>
@@ -79,6 +82,11 @@ export function ReviewCaseTable({ reviewCases }: ReviewCaseTableProps) {
                       ? `${reviewCase.rubricCriteriaCount} rubric criteria ready`
                       : "Template review guide ready"
                     : "No template review guide yet"}
+                </Text>
+                <Text size="1" color="gray">
+                  {reviewCase.assignedReviewerNames.length > 0
+                    ? `Assigned reviewers: ${reviewCase.assignedReviewerNames.join(", ")}`
+                    : "Assigned reviewers: none"}
                 </Text>
               </Flex>
             </Table.Cell>
@@ -159,6 +167,13 @@ export function ReviewCaseTable({ reviewCases }: ReviewCaseTableProps) {
                     : "Not completed"}
                 </Text>
               </Flex>
+            </Table.Cell>
+            <Table.Cell>
+              <Button asChild size="1" variant="soft">
+                <Link href={`/dashboard/reviews/${reviewCase.id}` as Route}>
+                  Open workflow
+                </Link>
+              </Button>
             </Table.Cell>
           </Table.Row>
         ))}

@@ -15,6 +15,7 @@ import {
   createCandidateCaseAction,
 } from "@/app/(app)/dashboard/candidate-cases/actions";
 import type { CandidateCaseAssignmentOptions } from "@/lib/candidate-cases/queries";
+import { ReviewerSelector } from "./reviewer-selector";
 
 const initialCreateCandidateCaseState: CreateCandidateCaseActionState = {
   status: "idle",
@@ -48,13 +49,26 @@ export function CandidateCaseCreateForm({
     initialCreateCandidateCaseState,
   );
   const [formKey, setFormKey] = useState(0);
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
+  const [selectedReviewerIds, setSelectedReviewerIds] = useState<string[]>([]);
   const hasRequiredOptions =
     assignmentOptions.candidates.length > 0 &&
-    assignmentOptions.templates.length > 0;
+    assignmentOptions.templates.length > 0 &&
+    assignmentOptions.reviewers.length > 0;
+
+  useEffect(() => {
+    const selectedTemplate = assignmentOptions.templates.find(
+      (template) => template.id === selectedTemplateId,
+    );
+
+    setSelectedReviewerIds(selectedTemplate?.defaultReviewerIds ?? []);
+  }, [assignmentOptions.templates, selectedTemplateId]);
 
   useEffect(() => {
     if (state.status === "success") {
       setFormKey((k) => k + 1);
+      setSelectedTemplateId("");
+      setSelectedReviewerIds([]);
     }
   }, [state.status]);
 
@@ -86,7 +100,11 @@ export function CandidateCaseCreateForm({
           <Text as="label" size="2" weight="medium">
             Case template
           </Text>
-          <Select.Root name="caseTemplateId">
+          <Select.Root
+            name="caseTemplateId"
+            value={selectedTemplateId}
+            onValueChange={setSelectedTemplateId}
+          >
             <Select.Trigger placeholder="Select a template" />
             <Select.Content>
               {assignmentOptions.templates.map((template) => (
@@ -101,6 +119,23 @@ export function CandidateCaseCreateForm({
               {error}
             </Text>
           ))}
+        </Flex>
+
+        <Flex direction="column" gap="1">
+          <Text size="2" weight="medium">
+            Reviewers
+          </Text>
+          <ReviewerSelector
+            reviewers={assignmentOptions.reviewers}
+            selectedReviewerIds={selectedReviewerIds}
+            onSelectedReviewerIdsChange={setSelectedReviewerIds}
+            errorMessages={state.fieldErrors?.reviewerIds}
+          />
+          <Text size="1" color="gray">
+            Template defaults are selected automatically. You can still add or
+            remove reviewers here for this one candidate before assigning the
+            case.
+          </Text>
         </Flex>
 
         <Flex direction="column" gap="1">
@@ -122,7 +157,8 @@ export function CandidateCaseCreateForm({
             {assignmentOptions.workspaceOrganization ??
               "the configured workspace organization"}
             . The candidate receives direct write access immediately after
-            generation.
+            generation, and only the selected recruiter accounts are expected to
+            review the submission.
           </Callout.Text>
         </Callout.Root>
 
@@ -130,7 +166,8 @@ export function CandidateCaseCreateForm({
           <Callout.Root color="red" size="1">
             <Callout.Text>
               Candidate assignment requires at least one provisioned candidate
-              with a linked Gitea login and one case template.
+              with a linked Gitea login, one case template, and one active
+              recruiter reviewer.
             </Callout.Text>
           </Callout.Root>
         ) : null}

@@ -33,6 +33,11 @@ enum CandidateInviteIssueKind {
   RESEND
 }
 
+enum RecruiterInviteIssueKind {
+  INITIAL
+  RESEND
+}
+
 model User {
   id            String          @id @default(cuid())
   name          String?
@@ -51,6 +56,12 @@ model User {
   createdCases  CandidateCase[] @relation("CaseAssignmentCreator")
   candidateInvites CandidateInvite[] @relation("CandidateInviteRecipient")
   createdCandidateInvites CandidateInvite[] @relation("CandidateInviteCreator")
+  recruiterInvites RecruiterInvite[] @relation("RecruiterInviteRecipient")
+  createdRecruiterInvites RecruiterInvite[] @relation("RecruiterInviteCreator")
+  assignedCaseTemplateReviews CaseTemplateReviewerAssignment[] @relation("CaseTemplateReviewer")
+  createdCaseTemplateReviewerAssignments CaseTemplateReviewerAssignment[] @relation("CaseTemplateReviewerAssignmentCreator")
+  assignedCandidateCaseReviews CandidateCaseReviewerAssignment[] @relation("CandidateCaseReviewer")
+  createdCandidateCaseReviewerAssignments CandidateCaseReviewerAssignment[] @relation("CandidateCaseReviewerAssignmentCreator")
   evaluations   EvaluationNote[] @relation("EvaluationAuthor")
   auditLogs     AuditLog[]      @relation("AuditActor")
 }
@@ -95,7 +106,22 @@ model CaseTemplate {
   updatedAt             DateTime        @updatedAt
   createdBy             User            @relation("CaseTemplateCreator", fields: [createdById], references: [id], onDelete: Restrict)
   candidateCases        CandidateCase[]
+  reviewerAssignments   CaseTemplateReviewerAssignment[]
   reviewGuide           CaseTemplateReviewGuide?
+}
+
+model CaseTemplateReviewerAssignment {
+  id             String       @id @default(cuid())
+  caseTemplateId String
+  reviewerId     String
+  assignedById   String?
+  createdAt      DateTime     @default(now())
+  caseTemplate   CaseTemplate @relation(fields: [caseTemplateId], references: [id], onDelete: Cascade)
+  reviewer       User         @relation("CaseTemplateReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  assignedBy     User?        @relation("CaseTemplateReviewerAssignmentCreator", fields: [assignedById], references: [id], onDelete: SetNull)
+
+  @@unique([caseTemplateId, reviewerId])
+  @@index([reviewerId, createdAt])
 }
 
 model CaseTemplateReviewGuide {
@@ -144,7 +170,22 @@ model CandidateCase {
   candidate           User                @relation("CandidateAssignments", fields: [candidateId], references: [id], onDelete: Restrict)
   createdBy           User                @relation("CaseAssignmentCreator", fields: [createdById], references: [id], onDelete: Restrict)
   accessGrants        CandidateAccessGrant[]
+  reviewerAssignments CandidateCaseReviewerAssignment[]
   evaluationNotes     EvaluationNote[]
+}
+
+model CandidateCaseReviewerAssignment {
+  id              String        @id @default(cuid())
+  candidateCaseId String
+  reviewerId      String
+  assignedById    String?
+  createdAt       DateTime      @default(now())
+  candidateCase   CandidateCase @relation(fields: [candidateCaseId], references: [id], onDelete: Cascade)
+  reviewer        User          @relation("CandidateCaseReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  assignedBy      User?         @relation("CandidateCaseReviewerAssignmentCreator", fields: [assignedById], references: [id], onDelete: SetNull)
+
+  @@unique([candidateCaseId, reviewerId])
+  @@index([reviewerId, createdAt])
 }
 
 model CandidateAccessGrant {
@@ -182,6 +223,29 @@ model CandidateInvite {
   @@index([candidateId, createdAt])
   @@index([candidateId, resendSequence])
   @@unique([candidateId, resendSequence])
+}
+
+model RecruiterInvite {
+  id               String                   @id @default(cuid())
+  recruiterId      String
+  createdById      String?
+  previousInviteId String?
+  issueKind        RecruiterInviteIssueKind @default(INITIAL)
+  resendSequence   Int                      @default(1)
+  tokenHash        String                   @unique
+  expiresAt        DateTime
+  claimedAt        DateTime?
+  revokedAt        DateTime?
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  recruiter        User                     @relation("RecruiterInviteRecipient", fields: [recruiterId], references: [id], onDelete: Cascade)
+  createdBy        User?                    @relation("RecruiterInviteCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  previousInvite   RecruiterInvite?         @relation("RecruiterInviteChain", fields: [previousInviteId], references: [id], onDelete: SetNull)
+  resentInvites    RecruiterInvite[]        @relation("RecruiterInviteChain")
+
+  @@index([recruiterId, createdAt])
+  @@index([recruiterId, resendSequence])
+  @@unique([recruiterId, resendSequence])
 }
 
 model EvaluationNote {

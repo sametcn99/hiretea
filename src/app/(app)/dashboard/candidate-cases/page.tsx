@@ -55,6 +55,7 @@ export default async function CandidateCasesPage({
         <CandidateCaseFilters showArchived={showArchived} />
         <CandidateCaseTable
           candidateCases={candidateCases}
+          assignmentOptions={assignmentOptions}
           showArchived={showArchived}
         />
       </SectionCard>

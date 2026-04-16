@@ -1,11 +1,14 @@
-import type { CandidateCaseStatus } from "@prisma/client";
 import { Flex, Link as RadixLink, Table, Text } from "@radix-ui/themes";
 import { StatusBadge } from "@/components/ui/status-badge";
-import type { CandidateCaseListItem } from "@/lib/candidate-cases/queries";
+import type {
+  CandidateCaseAssignmentOptions,
+  CandidateCaseListItem,
+} from "@/lib/candidate-cases/queries";
 import { CandidateCaseActions } from "./candidate-case-actions";
 
 type CandidateCaseTableProps = {
   candidateCases: CandidateCaseListItem[];
+  assignmentOptions: CandidateCaseAssignmentOptions;
   showArchived: boolean;
 };
 
@@ -32,6 +35,7 @@ const decisionToneMap = {
 
 export function CandidateCaseTable({
   candidateCases,
+  assignmentOptions,
   showArchived,
 }: CandidateCaseTableProps) {
   if (candidateCases.length === 0) {
@@ -51,6 +55,7 @@ export function CandidateCaseTable({
           <Table.ColumnHeaderCell>Candidate</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Template</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Repository</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell>Reviewers</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Dates</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell></Table.ColumnHeaderCell>
@@ -99,6 +104,21 @@ export function CandidateCaseTable({
                 <Text size="1" color="gray">
                   Branch: {candidateCase.branchName ?? "Not set"}
                 </Text>
+              </Flex>
+            </Table.Cell>
+            <Table.Cell>
+              <Flex direction="column" gap="1">
+                {candidateCase.reviewerDisplayNames.length > 0 ? (
+                  candidateCase.reviewerDisplayNames.map((reviewerName) => (
+                    <Text size="1" color="gray" key={reviewerName}>
+                      {reviewerName}
+                    </Text>
+                  ))
+                ) : (
+                  <Text size="1" color="gray">
+                    No reviewers assigned
+                  </Text>
+                )}
               </Flex>
             </Table.Cell>
             <Table.Cell>
@@ -153,11 +173,8 @@ export function CandidateCaseTable({
             </Table.Cell>
             <Table.Cell>
               <CandidateCaseActions
-                caseId={candidateCase.id}
-                status={candidateCase.status as CandidateCaseStatus}
-                repositoryName={
-                  candidateCase.workingRepository || "Pending Repository"
-                }
+                candidateCase={candidateCase}
+                assignmentOptions={assignmentOptions}
               />
             </Table.Cell>
           </Table.Row>

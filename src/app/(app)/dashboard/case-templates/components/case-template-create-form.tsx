@@ -11,10 +11,12 @@ import {
 } from "@radix-ui/themes";
 import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { ReviewerSelector } from "@/app/(app)/dashboard/candidate-cases/components/reviewer-selector";
 import {
   type CreateCaseTemplateActionState,
   createCaseTemplateAction,
 } from "@/app/(app)/dashboard/case-templates/actions";
+import type { CaseTemplateReviewerOption } from "@/lib/case-templates/queries";
 
 const initialCreateCaseTemplateState: CreateCaseTemplateActionState = {
   status: "idle",
@@ -30,6 +32,10 @@ const initialFormValues = {
   reviewerInstructions: "",
   decisionGuidance: "",
   rubricCriteria: "",
+};
+
+type CaseTemplateCreateFormProps = {
+  reviewerOptions: CaseTemplateReviewerOption[];
 };
 
 function SubmitButton() {
@@ -48,16 +54,20 @@ function SubmitButton() {
   );
 }
 
-export function CaseTemplateCreateForm() {
+export function CaseTemplateCreateForm({
+  reviewerOptions,
+}: CaseTemplateCreateFormProps) {
   const [state, formAction] = useActionState(
     createCaseTemplateAction,
     initialCreateCaseTemplateState,
   );
   const [formValues, setFormValues] = useState(initialFormValues);
+  const [selectedReviewerIds, setSelectedReviewerIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (state.status === "success") {
       setFormValues(initialFormValues);
+      setSelectedReviewerIds([]);
     }
   }, [state.status]);
 
@@ -251,9 +261,28 @@ export function CaseTemplateCreateForm() {
             The repository is created first in Gitea. If the local database
             write fails afterwards, the repository creation is rolled back
             automatically. Template-level review guidance stays local to Hiretea
-            and can evolve without touching the repository contents.
+            and can evolve without touching the repository contents. Saved
+            reviewer defaults are preselected later during case assignment, but
+            remain overrideable per candidate.
           </Callout.Text>
         </Callout.Root>
+
+        <Flex direction="column" gap="1">
+          <Text size="2" weight="medium">
+            Default reviewers
+          </Text>
+          <ReviewerSelector
+            reviewers={reviewerOptions}
+            selectedReviewerIds={selectedReviewerIds}
+            onSelectedReviewerIdsChange={setSelectedReviewerIds}
+            errorMessages={state.fieldErrors?.reviewerIds}
+          />
+          <Text size="1" color="gray">
+            These reviewers are selected by default when this template is
+            assigned to a candidate. You can still add or remove reviewers for a
+            specific case before saving it.
+          </Text>
+        </Flex>
 
         <Flex direction="column" gap="1">
           <Text

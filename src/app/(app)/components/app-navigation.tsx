@@ -61,11 +61,20 @@ const managementItems: NavigationItem[] = [
 ];
 
 const adminItems: NavigationItem[] = [
+  { href: "/dashboard/team", label: "Recruiting team", icon: <PersonIcon /> },
   { href: "/dashboard/settings", label: "Settings", icon: <GearIcon /> },
 ];
 
 export function AppNavigation({ role, user }: AppNavigationProps) {
   const pathname = usePathname();
+
+  function isItemActive(href: string) {
+    if (href === "/dashboard") {
+      return pathname === href;
+    }
+
+    return pathname === href || pathname.startsWith(`${href}/`);
+  }
 
   const getNavSections = () => {
     if (role === "CANDIDATE") {
@@ -106,7 +115,7 @@ export function AppNavigation({ role, user }: AppNavigationProps) {
                 {section.items.map((item) => (
                   <Link
                     className="ht-nav-link"
-                    data-active={pathname === item.href}
+                    data-active={isItemActive(item.href)}
                     href={item.href as Route}
                     key={item.label}
                   >

@@ -61,6 +61,23 @@ export type GiteaRepository = {
   archived?: boolean;
 };
 
+export type GiteaTeam = {
+  id: number;
+  name: string;
+  description?: string;
+  permission: "none" | "read" | "write" | "admin";
+  can_create_org_repo?: boolean;
+  includes_all_repositories?: boolean;
+};
+
+export type GiteaCreateTeamOptions = {
+  name: string;
+  description?: string;
+  permission: "read" | "write" | "admin";
+  can_create_org_repo: boolean;
+  includes_all_repositories: boolean;
+};
+
 export type GiteaEditRepositoryOptions = {
   description?: string;
   website?: string;
@@ -277,6 +294,23 @@ export class GiteaAdminClient {
         body: JSON.stringify(options),
       },
     );
+  }
+
+  async listOrganizationTeams(org: string) {
+    return this.request<GiteaTeam[]>(`/orgs/${org}/teams`);
+  }
+
+  async createOrganizationTeam(org: string, options: GiteaCreateTeamOptions) {
+    return this.request<GiteaTeam>(`/orgs/${org}/teams`, {
+      method: "POST",
+      body: JSON.stringify(options),
+    });
+  }
+
+  async addTeamMember(teamId: number, username: string) {
+    return this.request<void>(`/teams/${teamId}/members/${username}`, {
+      method: "PUT",
+    });
   }
 }
 

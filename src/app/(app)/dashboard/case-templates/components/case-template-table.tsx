@@ -172,6 +172,11 @@ export function CaseTemplateTable({
                       ? `${template.rubricCriteriaCount} rubric criteria configured.`
                       : "No rubric criteria defined yet."}
                   </Text>
+                  <Text size="1" color="gray">
+                    {template.defaultReviewerNames.length > 0
+                      ? `Default reviewers: ${template.defaultReviewerNames.join(", ")}`
+                      : "Default reviewers: none"}
+                  </Text>
                   {template.reviewerInstructions ? (
                     <Text size="1" color="gray">
                       {template.reviewerInstructions}

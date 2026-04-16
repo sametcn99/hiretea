@@ -54,51 +54,70 @@ function buildCandidateCaseRepositoryName(
 export async function createCandidateCase(input: CreateCandidateCaseParams) {
   assertInternalOperator(input, "assign candidate cases");
 
-  const [candidate, template, workspaceSettings, existingCandidateCase] =
-    await Promise.all([
-      db.user.findUnique({
-        where: {
-          id: input.candidateId,
-        },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          isActive: true,
-          giteaIdentity: {
-            select: {
-              login: true,
-            },
+  const [
+    candidate,
+    template,
+    workspaceSettings,
+    existingCandidateCase,
+    reviewers,
+  ] = await Promise.all([
+    db.user.findUnique({
+      where: {
+        id: input.candidateId,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        isActive: true,
+        giteaIdentity: {
+          select: {
+            login: true,
           },
         },
-      }),
-      db.caseTemplate.findUnique({
-        where: {
-          id: input.caseTemplateId,
+      },
+    }),
+    db.caseTemplate.findUnique({
+      where: {
+        id: input.caseTemplateId,
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        repositoryName: true,
+        defaultBranch: true,
+      },
+    }),
+    getWorkspaceSettingsOrThrow(),
+    db.candidateCase.findFirst({
+      where: {
+        candidateId: input.candidateId,
+        caseTemplateId: input.caseTemplateId,
+        status: {
+          in: [...activeCandidateCaseStatuses],
         },
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          repositoryName: true,
-          defaultBranch: true,
+      },
+      select: {
+        id: true,
+      },
+    }),
+    db.user.findMany({
+      where: {
+        id: {
+          in: input.reviewerIds,
         },
-      }),
-      getWorkspaceSettingsOrThrow(),
-      db.candidateCase.findFirst({
-        where: {
-          candidateId: input.candidateId,
-          caseTemplateId: input.caseTemplateId,
-          status: {
-            in: [...activeCandidateCaseStatuses],
-          },
-        },
-        select: {
-          id: true,
-        },
-      }),
-    ]);
+        role: UserRole.RECRUITER,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    }),
+  ]);
 
   if (!candidate || candidate.role !== UserRole.CANDIDATE) {
     throw new Error("The selected candidate does not exist.");
@@ -121,6 +140,12 @@ export async function createCandidateCase(input: CreateCandidateCaseParams) {
   if (existingCandidateCase) {
     throw new Error(
       "This candidate already has an active assignment for the selected template.",
+    );
+  }
+
+  if (reviewers.length !== input.reviewerIds.length) {
+    throw new Error(
+      "One or more selected reviewers are invalid or no longer active.",
     );
   }
 
@@ -184,6 +209,12 @@ export async function createCandidateCase(input: CreateCandidateCaseParams) {
         branchName: template.defaultBranch,
         workingRepositoryUrl: repositoryUrl,
         dueAt: input.dueAt ?? null,
+        reviewerAssignments: {
+          create: reviewers.map((reviewer) => ({
+            reviewerId: reviewer.id,
+            assignedById: input.actorId,
+          })),
+        },
         accessGrants: {
           create: {
             repositoryName,
@@ -210,6 +241,17 @@ export async function createCandidateCase(input: CreateCandidateCaseParams) {
             name: true,
           },
         },
+        reviewerAssignments: {
+          select: {
+            reviewerId: true,
+            reviewer: {
+              select: {
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -225,6 +267,10 @@ export async function createCandidateCase(input: CreateCandidateCaseParams) {
         templateSlug: template.slug,
         repositoryName,
         provisioningMethod: "gitea-migration",
+        reviewerIds: reviewers.map((reviewer) => reviewer.id),
+        reviewerNames: reviewers.map(
+          (reviewer) => reviewer.name ?? reviewer.email ?? "Unknown reviewer",
+        ),
       },
     });
 

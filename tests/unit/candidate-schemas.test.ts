@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { candidateCaseCreateSchema } from "@/lib/candidate-cases/schemas";
+import {
+  candidateCaseCreateSchema,
+  candidateCaseUpdateSchema,
+} from "@/lib/candidate-cases/schemas";
 import { candidateProvisionSchema } from "@/lib/candidates/schemas";
 import { caseTemplateCreateSchema } from "@/lib/case-templates/schemas";
 import { evaluationNoteCreateSchema } from "@/lib/evaluation-notes/schemas";
+import { recruiterProvisionSchema } from "@/lib/recruiters/schemas";
 
 const PASS_DECISION = "ADVANCE" as const;
 
@@ -49,6 +53,7 @@ describe("candidateCaseCreateSchema", () => {
     const parsed = candidateCaseCreateSchema.parse({
       candidateId: "cand-1",
       caseTemplateId: "tmpl-1",
+      reviewerIds: ["rev-1"],
       dueAt: "2025-06-15",
     });
 
@@ -62,6 +67,7 @@ describe("candidateCaseCreateSchema", () => {
     const parsed = candidateCaseCreateSchema.parse({
       candidateId: "cand-1",
       caseTemplateId: "tmpl-1",
+      reviewerIds: ["rev-1"],
       dueAt: "",
     });
     expect(parsed.dueAt).toBeUndefined();
@@ -71,6 +77,7 @@ describe("candidateCaseCreateSchema", () => {
     const result = candidateCaseCreateSchema.safeParse({
       candidateId: "cand-1",
       caseTemplateId: "tmpl-1",
+      reviewerIds: ["rev-1"],
       dueAt: "15-06-2025",
     });
     expect(result.success).toBe(false);
@@ -84,7 +91,63 @@ describe("candidateCaseCreateSchema", () => {
     const result = candidateCaseCreateSchema.safeParse({
       candidateId: "",
       caseTemplateId: "",
+      reviewerIds: [],
       dueAt: "",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("requires at least one reviewer", () => {
+    const result = candidateCaseCreateSchema.safeParse({
+      candidateId: "cand-1",
+      caseTemplateId: "tmpl-1",
+      reviewerIds: [],
+      dueAt: "",
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const messages = result.error.issues.map((issue) => issue.message);
+      expect(messages).toContain("Select at least one reviewer.");
+    }
+  });
+
+  it("deduplicates reviewer ids during update parsing", () => {
+    const parsed = candidateCaseUpdateSchema.parse({
+      candidateId: "cand-1",
+      caseTemplateId: "tmpl-1",
+      reviewerIds: ["rev-1", "rev-1", "rev-2"],
+      dueAt: "",
+    });
+
+    expect(parsed.reviewerIds).toEqual(["rev-1", "rev-2"]);
+  });
+});
+
+describe("recruiterProvisionSchema", () => {
+  it("accepts a well-formed recruiting team member", () => {
+    const parsed = recruiterProvisionSchema.parse({
+      displayName: "Jamie Chen",
+      email: "jamie@example.com",
+      username: "jamie-chen",
+    });
+    expect(parsed.username).toBe("jamie-chen");
+  });
+
+  it("rejects usernames that start with a symbol", () => {
+    const result = recruiterProvisionSchema.safeParse({
+      displayName: "Jamie",
+      email: "jamie@example.com",
+      username: "-jamie",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects invalid emails", () => {
+    const result = recruiterProvisionSchema.safeParse({
+      displayName: "Jamie Chen",
+      email: "not-an-email",
+      username: "jamie",
     });
     expect(result.success).toBe(false);
   });
@@ -100,6 +163,7 @@ describe("caseTemplateCreateSchema", () => {
     defaultBranch: "main",
     reviewerInstructions: "",
     decisionGuidance: "",
+    reviewerIds: [],
     rubricCriteria: "",
   };
 
@@ -168,6 +232,15 @@ describe("caseTemplateCreateSchema", () => {
       repositoryName: "-bad",
     });
     expect(result.success).toBe(false);
+  });
+
+  it("deduplicates template reviewer ids", () => {
+    const parsed = caseTemplateCreateSchema.parse({
+      ...base,
+      reviewerIds: ["rev-1", "rev-1", "rev-2"],
+    });
+
+    expect(parsed.reviewerIds).toEqual(["rev-1", "rev-2"]);
   });
 });
 
