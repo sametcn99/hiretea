@@ -4,6 +4,7 @@ import {
   Button,
   Callout,
   Flex,
+  Grid,
   Text,
   TextArea,
   TextField,
@@ -62,60 +63,138 @@ export function CaseTemplateCreateForm() {
 
   return (
     <form action={formAction}>
-      <Flex direction="column" gap="3">
-        <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium" htmlFor="name">
-            Template name
-          </Text>
-          <TextField.Root
-            id="name"
-            name="name"
-            placeholder="Backend API challenge"
-            type="text"
-            value={formValues.name}
-            onChange={(event) =>
-              setFormValues((current) => ({
-                ...current,
-                name: event.target.value,
-              }))
-            }
-            color={state.fieldErrors?.name ? "red" : undefined}
-          />
-          {state.fieldErrors?.name?.map((error) => (
-            <Text size="1" color="red" key={error}>
-              {error}
-            </Text>
-          ))}
-        </Flex>
+      <Flex direction="column" gap="4">
+        <Text size="1" color="gray">
+          Fields marked with{" "}
+          <Text as="span" color="red">
+            *
+          </Text>{" "}
+          are required.
+        </Text>
 
-        <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium" htmlFor="slug">
-            Template slug
-          </Text>
-          <TextField.Root
-            id="slug"
-            name="slug"
-            placeholder="backend-api-challenge"
-            type="text"
-            value={formValues.slug}
-            onChange={(event) =>
-              setFormValues((current) => ({
-                ...current,
-                slug: event.target.value,
-              }))
-            }
-            color={state.fieldErrors?.slug ? "red" : undefined}
-          />
-          {state.fieldErrors?.slug?.map((error) => (
-            <Text size="1" color="red" key={error}>
-              {error}
+        <Grid
+          columns={{ initial: "1fr", md: "repeat(2, minmax(0, 1fr))" }}
+          gap="3"
+        >
+          <Flex direction="column" gap="1">
+            <Text as="label" size="2" weight="medium" htmlFor="name">
+              Template name{" "}
+              <Text as="span" color="red">
+                *
+              </Text>
             </Text>
-          ))}
-        </Flex>
+            <TextField.Root
+              id="name"
+              name="name"
+              placeholder="Backend API challenge"
+              type="text"
+              value={formValues.name}
+              onChange={(event) =>
+                setFormValues((current) => ({
+                  ...current,
+                  name: event.target.value,
+                }))
+              }
+              color={state.fieldErrors?.name ? "red" : undefined}
+            />
+            {state.fieldErrors?.name?.map((error) => (
+              <Text size="1" color="red" key={error}>
+                {error}
+              </Text>
+            ))}
+          </Flex>
+
+          <Flex direction="column" gap="1">
+            <Text as="label" size="2" weight="medium" htmlFor="slug">
+              Template slug{" "}
+              <Text as="span" color="red">
+                *
+              </Text>
+            </Text>
+            <TextField.Root
+              id="slug"
+              name="slug"
+              placeholder="backend-api-challenge"
+              type="text"
+              value={formValues.slug}
+              onChange={(event) =>
+                setFormValues((current) => ({
+                  ...current,
+                  slug: event.target.value,
+                }))
+              }
+              color={state.fieldErrors?.slug ? "red" : undefined}
+            />
+            {state.fieldErrors?.slug?.map((error) => (
+              <Text size="1" color="red" key={error}>
+                {error}
+              </Text>
+            ))}
+          </Flex>
+
+          <Flex direction="column" gap="1">
+            <Text as="label" size="2" weight="medium" htmlFor="repositoryName">
+              Repository name{" "}
+              <Text as="span" color="red">
+                *
+              </Text>
+            </Text>
+            <TextField.Root
+              id="repositoryName"
+              name="repositoryName"
+              placeholder="backend-api-challenge"
+              type="text"
+              value={formValues.repositoryName}
+              onChange={(event) =>
+                setFormValues((current) => ({
+                  ...current,
+                  repositoryName: event.target.value,
+                }))
+              }
+              color={state.fieldErrors?.repositoryName ? "red" : undefined}
+            />
+            {state.fieldErrors?.repositoryName?.map((error) => (
+              <Text size="1" color="red" key={error}>
+                {error}
+              </Text>
+            ))}
+          </Flex>
+
+          <Flex direction="column" gap="1">
+            <Text as="label" size="2" weight="medium" htmlFor="defaultBranch">
+              Default branch{" "}
+              <Text as="span" color="red">
+                *
+              </Text>
+            </Text>
+            <TextField.Root
+              id="defaultBranch"
+              name="defaultBranch"
+              placeholder="main"
+              type="text"
+              value={formValues.defaultBranch}
+              onChange={(event) =>
+                setFormValues((current) => ({
+                  ...current,
+                  defaultBranch: event.target.value,
+                }))
+              }
+              color={state.fieldErrors?.defaultBranch ? "red" : undefined}
+            />
+            {state.fieldErrors?.defaultBranch?.map((error) => (
+              <Text size="1" color="red" key={error}>
+                {error}
+              </Text>
+            ))}
+          </Flex>
+        </Grid>
 
         <Flex direction="column" gap="1">
           <Text as="label" size="2" weight="medium" htmlFor="summary">
-            Summary
+            Summary{" "}
+            <Text as="span" color="red">
+              *
+            </Text>
           </Text>
           <TextArea
             id="summary"
@@ -132,31 +211,6 @@ export function CaseTemplateCreateForm() {
             color={state.fieldErrors?.summary ? "red" : undefined}
           />
           {state.fieldErrors?.summary?.map((error) => (
-            <Text size="1" color="red" key={error}>
-              {error}
-            </Text>
-          ))}
-        </Flex>
-
-        <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium" htmlFor="repositoryName">
-            Repository name
-          </Text>
-          <TextField.Root
-            id="repositoryName"
-            name="repositoryName"
-            placeholder="backend-api-challenge"
-            type="text"
-            value={formValues.repositoryName}
-            onChange={(event) =>
-              setFormValues((current) => ({
-                ...current,
-                repositoryName: event.target.value,
-              }))
-            }
-            color={state.fieldErrors?.repositoryName ? "red" : undefined}
-          />
-          {state.fieldErrors?.repositoryName?.map((error) => (
             <Text size="1" color="red" key={error}>
               {error}
             </Text>
@@ -186,31 +240,6 @@ export function CaseTemplateCreateForm() {
             }
           />
           {state.fieldErrors?.repositoryDescription?.map((error) => (
-            <Text size="1" color="red" key={error}>
-              {error}
-            </Text>
-          ))}
-        </Flex>
-
-        <Flex direction="column" gap="1">
-          <Text as="label" size="2" weight="medium" htmlFor="defaultBranch">
-            Default branch
-          </Text>
-          <TextField.Root
-            id="defaultBranch"
-            name="defaultBranch"
-            placeholder="main"
-            type="text"
-            value={formValues.defaultBranch}
-            onChange={(event) =>
-              setFormValues((current) => ({
-                ...current,
-                defaultBranch: event.target.value,
-              }))
-            }
-            color={state.fieldErrors?.defaultBranch ? "red" : undefined}
-          />
-          {state.fieldErrors?.defaultBranch?.map((error) => (
             <Text size="1" color="red" key={error}>
               {error}
             </Text>

@@ -93,7 +93,6 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
                 }
                 hasLinkedSignIn={candidate.hasLinkedSignIn}
                 inviteStatus={candidate.inviteStatus}
-                inviteCount={candidate.inviteCount}
               />
             </Table.Cell>
           </Table.Row>

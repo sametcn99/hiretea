@@ -97,7 +97,7 @@ export const caseTemplateCreateSchema = z.object({
     .max(280)
     .optional()
     .transform((value) => value || undefined),
-  defaultBranch: z.string().trim().min(2).max(32).default("main"),
+  defaultBranch: z.string().trim().min(2).max(32),
   reviewerInstructions: optionalTemplateReviewText(2000),
   decisionGuidance: optionalTemplateReviewText(1200),
   rubricCriteria: z.preprocess(

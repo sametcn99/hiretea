@@ -103,13 +103,18 @@ describe("caseTemplateCreateSchema", () => {
     rubricCriteria: "",
   };
 
-  it("parses a minimal template and applies the default branch", () => {
-    const parsed = caseTemplateCreateSchema.parse({
-      ...base,
-      defaultBranch: undefined as unknown as string,
-    });
+  it("parses a minimal template with the required fields", () => {
+    const parsed = caseTemplateCreateSchema.parse(base);
     expect(parsed.defaultBranch).toBe("main");
     expect(parsed.rubricCriteria).toEqual([]);
+  });
+
+  it("rejects templates without a default branch", () => {
+    const result = caseTemplateCreateSchema.safeParse({
+      ...base,
+      defaultBranch: "",
+    });
+    expect(result.success).toBe(false);
   });
 
   it("parses pipe-delimited rubric criteria with optional weight", () => {

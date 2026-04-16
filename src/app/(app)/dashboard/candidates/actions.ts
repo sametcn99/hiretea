@@ -19,7 +19,6 @@ type ProvisionCandidateField = keyof CandidateProvisionInput;
 export type ProvisionCandidateActionState = {
   status: "idle" | "success" | "error";
   message?: string;
-  inviteUrl?: string;
   inviteError?: string;
   fieldErrors?: Partial<Record<ProvisionCandidateField, string[]>>;
 };
@@ -74,12 +73,10 @@ export async function provisionCandidateAction(
       ...parsedInput.data,
     });
 
-    let inviteUrl: string | undefined;
     let inviteError: string | undefined;
 
     try {
-      const invite = await issueCandidateInvite(result.candidate.id, actor);
-      inviteUrl = invite.inviteUrl;
+      await issueCandidateInvite(result.candidate.id, actor);
     } catch (error) {
       inviteError =
         error instanceof Error
@@ -93,7 +90,6 @@ export async function provisionCandidateAction(
     return {
       status: "success",
       message: `${result.candidate.name ?? result.candidate.email} was provisioned successfully.`,
-      inviteUrl,
       inviteError,
     };
   } catch (error) {

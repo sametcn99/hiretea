@@ -21,7 +21,6 @@ type CandidateActionsProps = {
   candidateName: string;
   hasLinkedSignIn: boolean;
   inviteStatus: "PENDING" | "CLAIMED" | "REVOKED" | "EXPIRED" | null;
-  inviteCount: number;
 };
 
 export function CandidateActions({
@@ -29,7 +28,6 @@ export function CandidateActions({
   candidateName,
   hasLinkedSignIn,
   inviteStatus,
-  inviteCount,
 }: CandidateActionsProps) {
   const { showToast } = useToast();
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
@@ -124,40 +122,46 @@ export function CandidateActions({
 
   return (
     <>
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger>
-          <IconButton variant="ghost" color="gray" size="2">
-            <DotsHorizontalIcon />
-          </IconButton>
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Content>
-          {!hasLinkedSignIn ? (
-            <DropdownMenu.Item
-              disabled={isLoadingAction !== null}
-              onClick={handleIssueInvite}
-            >
-              {inviteCount > 0
-                ? "Resend onboarding invite"
-                : "Generate onboarding invite"}
-            </DropdownMenu.Item>
-          ) : null}
-          {!hasLinkedSignIn && inviteStatus === "PENDING" ? (
-            <DropdownMenu.Item
-              disabled={isLoadingAction !== null}
-              onClick={handleRevokeInvite}
-            >
-              Revoke active invite
-            </DropdownMenu.Item>
-          ) : null}
-          <DropdownMenu.Item
-            color="red"
+      <Flex align="center" gap="2" justify="end">
+        {!hasLinkedSignIn ? (
+          <Button
+            type="button"
+            size="1"
+            variant="soft"
+            color="gray"
             disabled={isLoadingAction !== null}
-            onClick={() => setIsDeleteAlertOpen(true)}
+            loading={isLoadingAction === "issue"}
+            onClick={handleIssueInvite}
           >
-            Archive Candidate & Revoke Access
-          </DropdownMenu.Item>
-        </DropdownMenu.Content>
-      </DropdownMenu.Root>
+            Copy onboarding invite
+          </Button>
+        ) : null}
+
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger>
+            <IconButton variant="ghost" color="gray" size="2">
+              <DotsHorizontalIcon />
+            </IconButton>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content>
+            {!hasLinkedSignIn && inviteStatus === "PENDING" ? (
+              <DropdownMenu.Item
+                disabled={isLoadingAction !== null}
+                onClick={handleRevokeInvite}
+              >
+                Revoke active invite
+              </DropdownMenu.Item>
+            ) : null}
+            <DropdownMenu.Item
+              color="red"
+              disabled={isLoadingAction !== null}
+              onClick={() => setIsDeleteAlertOpen(true)}
+            >
+              Archive Candidate & Revoke Access
+            </DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
+      </Flex>
 
       <AlertDialog.Root
         open={isDeleteAlertOpen}
