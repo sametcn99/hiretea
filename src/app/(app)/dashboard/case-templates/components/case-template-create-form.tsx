@@ -285,17 +285,6 @@ export function CaseTemplateCreateForm({
           ))}
         </Flex>
 
-        <Callout.Root color="gray" size="1">
-          <Callout.Text>
-            The repository is created first in Gitea. If the local database
-            write fails afterwards, the repository creation is rolled back
-            automatically. Template-level review guidance stays local to Hiretea
-            and can evolve without touching the repository contents. Saved
-            reviewer defaults are preselected later during case assignment, but
-            remain overrideable per candidate.
-          </Callout.Text>
-        </Callout.Root>
-
         <Flex direction="column" gap="1">
           <Text size="2" weight="medium">
             Default reviewers
@@ -402,6 +391,17 @@ export function CaseTemplateCreateForm({
             </Text>
           ))}
         </Flex>
+
+        <Callout.Root color="gray" size="1">
+          <Callout.Text>
+            The repository is created first in Gitea. If the local database
+            write fails afterwards, the repository creation is rolled back
+            automatically. Template-level review guidance stays local to Hiretea
+            and can evolve without touching the repository contents. Saved
+            reviewer defaults are preselected later during case assignment, but
+            remain overrideable per candidate.
+          </Callout.Text>
+        </Callout.Root>
 
         {state.status === "error" && state.message ? (
           <Callout.Root color="red" size="1">

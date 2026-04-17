@@ -16,6 +16,7 @@ export type RecruiterInviteHistoryItem = {
 
 export type RecruiterListItem = {
   id: string;
+  role: UserRole;
   displayName: string;
   email: string;
   giteaLogin: string | null;
@@ -38,7 +39,9 @@ export type RecruiterListItem = {
 export async function listRecruiters() {
   const users = await db.user.findMany({
     where: {
-      role: UserRole.RECRUITER,
+      role: {
+        in: [UserRole.ADMIN, UserRole.RECRUITER],
+      },
     },
     include: {
       giteaIdentity: {
@@ -99,6 +102,7 @@ export async function listRecruiters() {
 
     return {
       id: user.id,
+      role: user.role,
       displayName: user.name ?? "Unnamed team member",
       email: user.email ?? "No email",
       giteaLogin: user.giteaIdentity?.login ?? null,

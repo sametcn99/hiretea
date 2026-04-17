@@ -1,8 +1,10 @@
+import { UserRole } from "@prisma/client";
 import { Flex, Text } from "@radix-ui/themes";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { RecruiterInviteHistoryItem } from "@/lib/recruiters/queries";
 
 type RecruiterCredentialCellProps = {
+  role: UserRole;
   hasLinkedSignIn: boolean;
   inviteStatus: "PENDING" | "CLAIMED" | "REVOKED" | "EXPIRED" | null;
   inviteIssueKind: "INITIAL" | "RESEND" | null;
@@ -47,6 +49,7 @@ function formatInviteHistoryLabel(invite: RecruiterInviteHistoryItem) {
 }
 
 export function RecruiterCredentialCell({
+  role,
   hasLinkedSignIn,
   inviteStatus,
   inviteIssueKind,
@@ -60,6 +63,23 @@ export function RecruiterCredentialCell({
   inviteRevokedAt,
   inviteHistory,
 }: RecruiterCredentialCellProps) {
+  if (role === UserRole.ADMIN) {
+    return (
+      <Flex direction="column" gap="1">
+        <StatusBadge
+          label={
+            hasLinkedSignIn ? "Admin access active" : "Bootstrap account ready"
+          }
+          tone={hasLinkedSignIn ? "positive" : "info"}
+        />
+        <Text size="1" color="gray">
+          This admin account is part of the workspace roster and does not use
+          recruiter onboarding invites.
+        </Text>
+      </Flex>
+    );
+  }
+
   if (hasLinkedSignIn) {
     return (
       <Flex direction="column" gap="1">

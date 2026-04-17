@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { ensureWorkspaceBootstrap } from "@/lib/bootstrap/complete-bootstrap";
 import { readBootstrapStatus } from "@/lib/bootstrap/status";
 import { db } from "@/lib/db";
+import { listRecruiters } from "@/lib/recruiters/queries";
 import { shouldRunIntegrationTests } from "./helpers/runtime";
 
 const bootstrapInput = {
@@ -71,6 +72,25 @@ describe.skipIf(!shouldRunIntegrationTests)("ensureWorkspaceBootstrap", () => {
       companyName: bootstrapInput.companyName,
       defaultBranch: bootstrapInput.defaultBranch,
       manualInviteMode: true,
+    });
+  });
+
+  it("includes the bootstrap admin in the workspace members roster", async () => {
+    await ensureWorkspaceBootstrap(bootstrapInput);
+
+    const members = await listRecruiters();
+
+    expect(members).toHaveLength(1);
+    expect(members[0]).toMatchObject({
+      email: bootstrapInput.adminEmail,
+      displayName: bootstrapInput.adminName,
+      role: UserRole.ADMIN,
+      isActive: true,
+      hasLinkedSignIn: false,
+      giteaLogin: null,
+      inviteStatus: null,
+      inviteCount: 0,
+      inviteHistory: [],
     });
   });
 

@@ -1,3 +1,4 @@
+import { UserRole } from "@prisma/client";
 import { Flex, Table, Text } from "@radix-ui/themes";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { RecruiterListItem } from "@/lib/recruiters/queries";
@@ -17,8 +18,8 @@ export function RecruiterTable({ recruiters }: RecruiterTableProps) {
   if (recruiters.length === 0) {
     return (
       <Text as="p" size="2" color="gray">
-        No recruiting team members are provisioned yet. Start by creating the
-        first internal account from the form on the left.
+        No workspace members are available yet. Complete bootstrap or provision
+        the first recruiting team member from the form on the left.
       </Text>
     );
   }
@@ -46,12 +47,20 @@ export function RecruiterTable({ recruiters }: RecruiterTableProps) {
                 <Text size="1" color="gray">
                   {recruiter.giteaLogin
                     ? `Gitea: ${recruiter.giteaLogin}`
-                    : "No linked Gitea login"}
+                    : recruiter.role === UserRole.ADMIN
+                      ? "Bootstrap-created admin account"
+                      : "No linked Gitea login"}
                 </Text>
               </Flex>
             </Table.Cell>
             <Table.Cell>
               <Flex direction="column" gap="2">
+                <StatusBadge
+                  label={
+                    recruiter.role === UserRole.ADMIN ? "Admin" : "Recruiter"
+                  }
+                  tone={recruiter.role === UserRole.ADMIN ? "info" : "neutral"}
+                />
                 <StatusBadge
                   label={recruiter.isActive ? "Active" : "Inactive"}
                   tone={recruiter.isActive ? "positive" : "warning"}
@@ -68,6 +77,7 @@ export function RecruiterTable({ recruiters }: RecruiterTableProps) {
             </Table.Cell>
             <Table.Cell>
               <RecruiterCredentialCell
+                role={recruiter.role}
                 hasLinkedSignIn={recruiter.hasLinkedSignIn}
                 inviteStatus={recruiter.inviteStatus}
                 inviteIssueKind={recruiter.inviteIssueKind}
@@ -89,6 +99,7 @@ export function RecruiterTable({ recruiters }: RecruiterTableProps) {
                 recruiterName={
                   recruiter.displayName || recruiter.email || recruiter.id
                 }
+                role={recruiter.role}
                 hasLinkedSignIn={recruiter.hasLinkedSignIn}
                 inviteStatus={recruiter.inviteStatus}
                 isActive={recruiter.isActive}

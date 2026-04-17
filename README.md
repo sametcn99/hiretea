@@ -67,8 +67,6 @@ If you change the public ports, keep the matching public URLs in sync. The app s
 bun run docker:up
 bun run docker:wait
 bun run docker:watch
-bun run docker:down
-bun run docker:nuke
 bun run smoke:test
 bun run test:unit
 bun run test:integration
@@ -79,7 +77,6 @@ bun run typecheck
 bun run build
 ```
 
-Use `bun run docker:down` when you want a completely fresh Hiretea state. Use `bun run docker:nuke` when you also want Docker images removed.
 
 ## Testing Workflow
 
@@ -104,6 +101,7 @@ The `/setup` route is a fallback path if automatic bootstrap has not completed y
 - If OAuth stays unavailable after bootstrap, verify `NEXTAUTH_SECRET` is present and the Gitea OAuth redirect URI exactly matches `${NEXTAUTH_URL}/api/auth/callback/gitea`.
 - If candidate case assignment fails during repository migration, confirm Gitea is running with `GITEA__migrations__ALLOW_LOCALNETWORKS=true` and `GITEA__server__LOCAL_ROOT_URL=http://gitea:3000/`.
 - If webhook delivery stays unavailable, verify Gitea can reach `POST ${NEXTAUTH_URL}/api/webhooks/gitea` from the Docker network.
+- Use `docker compose -p hiretea -f docker-compose.yml down --volumes --remove-orphans --rmi all || true` when you want a completely fresh Hiretea state.
 
 ## Architectural Rules
 

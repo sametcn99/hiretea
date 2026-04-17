@@ -1,5 +1,6 @@
 "use client";
 
+import { UserRole } from "@prisma/client";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import {
   AlertDialog,
@@ -19,6 +20,7 @@ import {
 type RecruiterActionsProps = {
   recruiterId: string;
   recruiterName: string;
+  role: UserRole;
   hasLinkedSignIn: boolean;
   inviteStatus: "PENDING" | "CLAIMED" | "REVOKED" | "EXPIRED" | null;
   isActive: boolean;
@@ -27,6 +29,7 @@ type RecruiterActionsProps = {
 export function RecruiterActions({
   recruiterId,
   recruiterName,
+  role,
   hasLinkedSignIn,
   inviteStatus,
   isActive,
@@ -123,6 +126,10 @@ export function RecruiterActions({
     });
     setIsDeleteAlertOpen(false);
     setIsLoadingAction(null);
+  }
+
+  if (role === UserRole.ADMIN) {
+    return null;
   }
 
   return (
