@@ -41,5 +41,6 @@ yarn-error.log*
 next-env.d.ts
 !.env.bundled.example
 !.env.external.example
+!.env.example
 # smoke test results
 /test-results/

@@ -5,15 +5,17 @@ import {
   ActivityLogIcon,
   Component1Icon,
   DashboardIcon,
+  ExitIcon,
   GearIcon,
   MagnifyingGlassIcon,
   PersonIcon,
   TokensIcon,
 } from "@radix-ui/react-icons";
-import { Box, Flex, Text } from "@radix-ui/themes";
+import { Avatar, Box, Flex, IconButton, Text } from "@radix-ui/themes";
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 
 type AppNavigationProps = {
   role: UserRole;
@@ -124,18 +126,81 @@ export function AppNavigation({ role, user }: AppNavigationProps) {
       {/* User Profile */}
       <Box
         style={{
-          paddingTop: "1rem",
-          borderTop: "1px solid var(--gray-6)",
           marginTop: "auto",
         }}
       >
-        <Flex direction="column" gap="1">
-          <Text size="2" weight="bold">
-            {user.name ?? user.email}
-          </Text>
-          <Text size="1" color="gray">
-            {user.role}
-          </Text>
+        <Flex
+          align="center"
+          justify="between"
+          gap="3"
+          style={{
+            padding: "12px",
+            borderRadius: "var(--radius-3)",
+            backgroundColor: "var(--gray-3)",
+            border: "1px solid var(--gray-5)",
+          }}
+        >
+          <Flex gap="3" align="center" style={{ overflow: "hidden" }}>
+            <Avatar
+              size="2"
+              radius="full"
+              fallback={
+                user.name
+                  ? user.name.charAt(0).toUpperCase()
+                  : (user.email?.charAt(0).toUpperCase() ?? "U")
+              }
+              color="indigo"
+            />
+            <Flex direction="column" style={{ overflow: "hidden" }}>
+              <Text
+                size="2"
+                weight="bold"
+                style={{
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {user.name ?? user.email}
+              </Text>
+              {user.name && user.email ? (
+                <Text
+                  size="1"
+                  color="gray"
+                  style={{
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {user.email}
+                </Text>
+              ) : null}
+              <Text
+                size="1"
+                color="gray"
+                style={{
+                  fontSize: "10px",
+                  marginTop: "2px",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                {user.role}
+              </Text>
+            </Flex>
+          </Flex>
+
+          <IconButton
+            variant="ghost"
+            color="gray"
+            size="2"
+            onClick={() => signOut({ callbackUrl: "/sign-in" })}
+            title="Sign out"
+            style={{ flexShrink: 0, cursor: "pointer" }}
+          >
+            <ExitIcon />
+          </IconButton>
         </Flex>
       </Box>
     </Flex>

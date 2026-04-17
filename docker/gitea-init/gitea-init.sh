@@ -2,23 +2,35 @@
 
 set -euo pipefail
 
+require_env() {
+  local name="$1"
+  local value="${!name:-}"
+
+  if [ -z "$value" ]; then
+    echo "$name must be set before gitea-init can run." >&2
+    exit 1
+  fi
+
+  printf '%s\n' "$value"
+}
+
 APP_INI="${GITEA_APP_INI:-/etc/gitea/app.ini}"
-DATABASE_URL="${DATABASE_URL:-postgresql://hiretea:hiretea@db:5432/hiretea?schema=public}"
-GITEA_ADMIN_EMAIL="${GITEA_ADMIN_EMAIL:-admin@hiretea.local}"
-GITEA_ADMIN_NAME="${hiretea_ADMIN_NAME:-Hiretea Admin}"
-GITEA_ADMIN_PASSWORD="${GITEA_ADMIN_PASSWORD:-}"
+DATABASE_URL="$(require_env DATABASE_URL)"
+GITEA_ADMIN_EMAIL="$(require_env GITEA_ADMIN_EMAIL)"
+GITEA_ADMIN_NAME="$(require_env hiretea_ADMIN_NAME)"
+GITEA_ADMIN_PASSWORD="$(require_env GITEA_ADMIN_PASSWORD)"
 GITEA_ADMIN_TOKEN="${GITEA_ADMIN_TOKEN:-}"
-GITEA_ADMIN_USERNAME="${GITEA_ADMIN_USERNAME:-hiretea-admin}"
+GITEA_ADMIN_USERNAME="$(require_env GITEA_ADMIN_USERNAME)"
 GITEA_INTERNAL_URL="${GITEA_INTERNAL_URL:-http://gitea:3000}"
-GITEA_ORGANIZATION_NAME="${GITEA_ORGANIZATION_NAME:-hiretea}"
-GITEA_PUBLIC_URL="${GITEA_PUBLIC_URL:-http://localhost:3001}"
+GITEA_ORGANIZATION_NAME="$(require_env GITEA_ORGANIZATION_NAME)"
+GITEA_PUBLIC_URL="$(require_env GITEA_PUBLIC_URL)"
 GITEA_RUNTIME_ENV_FILE="${GITEA_RUNTIME_ENV_FILE:-/etc/gitea/hiretea.generated.env}"
-GITEA_WEBHOOK_SECRET="${GITEA_WEBHOOK_SECRET:-}"
-hiretea_COMPANY_NAME="${hiretea_COMPANY_NAME:-Hiretea Workspace}"
-hiretea_DEFAULT_BRANCH="${hiretea_DEFAULT_BRANCH:-main}"
-hiretea_MANUAL_INVITE_MODE="${hiretea_MANUAL_INVITE_MODE:-true}"
-NEXTAUTH_SECRET="${NEXTAUTH_SECRET:-}"
-NEXTAUTH_URL="${NEXTAUTH_URL:-http://localhost:3000}"
+GITEA_WEBHOOK_SECRET="$(require_env GITEA_WEBHOOK_SECRET)"
+hiretea_COMPANY_NAME="$(require_env hiretea_COMPANY_NAME)"
+hiretea_DEFAULT_BRANCH="$(require_env hiretea_DEFAULT_BRANCH)"
+hiretea_MANUAL_INVITE_MODE="$(require_env hiretea_MANUAL_INVITE_MODE)"
+NEXTAUTH_SECRET="$(require_env NEXTAUTH_SECRET)"
+NEXTAUTH_URL="$(require_env NEXTAUTH_URL)"
 AUTH_GITEA_ID="${AUTH_GITEA_ID:-}"
 AUTH_GITEA_SECRET="${AUTH_GITEA_SECRET:-}"
 GITEA_RECRUITER_TEAM_NAME="${GITEA_RECRUITER_TEAM_NAME:-hiretea-recruiters}"
@@ -40,10 +52,6 @@ CONFIG_NEXTAUTH_URL="$NEXTAUTH_URL"
 
 gitea_cmd() {
   gitea --config "$APP_INI" "$@"
-}
-
-random_hex() {
-  od -An -tx1 -N32 /dev/urandom | tr -d ' \n'
 }
 
 quote_env_value() {
@@ -155,10 +163,6 @@ ensure_admin_user() {
     fi
 
     return 0
-  fi
-
-  if [ -z "$GITEA_ADMIN_PASSWORD" ]; then
-    GITEA_ADMIN_PASSWORD="Ht!$(random_hex | cut -c1-24)Aa1"
   fi
 
   echo "Creating Gitea admin user $GITEA_ADMIN_USERNAME."
@@ -308,14 +312,6 @@ write_runtime_env() {
 
 mkdir -p "$(dirname "$GITEA_RUNTIME_ENV_FILE")"
 load_existing_runtime_env
-
-if [ -z "$NEXTAUTH_SECRET" ]; then
-  NEXTAUTH_SECRET="$(random_hex)"
-fi
-
-if [ -z "$GITEA_WEBHOOK_SECRET" ]; then
-  GITEA_WEBHOOK_SECRET="$(random_hex)"
-fi
 
 wait_for_config
 ensure_admin_user

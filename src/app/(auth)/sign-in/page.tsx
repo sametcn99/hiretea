@@ -27,14 +27,6 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
 
   const session = await getServerAuthSession();
 
-  if (session?.user?.id && session.user.isActive) {
-    redirect(
-      session.user.role === "CANDIDATE"
-        ? ("/" as Route)
-        : ("/dashboard" as Route),
-    );
-  }
-
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const [runtimeReadiness, runtimeConfig] = await Promise.all([
     getGiteaRuntimeReadiness(),
@@ -56,6 +48,19 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
           isConfigured={runtimeReadiness.authReady}
           error={resolvedSearchParams?.error}
           giteaBaseUrl={runtimeConfig.publicBaseUrl}
+          currentUser={
+            session?.user?.id && session.user.isActive
+              ? {
+                  email: session.user.email,
+                  name: session.user.name,
+                  role: session.user.role,
+                  continuePath:
+                    session.user.role === "CANDIDATE"
+                      ? ("/" as Route)
+                      : ("/dashboard" as Route),
+                }
+              : undefined
+          }
         />
       </Box>
     </Box>

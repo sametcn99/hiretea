@@ -1,8 +1,8 @@
 import type { OAuthConfig } from "next-auth/providers/oauth";
 
 type GiteaProfile = {
-  id: number;
-  login: string;
+  id?: number;
+  login?: string;
   email?: string | null;
   avatar_url?: string | null;
   full_name?: string | null;
@@ -32,15 +32,24 @@ export function createGiteaProvider(options: GiteaProviderOptions) {
     authorization: {
       url: `${issuer}/login/oauth/authorize`,
       params: {
-        scope: "read:user user:email",
+        scope: "read:user",
+        prompt: "login",
       },
     },
     token: `${internalBaseUrl}/login/oauth/access_token`,
-    userinfo: `${internalBaseUrl}/login/oauth/userinfo`,
+    userinfo: `${internalBaseUrl}/api/v1/user`,
     profile(profile: GiteaProfile) {
+      const providerAccountId = profile.id?.toString();
+
+      if (!providerAccountId) {
+        throw new TypeError(
+          "Gitea OAuth profile response is missing a stable account identifier.",
+        );
+      }
+
       return {
-        id: String(profile.id),
-        name: profile.full_name ?? profile.login,
+        id: providerAccountId,
+        name: profile.full_name ?? profile.login ?? providerAccountId,
         email: profile.email ?? null,
         image: profile.avatar_url ?? null,
         role: "CANDIDATE",

@@ -1,5 +1,6 @@
 "use client";
 
+import type { UserRole } from "@prisma/client";
 import {
   Box,
   Button,
@@ -9,37 +10,79 @@ import {
   Heading,
   Text,
 } from "@radix-ui/themes";
-import { signIn } from "next-auth/react";
+import type { Route } from "next";
+import Link from "next/link";
+import { signIn, signOut } from "next-auth/react";
 import { startTransition, useState } from "react";
 import { AppLogo } from "@/components/ui/app-logo";
 import { StatusBadge } from "@/components/ui/status-badge";
+
+type CurrentUserSession = {
+  name?: string | null;
+  email?: string | null;
+  role: UserRole;
+  continuePath: Route;
+};
 
 type SignInPanelProps = {
   isConfigured: boolean;
   error?: string;
   giteaBaseUrl?: string | null;
+  currentUser?: CurrentUserSession;
 };
 
 function getCandidateGiteaLoginUrl(giteaBaseUrl?: string | null) {
   return giteaBaseUrl ? `${giteaBaseUrl.replace(/\/$/, "")}/user/login` : null;
 }
 
+function getGiteaLogoutUrl(giteaBaseUrl?: string | null) {
+  return giteaBaseUrl ? `${giteaBaseUrl.replace(/\/$/, "")}/user/logout` : null;
+}
+
 export function SignInPanel({
   isConfigured,
   error,
   giteaBaseUrl,
+  currentUser,
 }: SignInPanelProps) {
-  const [isPending, setIsPending] = useState(false);
+  const [pendingAction, setPendingAction] = useState<
+    "sign-in" | "switch-account" | null
+  >(null);
   const candidateGiteaLoginUrl = getCandidateGiteaLoginUrl(giteaBaseUrl);
+  const giteaLogoutUrl = getGiteaLogoutUrl(giteaBaseUrl);
   const isCandidateAccessDenied = error === "candidate-access-denied";
+  const isPending = pendingAction !== null;
 
   const handleSignIn = () => {
-    setIsPending(true);
+    setPendingAction("sign-in");
 
     startTransition(() => {
       void signIn("gitea", { callbackUrl: "/dashboard" }).finally(() => {
-        setIsPending(false);
+        setPendingAction(null);
       });
+    });
+  };
+
+  const handleSwitchAccount = () => {
+    setPendingAction("switch-account");
+
+    startTransition(() => {
+      void signOut({ redirect: false })
+        .then(async () => {
+          if (giteaLogoutUrl) {
+            await fetch(giteaLogoutUrl, {
+              method: "GET",
+              mode: "no-cors",
+              credentials: "include",
+              cache: "no-store",
+            }).catch(() => undefined);
+          }
+
+          return signIn("gitea", { callbackUrl: "/dashboard" });
+        })
+        .finally(() => {
+          setPendingAction(null);
+        });
     });
   };
 
@@ -69,6 +112,55 @@ export function SignInPanel({
           </Text>
         </Flex>
 
+        {currentUser ? (
+          <Card variant="surface" size="2">
+            <Flex direction="column" gap="3">
+              <Box>
+                <Text size="2" weight="bold">
+                  You are already signed in to Hiretea
+                </Text>
+                <Text as="p" size="2" color="gray" mt="1">
+                  Continue with the current session or sign in with another
+                  Gitea account.
+                </Text>
+              </Box>
+
+              <Flex direction="column" gap="1">
+                <Text size="2" weight="bold">
+                  {currentUser.name ?? currentUser.email ?? "Current account"}
+                </Text>
+                {currentUser.name && currentUser.email ? (
+                  <Text size="2" color="gray">
+                    {currentUser.email}
+                  </Text>
+                ) : null}
+                <Text size="1" color="gray">
+                  {currentUser.role}
+                </Text>
+              </Flex>
+
+              <Flex direction="column" gap="2">
+                <Button asChild size="3">
+                  <Link href={currentUser.continuePath}>
+                    Continue with current account
+                  </Link>
+                </Button>
+
+                <Button
+                  size="3"
+                  variant="outline"
+                  disabled={!isConfigured || isPending}
+                  loading={pendingAction === "switch-account"}
+                  onClick={handleSwitchAccount}
+                  type="button"
+                >
+                  Sign in with another account
+                </Button>
+              </Flex>
+            </Flex>
+          </Card>
+        ) : null}
+
         {isCandidateAccessDenied ? (
           <Callout.Root color="amber" size="1">
             <Callout.Text>
@@ -94,16 +186,18 @@ export function SignInPanel({
           </Flex>
         </Card>
 
-        <Button
-          size="3"
-          loading={isPending}
-          disabled={!isConfigured || isPending}
-          onClick={handleSignIn}
-          type="button"
-          style={{ width: "100%" }}
-        >
-          Continue with Gitea
-        </Button>
+        {!currentUser ? (
+          <Button
+            size="3"
+            loading={pendingAction === "sign-in"}
+            disabled={!isConfigured || isPending}
+            onClick={handleSignIn}
+            type="button"
+            style={{ width: "100%" }}
+          >
+            Continue with Gitea
+          </Button>
+        ) : null}
 
         {isCandidateAccessDenied && candidateGiteaLoginUrl ? (
           <Button asChild size="3" variant="soft" color="gray">

@@ -11,11 +11,8 @@ function requireEnv(name: string) {
   return value;
 }
 
-function parseBoolean(value: string | undefined, fallback: boolean) {
-  if (value == null) {
-    return fallback;
-  }
-
+function requireBooleanEnv(name: string) {
+  const value = requireEnv(name);
   const normalized = value.trim().toLowerCase();
 
   if (normalized === "true") {
@@ -33,9 +30,8 @@ async function main() {
   const result = await ensureWorkspaceBootstrap({
     adminEmail: requireEnv("hiretea_ADMIN_EMAIL"),
     adminName: process.env.hiretea_ADMIN_NAME?.trim() || undefined,
-    companyName:
-      process.env.hiretea_COMPANY_NAME?.trim() || "Hiretea Workspace",
-    defaultBranch: process.env.hiretea_DEFAULT_BRANCH?.trim() || "main",
+    companyName: requireEnv("hiretea_COMPANY_NAME"),
+    defaultBranch: requireEnv("hiretea_DEFAULT_BRANCH"),
     giteaBaseUrl:
       process.env.AUTH_GITEA_ISSUER?.trim() ||
       process.env.GITEA_PUBLIC_URL?.trim() ||
@@ -43,10 +39,7 @@ async function main() {
     giteaAdminBaseUrl: process.env.GITEA_ADMIN_BASE_URL?.trim() || undefined,
     giteaOrganization: requireEnv("GITEA_ORGANIZATION_NAME"),
     giteaAuthClientId: process.env.AUTH_GITEA_ID?.trim() || undefined,
-    manualInviteMode: parseBoolean(
-      process.env.hiretea_MANUAL_INVITE_MODE,
-      true,
-    ),
+    manualInviteMode: requireBooleanEnv("hiretea_MANUAL_INVITE_MODE"),
   });
 
   console.log(
