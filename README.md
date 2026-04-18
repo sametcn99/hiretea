@@ -28,36 +28,25 @@ The entire product is English-only, dark-mode first, and self-hosted by default.
 
 ## Architecture Overview
 
-```text
-                 ┌─────────────────────────────────────────────┐
-   Browser ────► │ Next.js App Router (src/app)                │
-                 │  - Server Components for pages/layouts      │
-                 │  - "use client" only for interaction        │
-                 │  - Server Actions per route segment         │
-                 └───────────────┬─────────────────────────────┘
-                                 │ Zod-validated input
-                                 ▼
-                 ┌─────────────────────────────────────────────┐
-                 │ Domain modules (src/lib/<domain>)           │
-                 │  candidate-cases, candidates, case-templates│
-                 │  candidate-invites, recruiter-invites,      │
-                 │  evaluation-notes, audit, dashboard,        │
-                 │  workspace-settings, bootstrap, permissions │
-                 └───────┬───────────────────────┬─────────────┘
-                         │                       │
-                         ▼                       ▼
-            ┌────────────────────┐   ┌──────────────────────────┐
-            │ Prisma client      │   │ Gitea integration        │
-            │ (src/lib/db.ts)    │   │ (src/lib/gitea, sealed)  │
-            │  - PostgreSQL      │   │  - Admin REST client     │
-            │  - All persistence │   │  - HMAC-SHA256 webhooks  │
-            └────────┬───────────┘   └────────────┬─────────────┘
-                     ▼                            ▼
-              ┌─────────────┐              ┌──────────────┐
-              │ Postgres 16 │              │ Gitea 1.25.5 │
-              │ (HT + Gitea │              │ rootless     │
-              │   schemas)  │              │              │
-              └─────────────┘              └──────────────┘
+```mermaid
+flowchart TD
+  Browser[Browser]
+  App[Next.js App Router<br/>Server Components<br/>Route handlers and actions]
+  Domains[Domain modules<br/>src/lib/&lt;domain&gt;]
+  Prisma[Prisma client<br/>src/lib/db.ts]
+  Postgres[(PostgreSQL 16)]
+  GiteaLib[Sealed Gitea integration<br/>src/lib/gitea]
+  Gitea[(Gitea 1.25.5)]
+  Env[src/lib/env.ts<br/>Zod env parsing]
+  Runtime[runtime-config.ts<br/>dynamic Gitea config]
+
+  Browser --> App
+  App -->|Zod-validated input| Domains
+  Domains --> Prisma --> Postgres
+  Domains --> GiteaLib --> Gitea
+  Env --> Runtime
+  Runtime --> App
+  Runtime --> GiteaLib
 ```
 
 - **Auth boundary**: `next-auth` v4 with the `@next-auth/prisma-adapter` and a custom Gitea OAuth provider (`src/lib/auth/providers/gitea.ts`). Sessions are typed and exposed through `requireAuthSession` / `requireRole` helpers (`src/lib/auth/session.ts`).
@@ -67,20 +56,20 @@ The entire product is English-only, dark-mode first, and self-hosted by default.
 
 ## Tech Stack
 
-| Layer | Choice |
-| --- | --- |
-| Runtime | Bun (dev/scripts), Node.js (Next.js prod server) |
-| Framework | Next.js 16 (App Router, React 19, React Compiler) |
-| UI | Radix Themes 3, Radix Icons, dark mode only |
-| Auth | NextAuth 4 + Prisma Adapter, custom Gitea OAuth provider |
-| ORM | Prisma 7 with `@prisma/adapter-pg` over `pg` 8 |
-| Database | PostgreSQL 16 (separate Hiretea + Gitea schemas) |
-| Code host | Gitea 1.25.5 rootless (bundled in Compose) |
-| Validation | Zod 4 (per-domain `schemas.ts`) |
-| Client state | Zustand 5 (UI-only, never source of truth) |
-| Lint/format | Biome 2 |
-| Tests | Vitest 4 (unit + Postgres-backed integration), shell smoke |
-| Container | Multi-stage Dockerfile, Docker Compose `develop.watch` |
+| Layer        | Choice                                                     |
+|--------------|------------------------------------------------------------|
+| Runtime      | Bun (dev/scripts), Node.js (Next.js prod server)           |
+| Framework    | Next.js 16 (App Router, React 19, React Compiler)          |
+| UI           | Radix Themes 3, Radix Icons, dark mode only                |
+| Auth         | NextAuth 4 + Prisma Adapter, custom Gitea OAuth provider   |
+| ORM          | Prisma 7 with `@prisma/adapter-pg` over `pg` 8             |
+| Database     | PostgreSQL 16 (separate Hiretea + Gitea schemas)           |
+| Code host    | Gitea 1.25.5 rootless (bundled in Compose)                 |
+| Validation   | Zod 4 (per-domain `schemas.ts`)                            |
+| Client state | Zustand 5 (UI-only, never source of truth)                 |
+| Lint/format  | Biome 2                                                    |
+| Tests        | Vitest 4 (unit + Postgres-backed integration), shell smoke |
+| Container    | Multi-stage Dockerfile, Docker Compose `develop.watch`     |
 
 ## Repository Layout
 
@@ -174,6 +163,19 @@ Defined in [prisma/schema.prisma](prisma/schema.prisma). Highlights:
 - **Consistency model** — Pure database workflows use Prisma transactions. Cross-system workflows that touch both PostgreSQL and Gitea use compensating rollback rather than pretending to be distributed transactions: create external resource, persist internal state, and explicitly delete/revoke on downstream failure.
 - **Audit model** — Operationally meaningful mutations write append-only audit rows even when they skip a step or take a fallback path, which means the audit stream is part of the control plane, not just an optional log sink.
 
+### Active candidate case lifecycle
+
+```mermaid
+stateDiagram-v2
+  [*] --> DRAFT
+  DRAFT --> PROVISIONING: assignment starts
+  PROVISIONING --> READY: repository and access ready
+  READY --> IN_PROGRESS: first valid push
+  READY --> REVIEWING: review-submission pull request
+  IN_PROGRESS --> REVIEWING: review-submission pull request
+  REVIEWING --> COMPLETED: reviewer finalizes outcome
+```
+
 ## Critical Workflow Sequences
 
 ### Internal operator sign-in
@@ -186,6 +188,35 @@ Defined in [prisma/schema.prisma](prisma/schema.prisma). Highlights:
 
 ### Candidate case assignment
 
+```mermaid
+sequenceDiagram
+  actor Recruiter
+  participant App as Next.js action
+  participant Domain as createCandidateCase()
+  participant Gitea as Gitea integration
+  participant DB as PostgreSQL via Prisma
+  participant Audit as audit log
+
+  Recruiter->>App: Submit assignment form
+  App->>Domain: Validate actor and payload
+  Domain->>DB: Load candidate, template, settings, reviewers
+  DB-->>Domain: Validated records
+  Domain->>Gitea: generateCaseRepositoryFromTemplate()
+  alt Webhook config ready
+    Domain->>Gitea: ensureRepositoryWebhook()
+  else Webhook config incomplete
+    Domain->>Audit: record webhook skipped event
+  end
+  Domain->>Gitea: grantRepositoryAccess(write)
+  Domain->>DB: Create CandidateCase and access grants
+  Domain->>Audit: candidate.case.assigned
+  App-->>Recruiter: READY assignment
+  opt Downstream failure after provisioning
+    Domain->>Gitea: revokeRepositoryAccess()
+    Domain->>Gitea: deleteCaseRepository()
+  end
+```
+
 1. `createCandidateCase()` validates five invariants before any external side effect runs: candidate exists, candidate role is `CANDIDATE`, candidate is active, candidate has a linked Gitea login, and there is no active assignment for the same `(candidate, template)` pair.
 2. Reviewer ids are checked against active `RECRUITER` users only. A partial reviewer match is treated as a hard failure.
 3. The working repository name is synthesized from `template.slug + candidate login`, normalized to `[a-z0-9._-]`, collapsed for repeated separators, trimmed, and suffixed with a 2-byte hex token so concurrent assignments do not collide.
@@ -195,6 +226,22 @@ Defined in [prisma/schema.prisma](prisma/schema.prisma). Highlights:
 7. Any failure after repository creation triggers compensating rollback: revoke repository access if it was already granted, then delete the candidate repository, then rethrow.
 
 ### Webhook-driven candidate case synchronization
+
+```mermaid
+flowchart TD
+  Delivery[Gitea webhook delivery] --> Verify[Verify HMAC signature]
+  Verify --> Duplicate{Already processed\nsuccessfully?}
+  Duplicate -->|Yes| Ignore[Record duplicate ignored audit]
+  Duplicate -->|No| Extract[Extract repo, action, branch]
+  Extract --> Access{Active access grant\nexists?}
+  Access -->|No| Skip[Persist skipped delivery]
+  Access -->|Yes| Intent[Resolve transition intent]
+  Intent --> Stateful{Stateful event?}
+  Stateful -->|No| Skip
+  Stateful -->|Yes| Update[Update status and timestamps]
+  Update --> Persist[Persist delivery and audit event]
+  Skip --> Persist
+```
 
 1. `POST /api/webhooks/gitea` authenticates the raw payload with `HMAC-SHA256` and `timingSafeEqual`, then hands the parsed event to `processGiteaWebhookDelivery()`.
 2. Deliveries are keyed by `deliveryId`. If a delivery has already been processed successfully (`statusCode < 400`), it is treated as a duplicate, logged as `gitea.webhook.duplicate.ignored`, and not applied twice.
@@ -307,6 +354,26 @@ Defined in [prisma/schema.prisma](prisma/schema.prisma). Highlights:
 ## Runtime & Bootstrap
 
 The platform expects a small, stable runtime contract resolved in this order:
+
+```mermaid
+sequenceDiagram
+  participant Compose as docker compose
+  participant Init as gitea-init
+  participant Volume as gitea-config volume
+  participant App as app/start-app.sh
+  participant Prisma as prisma migrate deploy
+  participant Bootstrap as ensureWorkspaceBootstrap()
+  participant Health as /api/health
+
+  Compose->>Init: Start bootstrap helper
+  Init->>Volume: Write hiretea.generated.env
+  Compose->>App: Start Next.js container
+  App->>Volume: Source runtime env
+  App->>Prisma: Apply migrations
+  App->>Bootstrap: Seed admin and settings if needed
+  Bootstrap-->>App: Existing or seeded workspace state
+  App->>Health: Expose readiness endpoint
+```
 
 1. Compose injects the public envs declared in `docker-compose.yml` (`NEXTAUTH_URL`, `DATABASE_URL`, `hiretea_*`, `GITEA_*`).
 2. The `gitea-init` service writes generated values (admin token, OAuth client id/secret, webhook secret, `NEXTAUTH_SECRET`) into `gitea-config:/etc/gitea/hiretea.generated.env`.
