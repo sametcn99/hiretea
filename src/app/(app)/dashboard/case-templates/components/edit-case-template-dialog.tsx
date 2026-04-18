@@ -16,10 +16,7 @@ import {
   type UpdateCaseTemplateActionState,
   updateCaseTemplateAction,
 } from "@/app/(app)/dashboard/case-templates/actions";
-import {
-  buildRepositoryName,
-  buildTemplateSlug,
-} from "@/app/(app)/dashboard/case-templates/components/case-template-form-helpers";
+import { buildTemplateSlug } from "@/app/(app)/dashboard/case-templates/components/case-template-form-helpers";
 import { useToast } from "@/components/providers/toast-provider";
 import type {
   CaseTemplateListItem,
@@ -40,9 +37,6 @@ function buildInitialFormValues(template: CaseTemplateListItem) {
     name: template.name,
     slug: template.slug,
     summary: template.summary,
-    repositoryName: template.repositoryName,
-    repositoryDescription: template.repositoryDescription ?? "",
-    defaultBranch: template.defaultBranch,
     reviewerInstructions: template.reviewerInstructions ?? "",
     decisionGuidance: template.decisionGuidance ?? "",
     rubricCriteria: template.rubricCriteriaInput,
@@ -87,8 +81,6 @@ export function EditCaseTemplateDialog({
     template.defaultReviewerIds,
   );
   const [hasManualSlugOverride, setHasManualSlugOverride] = useState(false);
-  const [hasManualRepositoryNameOverride, setHasManualRepositoryNameOverride] =
-    useState(false);
   const allowImmediateCloseRef = useRef(false);
   const boundAction = useMemo(
     () => updateCaseTemplateAction.bind(null, template.id),
@@ -100,10 +92,6 @@ export function EditCaseTemplateDialog({
     formValues.name !== initialFormValues.name ||
     formValues.slug !== initialFormValues.slug ||
     formValues.summary !== initialFormValues.summary ||
-    formValues.repositoryName !== initialFormValues.repositoryName ||
-    formValues.repositoryDescription !==
-      initialFormValues.repositoryDescription ||
-    formValues.defaultBranch !== initialFormValues.defaultBranch ||
     formValues.reviewerInstructions !==
       initialFormValues.reviewerInstructions ||
     formValues.decisionGuidance !== initialFormValues.decisionGuidance ||
@@ -121,7 +109,6 @@ export function EditCaseTemplateDialog({
     setFormValues(initialFormValues);
     setSelectedReviewerIds(template.defaultReviewerIds);
     setHasManualSlugOverride(false);
-    setHasManualRepositoryNameOverride(false);
   }, [initialFormValues, open, template.defaultReviewerIds]);
 
   useEffect(() => {
@@ -183,9 +170,7 @@ export function EditCaseTemplateDialog({
   function handleNameChange(nextName: string) {
     setFormValues((current) => {
       const previousSlugSuggestion = buildTemplateSlug(current.name);
-      const previousRepositorySuggestion = buildRepositoryName(current.name);
       const nextSlugSuggestion = buildTemplateSlug(nextName);
-      const nextRepositorySuggestion = buildRepositoryName(nextName);
 
       return {
         ...current,
@@ -194,11 +179,6 @@ export function EditCaseTemplateDialog({
           !hasManualSlugOverride || current.slug === previousSlugSuggestion
             ? nextSlugSuggestion
             : current.slug,
-        repositoryName:
-          !hasManualRepositoryNameOverride ||
-          current.repositoryName === previousRepositorySuggestion
-            ? nextRepositorySuggestion
-            : current.repositoryName,
       };
     });
   }
@@ -213,15 +193,15 @@ export function EditCaseTemplateDialog({
       <Dialog.Content size="4" maxWidth="680px">
         <Dialog.Title>Edit case template</Dialog.Title>
         <Dialog.Description size="2">
-          Update template metadata, repository settings, and default review
-          guidance.
+          Update template metadata and default review guidance. Repository
+          bindings are fixed once the template is created.
         </Dialog.Description>
 
         <form action={formAction}>
           <Flex direction="column" gap="3" mt="4">
             <Text size="1" color="gray">
-              Template name keeps slug and repository name in sync until you
-              edit those fields manually.
+              Template name keeps the slug in sync until you edit the slug field
+              manually.
             </Text>
 
             <Flex direction={{ initial: "column", md: "row" }} gap="3">
@@ -278,64 +258,18 @@ export function EditCaseTemplateDialog({
               </Flex>
             </Flex>
 
-            <Flex direction={{ initial: "column", md: "row" }} gap="3">
-              <Flex direction="column" gap="1" flexGrow="1">
-                <Text
-                  as="label"
-                  size="2"
-                  weight="medium"
-                  htmlFor={`repository-name-${template.id}`}
-                >
-                  Repository name
-                </Text>
-                <TextField.Root
-                  id={`repository-name-${template.id}`}
-                  name="repositoryName"
-                  value={formValues.repositoryName}
-                  onChange={(event) => {
-                    setHasManualRepositoryNameOverride(true);
-                    setFormValues((current) => ({
-                      ...current,
-                      repositoryName: event.target.value,
-                    }));
-                  }}
-                  color={state.fieldErrors?.repositoryName ? "red" : undefined}
-                />
-                {state.fieldErrors?.repositoryName?.map((error) => (
-                  <Text size="1" color="red" key={error}>
-                    {error}
-                  </Text>
-                ))}
-              </Flex>
-
-              <Flex direction="column" gap="1" flexGrow="1">
-                <Text
-                  as="label"
-                  size="2"
-                  weight="medium"
-                  htmlFor={`default-branch-${template.id}`}
-                >
-                  Default branch
-                </Text>
-                <TextField.Root
-                  id={`default-branch-${template.id}`}
-                  name="defaultBranch"
-                  value={formValues.defaultBranch}
-                  onChange={(event) =>
-                    setFormValues((current) => ({
-                      ...current,
-                      defaultBranch: event.target.value,
-                    }))
-                  }
-                  color={state.fieldErrors?.defaultBranch ? "red" : undefined}
-                />
-                {state.fieldErrors?.defaultBranch?.map((error) => (
-                  <Text size="1" color="red" key={error}>
-                    {error}
-                  </Text>
-                ))}
-              </Flex>
-            </Flex>
+            <Callout.Root color="gray" size="1">
+              <Callout.Text>
+                Repository: {template.repositoryOwner}/{template.repositoryName}
+                {template.sourceRepositoryOwner && template.sourceRepositoryName
+                  ? ` | Source: ${template.sourceRepositoryOwner}/${template.sourceRepositoryName}`
+                  : ""}
+                {` | Default branch: ${template.defaultBranch}`}
+                {template.repositoryDescription
+                  ? ` | ${template.repositoryDescription}`
+                  : ""}
+              </Callout.Text>
+            </Callout.Root>
 
             <Flex direction="column" gap="1">
               <Text
@@ -360,37 +294,6 @@ export function EditCaseTemplateDialog({
                 color={state.fieldErrors?.summary ? "red" : undefined}
               />
               {state.fieldErrors?.summary?.map((error) => (
-                <Text size="1" color="red" key={error}>
-                  {error}
-                </Text>
-              ))}
-            </Flex>
-
-            <Flex direction="column" gap="1">
-              <Text
-                as="label"
-                size="2"
-                weight="medium"
-                htmlFor={`template-repository-description-${template.id}`}
-              >
-                Repository description
-              </Text>
-              <TextArea
-                id={`template-repository-description-${template.id}`}
-                name="repositoryDescription"
-                rows={3}
-                value={formValues.repositoryDescription}
-                onChange={(event) =>
-                  setFormValues((current) => ({
-                    ...current,
-                    repositoryDescription: event.target.value,
-                  }))
-                }
-                color={
-                  state.fieldErrors?.repositoryDescription ? "red" : undefined
-                }
-              />
-              {state.fieldErrors?.repositoryDescription?.map((error) => (
                 <Text size="1" color="red" key={error}>
                   {error}
                 </Text>
@@ -491,20 +394,16 @@ export function EditCaseTemplateDialog({
                 }
                 color={state.fieldErrors?.rubricCriteria ? "red" : undefined}
               />
+              <Text size="1" color="gray">
+                One criterion per line using{" "}
+                <strong>Title | Guidance | Weight</strong>.
+              </Text>
               {state.fieldErrors?.rubricCriteria?.map((error) => (
                 <Text size="1" color="red" key={error}>
                   {error}
                 </Text>
               ))}
             </Flex>
-
-            <Callout.Root color="gray" size="1">
-              <Callout.Text>
-                Updating the repository name renames the linked Gitea repository
-                too. Manual slug and repository edits stay respected after you
-                diverge from the template name.
-              </Callout.Text>
-            </Callout.Root>
 
             {state.status === "error" && state.message ? (
               <Callout.Root color="red" size="1">
@@ -514,7 +413,7 @@ export function EditCaseTemplateDialog({
 
             <Flex justify="end" gap="2" mt="2">
               <Dialog.Close>
-                <Button variant="soft" color="gray">
+                <Button type="button" variant="soft" color="gray">
                   Cancel
                 </Button>
               </Dialog.Close>

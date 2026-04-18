@@ -1,10 +1,17 @@
+import { CaseTemplateRepositorySourceKind } from "@prisma/client";
 import { createAuditLog } from "@/lib/audit/log";
 import type { CaseTemplateCreateInput } from "@/lib/case-templates/schemas";
 import { db } from "@/lib/db";
 import {
-  createCaseRepository,
+  GiteaAdminClientError,
+  type GiteaRepository,
+  getGiteaAdminClient,
+} from "@/lib/gitea/client";
+import {
   deleteCaseRepository,
+  generateTemplateRepositoryFromSource,
 } from "@/lib/gitea/repositories";
+import { getWorkspaceSettingsOrThrow } from "@/lib/workspace-settings/queries";
 
 type CreateCaseTemplateParams = CaseTemplateCreateInput & {
   actorId: string;
@@ -16,6 +23,40 @@ export async function createCaseTemplate(input: CreateCaseTemplateParams) {
     Boolean(input.decisionGuidance) ||
     input.rubricCriteria.length > 0;
 
+  const [settings, client] = await Promise.all([
+    getWorkspaceSettingsOrThrow(),
+    getGiteaAdminClient(),
+  ]);
+
+  let sourceRepository: GiteaRepository;
+
+  try {
+    sourceRepository = await client.getRepository(
+      settings.giteaOrganization,
+      input.sourceRepositoryName,
+    );
+  } catch (error) {
+    if (error instanceof GiteaAdminClientError && error.status === 404) {
+      throw new Error("The selected Gitea repository could not be found.");
+    }
+
+    throw error;
+  }
+
+  const sourceRepositoryOwner =
+    sourceRepository.owner?.login ??
+    sourceRepository.owner?.username ??
+    settings.giteaOrganization;
+  const finalRepositoryName = input.createDedicatedRepository
+    ? (input.targetRepositoryName ?? input.sourceRepositoryName)
+    : sourceRepository.name;
+  const finalRepositoryOwner = settings.giteaOrganization;
+  const finalDefaultBranch = sourceRepository.default_branch ?? "main";
+  const finalRepositoryDescription = sourceRepository.description ?? null;
+  const repositorySourceKind = input.createDedicatedRepository
+    ? CaseTemplateRepositorySourceKind.COPIED_FROM_EXISTING
+    : CaseTemplateRepositorySourceKind.LINKED_EXISTING;
+
   const [existingTemplate, reviewers] = await Promise.all([
     db.caseTemplate.findFirst({
       where: {
@@ -24,7 +65,8 @@ export async function createCaseTemplate(input: CreateCaseTemplateParams) {
             slug: input.slug,
           },
           {
-            repositoryName: input.repositoryName,
+            repositoryOwner: finalRepositoryOwner,
+            repositoryName: finalRepositoryName,
           },
         ],
       },
@@ -60,12 +102,17 @@ export async function createCaseTemplate(input: CreateCaseTemplateParams) {
     );
   }
 
-  await createCaseRepository({
-    actorId: input.actorId,
-    name: input.repositoryName,
-    description: input.repositoryDescription ?? input.summary,
-    defaultBranch: input.defaultBranch,
-  });
+  if (input.createDedicatedRepository) {
+    await generateTemplateRepositoryFromSource({
+      actorId: input.actorId,
+      sourceOwner: sourceRepositoryOwner,
+      sourceRepositoryName: sourceRepository.name,
+      destinationOwner: finalRepositoryOwner,
+      destinationRepositoryName: finalRepositoryName,
+      description: finalRepositoryDescription ?? input.summary,
+      defaultBranch: finalDefaultBranch,
+    });
+  }
 
   try {
     const template = await db.caseTemplate.create({
@@ -73,9 +120,13 @@ export async function createCaseTemplate(input: CreateCaseTemplateParams) {
         slug: input.slug,
         name: input.name,
         summary: input.summary,
-        repositoryName: input.repositoryName,
-        repositoryDescription: input.repositoryDescription,
-        defaultBranch: input.defaultBranch,
+        repositoryOwner: finalRepositoryOwner,
+        repositoryName: finalRepositoryName,
+        repositoryDescription: finalRepositoryDescription,
+        repositorySourceKind,
+        sourceRepositoryOwner,
+        sourceRepositoryName: sourceRepository.name,
+        defaultBranch: finalDefaultBranch,
         createdById: input.actorId,
         reviewerAssignments: input.reviewerIds.length
           ? {
@@ -151,7 +202,11 @@ export async function createCaseTemplate(input: CreateCaseTemplateParams) {
       resourceId: template.id,
       detail: {
         slug: template.slug,
+        repositoryOwner: template.repositoryOwner,
         repositoryName: template.repositoryName,
+        repositorySourceKind: template.repositorySourceKind,
+        sourceRepositoryOwner: template.sourceRepositoryOwner,
+        sourceRepositoryName: template.sourceRepositoryName,
         hasTemplateReviewGuide,
         rubricCriteriaCount: template.reviewGuide?._count.rubricCriteria ?? 0,
         defaultReviewerNames: template.reviewerAssignments.map(
@@ -165,11 +220,14 @@ export async function createCaseTemplate(input: CreateCaseTemplateParams) {
 
     return template;
   } catch (error) {
-    await deleteCaseRepository({
-      actorId: input.actorId,
-      repositoryName: input.repositoryName,
-      reason: "case.repository.rollback",
-    });
+    if (input.createDedicatedRepository) {
+      await deleteCaseRepository({
+        actorId: input.actorId,
+        organizationName: finalRepositoryOwner,
+        repositoryName: finalRepositoryName,
+        reason: "case.repository.rollback",
+      });
+    }
 
     throw error;
   }

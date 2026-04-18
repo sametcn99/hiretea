@@ -158,9 +158,9 @@ describe("caseTemplateCreateSchema", () => {
     name: "Backend Code Review",
     slug: "backend-code-review",
     summary: "Review a small Node.js service for bugs and code quality.",
-    repositoryName: "backend-code-review",
-    repositoryDescription: "Starter repo",
-    defaultBranch: "main",
+    sourceRepositoryName: "backend-code-review-source",
+    createDedicatedRepository: false,
+    targetRepositoryName: "",
     reviewerInstructions: "",
     decisionGuidance: "",
     reviewerIds: [],
@@ -169,14 +169,14 @@ describe("caseTemplateCreateSchema", () => {
 
   it("parses a minimal template with the required fields", () => {
     const parsed = caseTemplateCreateSchema.parse(base);
-    expect(parsed.defaultBranch).toBe("main");
+    expect(parsed.sourceRepositoryName).toBe("backend-code-review-source");
     expect(parsed.rubricCriteria).toEqual([]);
   });
 
-  it("rejects templates without a default branch", () => {
+  it("rejects templates without a selected source repository", () => {
     const result = caseTemplateCreateSchema.safeParse({
       ...base,
-      defaultBranch: "",
+      sourceRepositoryName: "",
     });
     expect(result.success).toBe(false);
   });
@@ -229,8 +229,29 @@ describe("caseTemplateCreateSchema", () => {
   it("rejects repository names starting with a hyphen", () => {
     const result = caseTemplateCreateSchema.safeParse({
       ...base,
-      repositoryName: "-bad",
+      createDedicatedRepository: true,
+      targetRepositoryName: "-bad",
     });
+    expect(result.success).toBe(false);
+  });
+
+  it("requires a target repository name when creating a dedicated copy", () => {
+    const result = caseTemplateCreateSchema.safeParse({
+      ...base,
+      createDedicatedRepository: true,
+      targetRepositoryName: "",
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects dedicated copies that reuse the selected source repository name", () => {
+    const result = caseTemplateCreateSchema.safeParse({
+      ...base,
+      createDedicatedRepository: true,
+      targetRepositoryName: "backend-code-review-source",
+    });
+
     expect(result.success).toBe(false);
   });
 

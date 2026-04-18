@@ -1,8 +1,6 @@
 import { createAuditLog } from "@/lib/audit/log";
 import type { CaseTemplateUpdateInput } from "@/lib/case-templates/schemas";
 import { db } from "@/lib/db";
-import { getGiteaAdminClient } from "@/lib/gitea/client";
-import { getResolvedGiteaAdminConfig } from "@/lib/gitea/runtime-config";
 
 type UpdateCaseTemplateParams = CaseTemplateUpdateInput & {
   actorId: string;
@@ -15,15 +13,7 @@ export async function updateCaseTemplate(input: UpdateCaseTemplateParams) {
     Boolean(input.decisionGuidance) ||
     input.rubricCriteria.length > 0;
 
-  const [
-    client,
-    adminConfig,
-    existingTemplate,
-    conflictingTemplate,
-    reviewers,
-  ] = await Promise.all([
-    getGiteaAdminClient(),
-    getResolvedGiteaAdminConfig(),
+  const [existingTemplate, conflictingTemplate, reviewers] = await Promise.all([
     db.caseTemplate.findUnique({
       where: {
         id: input.templateId,
@@ -33,8 +23,12 @@ export async function updateCaseTemplate(input: UpdateCaseTemplateParams) {
         slug: true,
         name: true,
         summary: true,
+        repositoryOwner: true,
         repositoryName: true,
         repositoryDescription: true,
+        repositorySourceKind: true,
+        sourceRepositoryOwner: true,
+        sourceRepositoryName: true,
         defaultBranch: true,
         reviewGuide: {
           select: {
@@ -48,14 +42,7 @@ export async function updateCaseTemplate(input: UpdateCaseTemplateParams) {
         id: {
           not: input.templateId,
         },
-        OR: [
-          {
-            slug: input.slug,
-          },
-          {
-            repositoryName: input.repositoryName,
-          },
-        ],
+        slug: input.slug,
       },
       select: {
         id: true,
@@ -93,158 +80,111 @@ export async function updateCaseTemplate(input: UpdateCaseTemplateParams) {
     );
   }
 
-  const organizationName = adminConfig.organization;
-
-  if (!organizationName) {
-    throw new Error(
-      "A Gitea organization name is required to update case templates.",
-    );
-  }
-
-  const nextRepositoryDescription =
-    input.repositoryDescription ?? input.summary;
-  const previousRepositoryDescription =
-    existingTemplate.repositoryDescription ?? existingTemplate.summary;
-  const repositoryPatchTarget =
-    input.repositoryName !== existingTemplate.repositoryName
-      ? input.repositoryName
-      : existingTemplate.repositoryName;
-
-  await client.editRepository(
-    organizationName,
-    existingTemplate.repositoryName,
-    {
-      name:
-        input.repositoryName !== existingTemplate.repositoryName
-          ? input.repositoryName
-          : undefined,
-      description: nextRepositoryDescription,
-      default_branch: input.defaultBranch,
+  const template = await db.caseTemplate.update({
+    where: {
+      id: input.templateId,
     },
-  );
-
-  try {
-    const template = await db.caseTemplate.update({
-      where: {
-        id: input.templateId,
+    data: {
+      slug: input.slug,
+      name: input.name,
+      summary: input.summary,
+      reviewerAssignments: {
+        deleteMany: {},
+        create: input.reviewerIds.map((reviewerId) => ({
+          reviewerId,
+          assignedById: input.actorId,
+        })),
       },
-      data: {
-        slug: input.slug,
-        name: input.name,
-        summary: input.summary,
-        repositoryName: input.repositoryName,
-        repositoryDescription: input.repositoryDescription,
-        defaultBranch: input.defaultBranch,
-        reviewerAssignments: {
-          deleteMany: {},
-          create: input.reviewerIds.map((reviewerId) => ({
-            reviewerId,
-            assignedById: input.actorId,
-          })),
-        },
-        reviewGuide: hasTemplateReviewGuide
+      reviewGuide: hasTemplateReviewGuide
+        ? {
+            upsert: {
+              create: {
+                reviewerInstructions: input.reviewerInstructions,
+                decisionGuidance: input.decisionGuidance,
+                rubricCriteria: input.rubricCriteria.length
+                  ? {
+                      create: input.rubricCriteria.map((criterion, index) => ({
+                        title: criterion.title,
+                        description: criterion.description,
+                        weight: criterion.weight,
+                        sortOrder: index,
+                      })),
+                    }
+                  : undefined,
+              },
+              update: {
+                reviewerInstructions: input.reviewerInstructions,
+                decisionGuidance: input.decisionGuidance,
+                rubricCriteria: {
+                  deleteMany: {},
+                  create: input.rubricCriteria.map((criterion, index) => ({
+                    title: criterion.title,
+                    description: criterion.description,
+                    weight: criterion.weight,
+                    sortOrder: index,
+                  })),
+                },
+              },
+            },
+          }
+        : existingTemplate.reviewGuide
           ? {
-              upsert: {
-                create: {
-                  reviewerInstructions: input.reviewerInstructions,
-                  decisionGuidance: input.decisionGuidance,
-                  rubricCriteria: input.rubricCriteria.length
-                    ? {
-                        create: input.rubricCriteria.map(
-                          (criterion, index) => ({
-                            title: criterion.title,
-                            description: criterion.description,
-                            weight: criterion.weight,
-                            sortOrder: index,
-                          }),
-                        ),
-                      }
-                    : undefined,
-                },
-                update: {
-                  reviewerInstructions: input.reviewerInstructions,
-                  decisionGuidance: input.decisionGuidance,
-                  rubricCriteria: {
-                    deleteMany: {},
-                    create: input.rubricCriteria.map((criterion, index) => ({
-                      title: criterion.title,
-                      description: criterion.description,
-                      weight: criterion.weight,
-                      sortOrder: index,
-                    })),
-                  },
-                },
-              },
+              delete: true,
             }
-          : existingTemplate.reviewGuide
-            ? {
-                delete: true,
-              }
-            : undefined,
-      },
-      include: {
-        reviewerAssignments: {
-          orderBy: {
-            createdAt: "asc",
-          },
-          select: {
-            reviewer: {
-              select: {
-                name: true,
-                email: true,
-              },
-            },
-          },
+          : undefined,
+    },
+    include: {
+      reviewerAssignments: {
+        orderBy: {
+          createdAt: "asc",
         },
-        reviewGuide: {
-          select: {
-            id: true,
-            _count: {
-              select: {
-                rubricCriteria: true,
-              },
+        select: {
+          reviewer: {
+            select: {
+              name: true,
+              email: true,
             },
           },
         },
       },
-    });
-
-    await createAuditLog({
-      action: "case.template.updated",
-      actorId: input.actorId,
-      resourceType: "CaseTemplate",
-      resourceId: template.id,
-      detail: {
-        previousName: existingTemplate.name,
-        nextName: template.name,
-        previousSlug: existingTemplate.slug,
-        nextSlug: template.slug,
-        previousRepositoryName: existingTemplate.repositoryName,
-        nextRepositoryName: template.repositoryName,
-        rubricCriteriaCount: template.reviewGuide?._count.rubricCriteria ?? 0,
-        hasTemplateReviewGuide,
-        defaultReviewerNames: template.reviewerAssignments.map(
-          (assignment) =>
-            assignment.reviewer.name ??
-            assignment.reviewer.email ??
-            "Unknown reviewer",
-        ),
+      reviewGuide: {
+        select: {
+          id: true,
+          _count: {
+            select: {
+              rubricCriteria: true,
+            },
+          },
+        },
       },
-    });
+    },
+  });
 
-    return template;
-  } catch (error) {
-    await client
-      .editRepository(organizationName, repositoryPatchTarget, {
-        name:
-          input.repositoryName !== existingTemplate.repositoryName
-            ? existingTemplate.repositoryName
-            : undefined,
-        description: previousRepositoryDescription,
-        default_branch: existingTemplate.defaultBranch,
-      })
-      .catch(() => undefined);
+  await createAuditLog({
+    action: "case.template.updated",
+    actorId: input.actorId,
+    resourceType: "CaseTemplate",
+    resourceId: template.id,
+    detail: {
+      previousName: existingTemplate.name,
+      nextName: template.name,
+      previousSlug: existingTemplate.slug,
+      nextSlug: template.slug,
+      repositoryOwner: existingTemplate.repositoryOwner,
+      repositoryName: existingTemplate.repositoryName,
+      repositorySourceKind: existingTemplate.repositorySourceKind,
+      sourceRepositoryOwner: existingTemplate.sourceRepositoryOwner,
+      sourceRepositoryName: existingTemplate.sourceRepositoryName,
+      rubricCriteriaCount: template.reviewGuide?._count.rubricCriteria ?? 0,
+      hasTemplateReviewGuide,
+      defaultReviewerNames: template.reviewerAssignments.map(
+        (assignment) =>
+          assignment.reviewer.name ??
+          assignment.reviewer.email ??
+          "Unknown reviewer",
+      ),
+    },
+  });
 
-    throw error;
-  }
+  return template;
 }

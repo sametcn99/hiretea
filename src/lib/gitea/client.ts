@@ -29,6 +29,7 @@ export type GiteaRepository = {
   id: number;
   name: string;
   full_name: string;
+  owner?: GiteaUserReference | null;
   html_url?: string;
   clone_url?: string;
   default_branch?: string;
@@ -294,6 +295,28 @@ export class GiteaAdminClient {
 
   async getRepository(owner: string, repositoryName: string) {
     return this.request<GiteaRepository>(`/repos/${owner}/${repositoryName}`);
+  }
+
+  async listOrganizationRepositories(
+    org: string,
+    options: {
+      page?: number;
+      limit?: number;
+    } = {},
+  ) {
+    const searchParams = new URLSearchParams();
+
+    if (options.page) {
+      searchParams.set("page", String(options.page));
+    }
+
+    if (options.limit) {
+      searchParams.set("limit", String(options.limit));
+    }
+
+    return this.request<GiteaRepository[]>(`/orgs/${org}/repos`, {
+      searchParams,
+    });
   }
 
   async editRepository(

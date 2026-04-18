@@ -86,6 +86,7 @@ export async function createCandidateCase(input: CreateCandidateCaseParams) {
         id: true,
         name: true,
         slug: true,
+        repositoryOwner: true,
         repositoryName: true,
         defaultBranch: true,
       },
@@ -159,7 +160,7 @@ export async function createCandidateCase(input: CreateCandidateCaseParams) {
 
   const repository = await generateCaseRepositoryFromTemplate({
     actorId: input.actorId,
-    templateOwner: workspaceSettings.giteaOrganization,
+    templateOwner: template.repositoryOwner,
     templateRepositoryName: template.repositoryName,
     repositoryName,
     description: repositoryDescription,

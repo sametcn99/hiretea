@@ -41,6 +41,16 @@ type GenerateCaseRepositoryFromTemplateInput = {
   defaultBranch?: string;
 };
 
+type GenerateTemplateRepositoryFromSourceInput = {
+  actorId: string;
+  sourceOwner: string;
+  sourceRepositoryName: string;
+  destinationOwner: string;
+  destinationRepositoryName: string;
+  description: string;
+  defaultBranch?: string;
+};
+
 type GiteaCurrentUserResponse = {
   login: string;
 };
@@ -544,6 +554,168 @@ export async function generateCaseRepositoryFromTemplate(
     detail: {
       name: repository.full_name,
       sourceTemplate: `${input.templateOwner}/${input.templateRepositoryName}`,
+      url: repository.html_url,
+      provisioningMethod,
+    },
+  });
+
+  return repository;
+}
+
+export async function generateTemplateRepositoryFromSource(
+  input: GenerateTemplateRepositoryFromSourceInput,
+) {
+  const [migrationConfig, client] = await Promise.all([
+    getResolvedGiteaMigrationConfig(),
+    getGiteaAdminClient(),
+  ]);
+  const cloneAddress = buildRepositoryGitUrl({
+    baseUrl: migrationConfig.baseUrl,
+    owner: input.sourceOwner,
+    repositoryName: input.sourceRepositoryName,
+  });
+
+  await createAuditLog({
+    action: "case.template.repository.migration.started",
+    actorId: input.actorId,
+    resourceType: "GiteaRepository",
+    resourceId: `${input.destinationOwner}/${input.destinationRepositoryName}`,
+    detail: {
+      sourceRepository: `${input.sourceOwner}/${input.sourceRepositoryName}`,
+      cloneAddress,
+    },
+  });
+
+  let repository: GiteaRepository | null = null;
+  let provisioningMethod = "gitea-migration";
+
+  try {
+    repository = await client.migrateRepository({
+      clone_addr: cloneAddress,
+      repo_owner: input.destinationOwner,
+      repo_name: input.destinationRepositoryName,
+      service: "gitea",
+      auth_token: migrationConfig.token,
+      private: true,
+      description: input.description,
+      mirror: false,
+      ...candidateRepositoryMigrationOptions,
+    });
+
+    await normalizeMigratedRepository({
+      actorId: input.actorId,
+      sourceOwner: input.sourceOwner,
+      sourceRepositoryName: input.sourceRepositoryName,
+      destinationOwner: input.destinationOwner,
+      destinationRepositoryName: input.destinationRepositoryName,
+    });
+  } catch (error) {
+    if (shouldFallbackToGitMirrorSync(error)) {
+      await createAuditLog({
+        action: "case.template.repository.migration.fallback.started",
+        actorId: input.actorId,
+        resourceType: "GiteaRepository",
+        resourceId: `${input.destinationOwner}/${input.destinationRepositoryName}`,
+        detail: {
+          sourceRepository: `${input.sourceOwner}/${input.sourceRepositoryName}`,
+          reason: error instanceof Error ? error.message : "Migration failed.",
+        },
+      }).catch(() => undefined);
+
+      await deleteCaseRepository({
+        actorId: input.actorId,
+        organizationName: input.destinationOwner,
+        repositoryName: input.destinationRepositoryName,
+        reason: "case.template.repository.rollback",
+      }).catch(() => undefined);
+
+      try {
+        repository = await createCaseRepository({
+          actorId: input.actorId,
+          name: input.destinationRepositoryName,
+          description: input.description,
+          defaultBranch: input.defaultBranch,
+          organizationName: input.destinationOwner,
+        });
+
+        await syncRepositoryContents({
+          sourceOwner: input.sourceOwner,
+          sourceRepositoryName: input.sourceRepositoryName,
+          destinationOwner: input.destinationOwner,
+          destinationRepositoryName: input.destinationRepositoryName,
+        });
+
+        await normalizeMigratedRepository({
+          actorId: input.actorId,
+          sourceOwner: input.sourceOwner,
+          sourceRepositoryName: input.sourceRepositoryName,
+          destinationOwner: input.destinationOwner,
+          destinationRepositoryName: input.destinationRepositoryName,
+        });
+
+        provisioningMethod = "git-mirror-fallback";
+      } catch (fallbackError) {
+        await deleteCaseRepository({
+          actorId: input.actorId,
+          organizationName: input.destinationOwner,
+          repositoryName: input.destinationRepositoryName,
+          reason: "case.template.repository.rollback",
+        }).catch(() => undefined);
+
+        await createAuditLog({
+          action: "case.template.repository.migration.fallback.failed",
+          actorId: input.actorId,
+          resourceType: "GiteaRepository",
+          resourceId: `${input.destinationOwner}/${input.destinationRepositoryName}`,
+          detail: {
+            sourceRepository: `${input.sourceOwner}/${input.sourceRepositoryName}`,
+            error:
+              fallbackError instanceof Error
+                ? fallbackError.message
+                : "Repository mirror sync failed.",
+          },
+        }).catch(() => undefined);
+
+        throw fallbackError;
+      }
+    } else {
+      await deleteCaseRepository({
+        actorId: input.actorId,
+        organizationName: input.destinationOwner,
+        repositoryName: input.destinationRepositoryName,
+        reason: "case.template.repository.rollback",
+      }).catch(() => undefined);
+
+      await createAuditLog({
+        action: "case.template.repository.migration.failed",
+        actorId: input.actorId,
+        resourceType: "GiteaRepository",
+        resourceId: `${input.destinationOwner}/${input.destinationRepositoryName}`,
+        detail: {
+          sourceRepository: `${input.sourceOwner}/${input.sourceRepositoryName}`,
+          error:
+            error instanceof Error
+              ? error.message
+              : "Repository migration failed.",
+        },
+      }).catch(() => undefined);
+
+      throw error;
+    }
+  }
+
+  if (!repository) {
+    throw new Error("Repository provisioning did not return a repository.");
+  }
+
+  await createAuditLog({
+    action: "case.template.repository.generated",
+    actorId: input.actorId,
+    resourceType: "GiteaRepository",
+    resourceId: String(repository.id),
+    detail: {
+      name: repository.full_name,
+      sourceRepository: `${input.sourceOwner}/${input.sourceRepositoryName}`,
       url: repository.html_url,
       provisioningMethod,
     },

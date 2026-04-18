@@ -1,13 +1,20 @@
+import type { CaseTemplateRepositorySourceKind } from "@prisma/client";
 import { formatRubricCriteriaInput } from "@/app/(app)/dashboard/case-templates/components/case-template-form-helpers";
 import { db } from "@/lib/db";
+import { getGiteaAdminClient } from "@/lib/gitea/client";
+import { getWorkspaceSettingsOrThrow } from "@/lib/workspace-settings/queries";
 
 export type CaseTemplateListItem = {
   id: string;
   name: string;
   slug: string;
   summary: string;
+  repositoryOwner: string;
   repositoryName: string;
   repositoryDescription: string | null;
+  repositorySourceKind: CaseTemplateRepositorySourceKind;
+  sourceRepositoryOwner: string | null;
+  sourceRepositoryName: string | null;
   defaultBranch: string;
   candidateCaseCount: number;
   reviewerInstructions: string | null;
@@ -30,6 +37,16 @@ export type CaseTemplateReviewerOption = {
   id: string;
   displayName: string;
   email: string;
+};
+
+export type CaseTemplateSourceRepositoryOption = {
+  id: string;
+  name: string;
+  fullName: string;
+  owner: string;
+  description: string | null;
+  defaultBranch: string;
+  isPrivate: boolean;
 };
 
 export async function listCaseTemplates() {
@@ -93,8 +110,12 @@ export async function listCaseTemplates() {
     name: template.name,
     slug: template.slug,
     summary: template.summary,
+    repositoryOwner: template.repositoryOwner,
     repositoryName: template.repositoryName,
     repositoryDescription: template.repositoryDescription ?? null,
+    repositorySourceKind: template.repositorySourceKind,
+    sourceRepositoryOwner: template.sourceRepositoryOwner ?? null,
+    sourceRepositoryName: template.sourceRepositoryName ?? null,
     defaultBranch: template.defaultBranch,
     candidateCaseCount: template._count.candidateCases,
     reviewerInstructions: template.reviewGuide?.reviewerInstructions ?? null,
@@ -144,4 +165,35 @@ export async function listCaseTemplateReviewerOptions(): Promise<
     displayName: reviewer.name ?? reviewer.email ?? "Unnamed reviewer",
     email: reviewer.email ?? "No email",
   }));
+}
+
+export async function listCaseTemplateSourceRepositories(): Promise<
+  CaseTemplateSourceRepositoryOption[]
+> {
+  const [settings, client] = await Promise.all([
+    getWorkspaceSettingsOrThrow(),
+    getGiteaAdminClient(),
+  ]);
+  const repositories = await client.listOrganizationRepositories(
+    settings.giteaOrganization,
+    {
+      limit: 100,
+    },
+  );
+
+  return repositories
+    .filter((repository) => !repository.archived)
+    .map((repository) => ({
+      id: repository.full_name,
+      name: repository.name,
+      fullName: repository.full_name,
+      owner:
+        repository.owner?.login ??
+        repository.owner?.username ??
+        settings.giteaOrganization,
+      description: repository.description ?? null,
+      defaultBranch: repository.default_branch ?? "main",
+      isPrivate: Boolean(repository.private),
+    }))
+    .sort((left, right) => left.fullName.localeCompare(right.fullName, "en"));
 }

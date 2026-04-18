@@ -7,23 +7,25 @@ import { requireRole } from "@/lib/auth/session";
 import { createCaseTemplate } from "@/lib/case-templates/create-case-template";
 import {
   type CaseTemplateCreateInput,
+  type CaseTemplateUpdateInput,
   caseTemplateCreateSchema,
   caseTemplateUpdateSchema,
 } from "@/lib/case-templates/schemas";
 import { updateCaseTemplate } from "@/lib/case-templates/update-case-template";
 
-type CaseTemplateField = keyof CaseTemplateCreateInput;
+type CaseTemplateCreateField = keyof CaseTemplateCreateInput;
+type CaseTemplateUpdateField = keyof CaseTemplateUpdateInput;
 
 export type CreateCaseTemplateActionState = {
   status: "idle" | "success" | "error";
   message?: string;
-  fieldErrors?: Partial<Record<CaseTemplateField, string[]>>;
+  fieldErrors?: Partial<Record<CaseTemplateCreateField, string[]>>;
 };
 
 export type UpdateCaseTemplateActionState = CreateCaseTemplateActionState;
 
-function mapFieldErrors(issues: ZodIssue[]) {
-  return issues.reduce<Partial<Record<CaseTemplateField, string[]>>>(
+function mapCreateFieldErrors(issues: ZodIssue[]) {
+  return issues.reduce<Partial<Record<CaseTemplateCreateField, string[]>>>(
     (fieldErrors, issue) => {
       const field = issue.path[0];
 
@@ -31,9 +33,33 @@ function mapFieldErrors(issues: ZodIssue[]) {
         field === "name" ||
         field === "slug" ||
         field === "summary" ||
-        field === "repositoryName" ||
-        field === "repositoryDescription" ||
-        field === "defaultBranch" ||
+        field === "sourceRepositoryName" ||
+        field === "createDedicatedRepository" ||
+        field === "targetRepositoryName" ||
+        field === "reviewerInstructions" ||
+        field === "decisionGuidance" ||
+        field === "reviewerIds" ||
+        field === "rubricCriteria"
+      ) {
+        const existingErrors = fieldErrors[field] ?? [];
+        fieldErrors[field] = [...existingErrors, issue.message];
+      }
+
+      return fieldErrors;
+    },
+    {},
+  );
+}
+
+function mapUpdateFieldErrors(issues: ZodIssue[]) {
+  return issues.reduce<Partial<Record<CaseTemplateUpdateField, string[]>>>(
+    (fieldErrors, issue) => {
+      const field = issue.path[0];
+
+      if (
+        field === "name" ||
+        field === "slug" ||
+        field === "summary" ||
         field === "reviewerInstructions" ||
         field === "decisionGuidance" ||
         field === "reviewerIds" ||
@@ -59,9 +85,9 @@ export async function createCaseTemplateAction(
     name: formData.get("name"),
     slug: formData.get("slug"),
     summary: formData.get("summary"),
-    repositoryName: formData.get("repositoryName"),
-    repositoryDescription: formData.get("repositoryDescription"),
-    defaultBranch: formData.get("defaultBranch"),
+    sourceRepositoryName: formData.get("sourceRepositoryName"),
+    createDedicatedRepository: formData.get("createDedicatedRepository"),
+    targetRepositoryName: formData.get("targetRepositoryName"),
     reviewerInstructions: formData.get("reviewerInstructions"),
     decisionGuidance: formData.get("decisionGuidance"),
     reviewerIds: formData.getAll("reviewerIds"),
@@ -72,7 +98,7 @@ export async function createCaseTemplateAction(
     return {
       status: "error",
       message: "Please correct the highlighted fields and submit again.",
-      fieldErrors: mapFieldErrors(parsedInput.error.issues),
+      fieldErrors: mapCreateFieldErrors(parsedInput.error.issues),
     };
   }
 
@@ -111,9 +137,6 @@ export async function updateCaseTemplateAction(
     name: formData.get("name"),
     slug: formData.get("slug"),
     summary: formData.get("summary"),
-    repositoryName: formData.get("repositoryName"),
-    repositoryDescription: formData.get("repositoryDescription"),
-    defaultBranch: formData.get("defaultBranch"),
     reviewerInstructions: formData.get("reviewerInstructions"),
     decisionGuidance: formData.get("decisionGuidance"),
     reviewerIds: formData.getAll("reviewerIds"),
@@ -124,7 +147,7 @@ export async function updateCaseTemplateAction(
     return {
       status: "error",
       message: "Please correct the highlighted fields and submit again.",
-      fieldErrors: mapFieldErrors(parsedInput.error.issues),
+      fieldErrors: mapUpdateFieldErrors(parsedInput.error.issues),
     };
   }
 

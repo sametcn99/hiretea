@@ -1,19 +1,18 @@
 "use client";
 
 import { Button, Code, Flex, Table, Text } from "@radix-ui/themes";
-import { EditCaseTemplateDialog } from "@/app/(app)/dashboard/case-templates/components/edit-case-template-dialog";
 import { useToast } from "@/components/providers/toast-provider";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type {
   CaseTemplateListItem,
   CaseTemplateReviewerOption,
 } from "@/lib/case-templates/queries";
+import { EditCaseTemplateDialog } from "./edit-case-template-dialog";
 
 type CaseTemplateTableProps = {
   templates: CaseTemplateListItem[];
   reviewerOptions: CaseTemplateReviewerOption[];
   workspaceBaseUrl: string | null;
-  workspaceOrganization: string | null;
 };
 
 const dateFormatter = new Intl.DateTimeFormat("en", {
@@ -23,15 +22,15 @@ const dateFormatter = new Intl.DateTimeFormat("en", {
 
 function buildRepositoryUrl(input: {
   workspaceBaseUrl: string | null;
-  workspaceOrganization: string | null;
+  repositoryOwner: string;
   repositoryName: string;
 }) {
-  if (!input.workspaceBaseUrl || !input.workspaceOrganization) {
+  if (!input.workspaceBaseUrl) {
     return null;
   }
 
   return new URL(
-    `${input.workspaceOrganization}/${input.repositoryName}`,
+    `${input.repositoryOwner}/${input.repositoryName}`,
     `${input.workspaceBaseUrl.replace(/\/$/, "")}/`,
   ).toString();
 }
@@ -64,7 +63,6 @@ export function CaseTemplateTable({
   templates,
   reviewerOptions,
   workspaceBaseUrl,
-  workspaceOrganization,
 }: CaseTemplateTableProps) {
   const { showToast } = useToast();
 
@@ -93,7 +91,7 @@ export function CaseTemplateTable({
         {templates.map((template) => {
           const repositoryUrl = buildRepositoryUrl({
             workspaceBaseUrl,
-            workspaceOrganization,
+            repositoryOwner: template.repositoryOwner,
             repositoryName: template.repositoryName,
           });
           const cloneCommand = buildCloneCommand(repositoryUrl);
@@ -109,6 +107,9 @@ export function CaseTemplateTable({
                   <Text size="1" color="gray">
                     {template.summary}
                   </Text>
+                  <Text size="1" color="gray">
+                    Repo owner: {template.repositoryOwner}
+                  </Text>
                   {repositoryUrl ? (
                     <Text asChild size="1" color="blue">
                       <a href={repositoryUrl} target="_blank" rel="noreferrer">
@@ -121,6 +122,20 @@ export function CaseTemplateTable({
               <Table.Cell>
                 <Flex direction="column" gap="1">
                   <StatusBadge label={template.defaultBranch} tone="info" />
+                  <StatusBadge
+                    label={
+                      template.repositorySourceKind === "COPIED_FROM_EXISTING"
+                        ? "Dedicated template copy"
+                        : template.repositorySourceKind === "LINKED_EXISTING"
+                          ? "Linked existing repo"
+                          : "Provisioned template repo"
+                    }
+                    tone={
+                      template.repositorySourceKind === "COPIED_FROM_EXISTING"
+                        ? "positive"
+                        : "neutral"
+                    }
+                  />
                   <Text size="1" color="gray">
                     {template.repositoryName}
                   </Text>
@@ -159,6 +174,13 @@ export function CaseTemplateTable({
                         {cloneCommand}
                       </Code>
                     </Button>
+                  ) : null}
+                  {template.sourceRepositoryOwner &&
+                  template.sourceRepositoryName ? (
+                    <Text size="1" color="gray">
+                      Source: {template.sourceRepositoryOwner}/
+                      {template.sourceRepositoryName}
+                    </Text>
                   ) : null}
                 </Flex>
               </Table.Cell>

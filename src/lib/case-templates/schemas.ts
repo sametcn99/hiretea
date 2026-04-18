@@ -97,24 +97,84 @@ const reviewerIdsSchema = z.preprocess(
     .transform((reviewerIds) => [...new Set(reviewerIds)]),
 );
 
-export const caseTemplateCreateSchema = z.object({
+const checkboxBooleanSchema = z.preprocess(
+  (value) =>
+    value === true || value === "true" || value === "on" || value === "1",
+  z.boolean(),
+);
+
+export const caseTemplateCreateSchema = z
+  .object({
+    name: z.string().trim().min(3).max(80),
+    slug: z.string().trim().min(3).max(64).regex(slugPattern, {
+      message:
+        "Use lowercase letters, numbers, and single hyphens between words.",
+    }),
+    summary: z.string().trim().min(16).max(280),
+    sourceRepositoryName: z
+      .string()
+      .trim()
+      .min(1, "Select a source repository."),
+    createDedicatedRepository: checkboxBooleanSchema,
+    targetRepositoryName: z
+      .string()
+      .trim()
+      .max(100)
+      .optional()
+      .transform((value) => value || undefined),
+    reviewerInstructions: optionalTemplateReviewText(2000),
+    decisionGuidance: optionalTemplateReviewText(1200),
+    reviewerIds: reviewerIdsSchema,
+    rubricCriteria: z.preprocess(
+      (value) => (typeof value === "string" ? value : ""),
+      z
+        .string()
+        .transform((value, context) =>
+          parseCaseTemplateRubricCriteria(value, context),
+        ),
+    ),
+  })
+  .superRefine((value, context) => {
+    if (!value.createDedicatedRepository) {
+      return;
+    }
+
+    if (!value.targetRepositoryName) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Enter a repository name for the dedicated template copy.",
+        path: ["targetRepositoryName"],
+      });
+
+      return;
+    }
+
+    if (!repositoryPattern.test(value.targetRepositoryName)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Use lowercase letters, numbers, periods, underscores, or hyphens for the repository name.",
+        path: ["targetRepositoryName"],
+      });
+    }
+
+    if (value.targetRepositoryName === value.sourceRepositoryName) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Choose a different repository name when creating a dedicated template copy.",
+        path: ["targetRepositoryName"],
+      });
+    }
+  });
+
+export const caseTemplateUpdateSchema = z.object({
   name: z.string().trim().min(3).max(80),
   slug: z.string().trim().min(3).max(64).regex(slugPattern, {
     message:
       "Use lowercase letters, numbers, and single hyphens between words.",
   }),
   summary: z.string().trim().min(16).max(280),
-  repositoryName: z.string().trim().min(3).max(100).regex(repositoryPattern, {
-    message:
-      "Use lowercase letters, numbers, periods, underscores, or hyphens for the repository name.",
-  }),
-  repositoryDescription: z
-    .string()
-    .trim()
-    .max(280)
-    .optional()
-    .transform((value) => value || undefined),
-  defaultBranch: z.string().trim().min(2).max(32),
   reviewerInstructions: optionalTemplateReviewText(2000),
   decisionGuidance: optionalTemplateReviewText(1200),
   reviewerIds: reviewerIdsSchema,
@@ -127,8 +187,6 @@ export const caseTemplateCreateSchema = z.object({
       ),
   ),
 });
-
-export const caseTemplateUpdateSchema = caseTemplateCreateSchema;
 
 export type CaseTemplateCreateInput = z.infer<typeof caseTemplateCreateSchema>;
 export type CaseTemplateUpdateInput = z.infer<typeof caseTemplateUpdateSchema>;

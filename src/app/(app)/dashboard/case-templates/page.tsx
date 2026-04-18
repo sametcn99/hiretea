@@ -6,17 +6,20 @@ import { SectionCard } from "@/components/ui/section-card";
 import { requireRole } from "@/lib/auth/session";
 import {
   listCaseTemplateReviewerOptions,
+  listCaseTemplateSourceRepositories,
   listCaseTemplates,
 } from "@/lib/case-templates/queries";
 import { getWorkspaceSettings } from "@/lib/workspace-settings/queries";
 
 export default async function CaseTemplatesPage() {
   await requireRole(UserRole.ADMIN, UserRole.RECRUITER);
-  const [templates, reviewerOptions, settings] = await Promise.all([
-    listCaseTemplates(),
-    listCaseTemplateReviewerOptions(),
-    getWorkspaceSettings(),
-  ]);
+  const [templates, reviewerOptions, sourceRepositories, settings] =
+    await Promise.all([
+      listCaseTemplates(),
+      listCaseTemplateReviewerOptions(),
+      listCaseTemplateSourceRepositories(),
+      getWorkspaceSettings(),
+    ]);
 
   return (
     <Grid
@@ -27,10 +30,13 @@ export default async function CaseTemplatesPage() {
       <SectionCard
         style={{ position: "sticky", top: 28 }}
         title="Create a case template"
-        description="Provision the repository in Gitea and attach the reusable template-level review definition locally."
+        description="Select an existing Gitea repository, then either link it directly or create a dedicated template copy before saving the reusable review definition locally."
         eyebrow="Case operations"
       >
-        <CaseTemplateCreateForm reviewerOptions={reviewerOptions} />
+        <CaseTemplateCreateForm
+          reviewerOptions={reviewerOptions}
+          sourceRepositories={sourceRepositories}
+        />
       </SectionCard>
 
       <SectionCard
@@ -42,7 +48,6 @@ export default async function CaseTemplatesPage() {
           templates={templates}
           reviewerOptions={reviewerOptions}
           workspaceBaseUrl={settings?.giteaBaseUrl ?? null}
-          workspaceOrganization={settings?.giteaOrganization ?? null}
         />
       </SectionCard>
     </Grid>

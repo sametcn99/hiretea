@@ -38,6 +38,12 @@ enum RecruiterInviteIssueKind {
   RESEND
 }
 
+enum CaseTemplateRepositorySourceKind {
+  PROVISIONED
+  LINKED_EXISTING
+  COPIED_FROM_EXISTING
+}
+
 model User {
   id            String          @id @default(cuid())
   name          String?
@@ -98,8 +104,12 @@ model CaseTemplate {
   slug                  String          @unique
   name                  String
   summary               String
+  repositoryOwner       String
   repositoryName        String
   repositoryDescription String?
+  repositorySourceKind  CaseTemplateRepositorySourceKind @default(PROVISIONED)
+  sourceRepositoryOwner String?
+  sourceRepositoryName  String?
   defaultBranch         String          @default("main")
   createdById           String
   createdAt             DateTime        @default(now())
@@ -108,6 +118,8 @@ model CaseTemplate {
   candidateCases        CandidateCase[]
   reviewerAssignments   CaseTemplateReviewerAssignment[]
   reviewGuide           CaseTemplateReviewGuide?
+
+  @@unique([repositoryOwner, repositoryName])
 }
 
 model CaseTemplateReviewerAssignment {
