@@ -1,7 +1,17 @@
 {
   "name": "hiretea",
+  "displayName": "Hiretea",
   "version": "0.1.0",
   "private": true,
+  "author": {
+    "email": "contact@sametcc.me",
+    "name": "sametcn99",
+    "url": "https://sametcc.me"
+  },
+  "license": "GPL-3.0-only",
+  "repository": {
+    "url": "https://github.com/sametcn99/hiretea"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
