@@ -1,4 +1,8 @@
 import { CandidateCaseStatus, UserRole } from "@prisma/client";
+import {
+  candidateCompletionActiveFilter,
+  syncExpiredCandidateCompletions,
+} from "@/lib/candidate-cases/candidate-completion";
 import { db } from "@/lib/db";
 
 const activeCandidateCaseStatuses = [
@@ -31,6 +35,8 @@ export async function getDashboardSummary(
   _role: UserRole,
   _userId: string,
 ): Promise<DashboardSummary> {
+  await syncExpiredCandidateCompletions();
+
   const [
     candidateCount,
     templateCount,
@@ -58,6 +64,7 @@ export async function getDashboardSummary(
         status: {
           in: [...reviewQueueStatuses],
         },
+        ...candidateCompletionActiveFilter,
       },
     }),
     db.candidateCase.count({

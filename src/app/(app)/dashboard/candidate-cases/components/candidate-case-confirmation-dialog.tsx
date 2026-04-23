@@ -1,5 +1,5 @@
-import { AlertDialog, Button, Flex } from "@radix-ui/themes";
 import type { ReactNode } from "react";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
 type CandidateCaseConfirmationDialogProps = {
   open: boolean;
@@ -23,31 +23,15 @@ export function CandidateCaseConfirmationDialog({
   onConfirm,
 }: CandidateCaseConfirmationDialogProps) {
   return (
-    <AlertDialog.Root open={open} onOpenChange={onOpenChange}>
-      <AlertDialog.Content maxWidth="450px">
-        <AlertDialog.Title>{title}</AlertDialog.Title>
-        <AlertDialog.Description size="2">
-          {description}
-        </AlertDialog.Description>
-
-        <Flex gap="3" mt="4" justify="end">
-          <AlertDialog.Cancel>
-            <Button variant="soft" color="gray" disabled={isLoading}>
-              Cancel
-            </Button>
-          </AlertDialog.Cancel>
-          <AlertDialog.Action>
-            <Button
-              variant="solid"
-              color={confirmColor}
-              onClick={onConfirm}
-              loading={isLoading}
-            >
-              {confirmLabel}
-            </Button>
-          </AlertDialog.Action>
-        </Flex>
-      </AlertDialog.Content>
-    </AlertDialog.Root>
+    <ConfirmationDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={title}
+      description={description}
+      confirmLabel={confirmLabel}
+      confirmColor={confirmColor}
+      isLoading={isLoading}
+      onConfirm={onConfirm}
+    />
   );
 }

@@ -45,9 +45,8 @@ export default async function CandidateCaseDetailPage({
     candidateCase.id,
     candidateCases,
   );
-  const canOpenReviewWorkflow = canOpenCandidateCaseReviewWorkflow(
-    candidateCase.status,
-  );
+  const canOpenReviewWorkflow =
+    canOpenCandidateCaseReviewWorkflow(candidateCase);
 
   return (
     <Grid

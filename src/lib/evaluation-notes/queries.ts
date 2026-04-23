@@ -4,6 +4,10 @@ import {
   type CandidateCaseStatus as CandidateCaseStatusType,
   UserRole,
 } from "@prisma/client";
+import {
+  candidateCompletionActiveFilter,
+  syncExpiredCandidateCompletions,
+} from "@/lib/candidate-cases/candidate-completion";
 import { db } from "@/lib/db";
 
 export type ReviewCaseListItem = {
@@ -76,6 +80,7 @@ function buildReviewCaseWhereClause(input?: ReviewCaseActorInput) {
         CandidateCaseStatus.COMPLETED,
       ],
     },
+    ...candidateCompletionActiveFilter,
   };
 }
 
@@ -165,6 +170,7 @@ export async function listReviewCases(input?: {
   actorId: string;
   actorRole: UserRole;
 }) {
+  await syncExpiredCandidateCompletions();
   const candidateCases = await db.candidateCase.findMany({
     where: buildReviewCaseWhereClause(input),
     include: {
@@ -244,6 +250,7 @@ export async function getReviewCaseById(
     candidateCaseId: string;
   },
 ) {
+  await syncExpiredCandidateCompletions();
   const candidateCase = await db.candidateCase.findFirst({
     where: {
       id: input.candidateCaseId,

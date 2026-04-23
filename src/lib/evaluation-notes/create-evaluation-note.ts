@@ -8,6 +8,7 @@ import {
   type AuthorizedActor,
   assertInternalOperator,
 } from "@/lib/auth/authorization";
+import { syncExpiredCandidateCompletions } from "@/lib/candidate-cases/candidate-completion";
 import { db } from "@/lib/db";
 import type { EvaluationNoteCreateInput } from "@/lib/evaluation-notes/schemas";
 
@@ -50,6 +51,8 @@ function getNextDecision(
 export async function createEvaluationNote(input: CreateEvaluationNoteParams) {
   assertInternalOperator(input, "review candidate cases");
 
+  await syncExpiredCandidateCompletions();
+
   const candidateCase = await db.candidateCase.findUnique({
     where: {
       id: input.candidateCaseId,
@@ -59,6 +62,7 @@ export async function createEvaluationNote(input: CreateEvaluationNoteParams) {
       status: true,
       decision: true,
       reviewedAt: true,
+      candidateCompletionRequestedAt: true,
       candidate: {
         select: {
           name: true,
@@ -84,6 +88,12 @@ export async function createEvaluationNote(input: CreateEvaluationNoteParams) {
 
   if (!reviewableStatuses.includes(candidateCase.status)) {
     throw new Error("The selected candidate case is not ready for review yet.");
+  }
+
+  if (!candidateCase.candidateCompletionRequestedAt) {
+    throw new Error(
+      "The candidate has not marked this case complete yet. Review notes can only be added after completion.",
+    );
   }
 
   if (

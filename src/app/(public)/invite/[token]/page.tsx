@@ -1,15 +1,50 @@
 import { Box, Container, Flex, Text } from "@radix-ui/themes";
+import {
+  CandidateCaseCompletionPanel,
+  type CandidateCompletionSignalView,
+} from "@/app/(public)/invite/[token]/components/candidate-case-completion-panel";
 import { InviteClaimPanel } from "@/app/(public)/invite/[token]/components/invite-claim-panel";
 import { AppLogo } from "@/components/ui/app-logo";
 import { SectionCard } from "@/components/ui/section-card";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { getCandidateInviteLanding } from "@/lib/candidate-invites/claim-candidate-invite";
+import type { CandidateCompletionSignal } from "@/lib/candidate-cases/candidate-completion";
+import { getCandidateInvitePageData } from "@/lib/candidate-invites/queries";
 import { getGiteaRuntimeConfig } from "@/lib/gitea/runtime-config";
 
 const dateFormatter = new Intl.DateTimeFormat("en", {
   dateStyle: "medium",
   timeStyle: "short",
 });
+
+function serializeCompletionSignal(
+  signal: CandidateCompletionSignal,
+): CandidateCompletionSignalView {
+  switch (signal.kind) {
+    case "LOGIN_REQUIRED":
+    case "OPEN":
+      return signal;
+    case "MARKED_REVERTIBLE":
+      return {
+        kind: "MARKED_REVERTIBLE",
+        requestedAt: signal.requestedAt.toISOString(),
+        source: signal.source,
+      };
+    case "LOCKED_BY_DEADLINE":
+      return {
+        kind: "LOCKED_BY_DEADLINE",
+        requestedAt: signal.requestedAt?.toISOString() ?? null,
+        lockedAt: signal.lockedAt.toISOString(),
+        source: signal.source,
+      };
+    case "LOCKED_BY_REVIEW":
+      return {
+        kind: "LOCKED_BY_REVIEW",
+        requestedAt: signal.requestedAt.toISOString(),
+        source: signal.source,
+        firstReviewNoteAt: signal.firstReviewNoteAt.toISOString(),
+      };
+  }
+}
 
 type InvitePageProps = {
   params: Promise<{
@@ -19,10 +54,12 @@ type InvitePageProps = {
 
 export default async function InvitePage({ params }: InvitePageProps) {
   const { token } = await params;
-  const [invite, runtimeConfig] = await Promise.all([
-    getCandidateInviteLanding(token),
+  const [pageData, runtimeConfig] = await Promise.all([
+    getCandidateInvitePageData(token),
     getGiteaRuntimeConfig(),
   ]);
+  const invite = pageData?.landing ?? null;
+  const cases = pageData?.cases ?? [];
   const giteaLoginUrl = runtimeConfig.publicBaseUrl
     ? `${runtimeConfig.publicBaseUrl.replace(/\/$/, "")}/user/login`
     : null;
@@ -88,6 +125,33 @@ export default async function InvitePage({ params }: InvitePageProps) {
             </Text>
           )}
         </SectionCard>
+
+        {invite && cases.length > 0 ? (
+          <SectionCard
+            title="Your cases"
+            description="Mark a case complete once you are finished. Reviewers can only score cases after you mark them complete, and cases lock automatically at their deadline."
+            eyebrow="Completion"
+          >
+            <Flex direction="column" gap="3">
+              {cases.map((candidateCase) => (
+                <CandidateCaseCompletionPanel
+                  key={candidateCase.candidateCaseId}
+                  token={token}
+                  candidateCaseId={candidateCase.candidateCaseId}
+                  templateName={candidateCase.templateName}
+                  templateSlug={candidateCase.templateSlug}
+                  status={candidateCase.status}
+                  workingRepository={candidateCase.workingRepository}
+                  workingRepositoryUrl={candidateCase.workingRepositoryUrl}
+                  dueAt={candidateCase.dueAt?.toISOString() ?? null}
+                  completion={serializeCompletionSignal(
+                    candidateCase.completion,
+                  )}
+                />
+              ))}
+            </Flex>
+          </SectionCard>
+        ) : null}
 
         <SectionCard
           title="What happens next"

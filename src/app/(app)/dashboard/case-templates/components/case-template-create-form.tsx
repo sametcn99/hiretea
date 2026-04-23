@@ -12,6 +12,8 @@ import {
   TextArea,
   TextField,
 } from "@radix-ui/themes";
+import type { Route } from "next";
+import { useRouter } from "next/navigation";
 import { useActionState, useDeferredValue, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { ReviewerSelector } from "@/app/(app)/dashboard/candidate-cases/components/reviewer-selector";
@@ -47,6 +49,7 @@ const initialFormValues = {
 type CaseTemplateCreateFormProps = {
   reviewerOptions: CaseTemplateReviewerOption[];
   sourceRepositories: CaseTemplateSourceRepositoryOption[];
+  successRedirectPath?: Route;
 };
 
 type RepositoryVisibilityFilter = "all" | "private" | "public";
@@ -248,6 +251,7 @@ function SubmitButton() {
 export function CaseTemplateCreateForm({
   reviewerOptions,
   sourceRepositories,
+  successRedirectPath,
 }: CaseTemplateCreateFormProps) {
   const [state, formAction] = useActionState(
     createCaseTemplateAction,
@@ -270,6 +274,7 @@ export function CaseTemplateCreateForm({
     setHasManualTargetRepositoryNameOverride,
   ] = useState(false);
   const deferredRepositorySearchTerm = useDeferredValue(repositorySearchTerm);
+  const router = useRouter();
 
   const selectedSourceRepository = sourceRepositories.find(
     (repository) => repository.name === formValues.sourceRepositoryName,
@@ -317,6 +322,11 @@ export function CaseTemplateCreateForm({
 
   useEffect(() => {
     if (state.status === "success") {
+      if (successRedirectPath) {
+        router.replace(successRedirectPath);
+        return;
+      }
+
       setFormValues(initialFormValues);
       setSelectedReviewerIds([]);
       setCreateDedicatedRepository(false);
@@ -326,7 +336,7 @@ export function CaseTemplateCreateForm({
       setHasManualSlugOverride(false);
       setHasManualTargetRepositoryNameOverride(false);
     }
-  }, [state.status]);
+  }, [router, state.status, successRedirectPath]);
 
   function handleSourceRepositorySelect(repositoryName: string) {
     setFormValues((current) => ({

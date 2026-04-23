@@ -2,12 +2,19 @@
 
 import { Button, Callout, Flex, Grid, Text, TextField } from "@radix-ui/themes";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect } from "react";
+import {
+  type RefObject,
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useFormStatus } from "react-dom";
 import {
   type UpdateWorkspaceSettingsActionState,
   updateWorkspaceSettingsAction,
 } from "@/app/(app)/dashboard/settings/actions";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
 const initialUpdateWorkspaceSettingsState: UpdateWorkspaceSettingsActionState =
   {
@@ -31,19 +38,42 @@ type WorkspaceSettingsFormProps = {
   settings: WorkspaceSettingsRecord;
 };
 
-function SubmitButton() {
+function SubmitButton({
+  formRef,
+}: {
+  formRef: RefObject<HTMLFormElement | null>;
+}) {
   const { pending } = useFormStatus();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  function handleConfirm() {
+    setIsDialogOpen(false);
+    formRef.current?.requestSubmit();
+  }
 
   return (
-    <Button
-      size="3"
-      loading={pending}
-      disabled={pending}
-      type="submit"
-      style={{ width: "100%" }}
-    >
-      Save settings
-    </Button>
+    <>
+      <Button
+        size="3"
+        disabled={pending}
+        type="button"
+        onClick={() => setIsDialogOpen(true)}
+        style={{ width: "100%" }}
+      >
+        Save settings
+      </Button>
+
+      <ConfirmationDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        title="Save workspace settings"
+        description="Are you sure you want to save these workspace settings? Changes to organization, branch, and Gitea runtime URLs affect future provisioning, template operations, and assignment flows immediately after save."
+        confirmLabel="Save changes"
+        confirmColor="blue"
+        isLoading={pending}
+        onConfirm={handleConfirm}
+      />
+    </>
   );
 }
 
@@ -51,6 +81,7 @@ export function WorkspaceSettingsForm({
   settings,
 }: WorkspaceSettingsFormProps) {
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction] = useActionState(
     updateWorkspaceSettingsAction,
     initialUpdateWorkspaceSettingsState,
@@ -63,7 +94,7 @@ export function WorkspaceSettingsForm({
   }, [router, state.status]);
 
   return (
-    <form action={formAction}>
+    <form action={formAction} ref={formRef}>
       <input type="hidden" name="manualInviteMode" value="on" />
       <Flex direction="column" gap="3">
         <Flex direction="column" gap="1">
@@ -213,7 +244,7 @@ export function WorkspaceSettingsForm({
           </Callout.Root>
         ) : null}
 
-        <SubmitButton />
+        <SubmitButton formRef={formRef} />
       </Flex>
     </form>
   );

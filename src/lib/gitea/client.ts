@@ -68,6 +68,17 @@ export type GiteaUserReference = {
   full_name?: string;
 };
 
+export type GiteaAdminUser = {
+  id: number;
+  login: string;
+  full_name?: string | null;
+  email?: string | null;
+  last_login?: string | null;
+  created?: string | null;
+  active?: boolean;
+  is_admin?: boolean;
+};
+
 export type GiteaRepositoryCommit = {
   sha: string;
   html_url?: string;
@@ -414,6 +425,18 @@ export class GiteaAdminClient {
     return this.request<void>(`/teams/${teamId}/members/${username}`, {
       method: "PUT",
     });
+  }
+
+  async getAdminUserByLogin(login: string): Promise<GiteaAdminUser | null> {
+    const searchParams = new URLSearchParams();
+    searchParams.set("login_name", login);
+    searchParams.set("limit", "1");
+
+    const users = await this.request<GiteaAdminUser[]>("/admin/users", {
+      searchParams,
+    });
+
+    return users.find((user) => user.login === login) ?? null;
   }
 }
 

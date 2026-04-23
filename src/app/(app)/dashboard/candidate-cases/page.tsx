@@ -1,6 +1,7 @@
 import { UserRole } from "@prisma/client";
-import { Grid } from "@radix-ui/themes";
-import { CandidateCaseCreateForm } from "@/app/(app)/dashboard/candidate-cases/components/candidate-case-create-form";
+import { Button, Flex, Grid } from "@radix-ui/themes";
+import type { Route } from "next";
+import Link from "next/link";
 import { CandidateCaseFilters } from "@/app/(app)/dashboard/candidate-cases/components/candidate-case-filters";
 import { CandidateCaseTable } from "@/app/(app)/dashboard/candidate-cases/components/candidate-case-table";
 import { SectionCard } from "@/components/ui/section-card";
@@ -29,20 +30,7 @@ export default async function CandidateCasesPage({
   ]);
 
   return (
-    <Grid
-      columns={{ initial: "1fr", lg: "minmax(320px, 400px) minmax(0, 1fr)" }}
-      gap="4"
-      align="start"
-    >
-      <SectionCard
-        style={{ position: "sticky", top: 28 }}
-        title="Assign a candidate case"
-        description="Generate a private working repository from the selected template and grant the candidate direct write access in one flow."
-        eyebrow="Case operations"
-      >
-        <CandidateCaseCreateForm assignmentOptions={assignmentOptions} />
-      </SectionCard>
-
+    <Grid columns={{ initial: "1fr" }} gap="4">
       <SectionCard
         title="Assigned candidate cases"
         description={
@@ -52,7 +40,14 @@ export default async function CandidateCasesPage({
         }
         eyebrow="Current workload"
       >
-        <CandidateCaseFilters showArchived={showArchived} />
+        <Flex justify="between" align="center" gap="3" mb="4" wrap="wrap">
+          <CandidateCaseFilters showArchived={showArchived} />
+          <Button asChild size="2">
+            <Link href={"/dashboard/candidate-cases/new" as Route}>
+              New candidate case
+            </Link>
+          </Button>
+        </Flex>
         <CandidateCaseTable
           candidateCases={candidateCases}
           assignmentOptions={assignmentOptions}

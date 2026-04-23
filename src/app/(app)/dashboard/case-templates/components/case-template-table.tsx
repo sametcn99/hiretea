@@ -2,6 +2,7 @@
 
 import { Button, Code, Flex, Table, Text } from "@radix-ui/themes";
 import { useToast } from "@/components/providers/toast-provider";
+import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type {
   CaseTemplateListItem,
@@ -68,10 +69,11 @@ export function CaseTemplateTable({
 
   if (templates.length === 0) {
     return (
-      <Text as="p" size="2" color="gray">
-        No case templates are available yet. Create the first reusable challenge
-        from the form on the left.
-      </Text>
+      <EmptyState
+        eyebrow="Template library"
+        title="No case templates yet"
+        description="Use New case template to add the first reusable challenge and review kit."
+      />
     );
   }
 

@@ -5,6 +5,7 @@ import type {
 import { Button, Flex, Link as RadixLink, Table, Text } from "@radix-ui/themes";
 import type { Route } from "next";
 import Link from "next/link";
+import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { ReviewCaseListItem } from "@/lib/evaluation-notes/queries";
 
@@ -42,10 +43,11 @@ const decisionToneMap: Record<
 export function ReviewCaseTable({ reviewCases }: ReviewCaseTableProps) {
   if (reviewCases.length === 0) {
     return (
-      <Text as="p" size="2" color="gray">
-        No reviewable candidate cases exist yet. Assign a candidate case before
-        recording reviewer notes.
-      </Text>
+      <EmptyState
+        eyebrow="Review queue"
+        title="Nothing to review yet"
+        description="Assign a candidate case before recording reviewer notes and final decisions."
+      />
     );
   }
 

@@ -27,17 +27,6 @@ type InviteLandingRecord = {
   };
 };
 
-export type CandidateInviteLanding = {
-  inviteId: string;
-  displayName: string;
-  email: string;
-  login: string | null;
-  status: CandidateInviteLifecycleStatus;
-  expiresAt: Date;
-  createdAt: Date;
-  passwordAvailable: boolean;
-};
-
 async function getInviteLandingRecord(
   token: string,
 ): Promise<InviteLandingRecord | null> {
@@ -71,30 +60,7 @@ async function getInviteLandingRecord(
   });
 }
 
-export async function getCandidateInviteLanding(
-  token: string,
-): Promise<CandidateInviteLanding | null> {
-  const invite = await getInviteLandingRecord(token);
-
-  if (!invite) {
-    return null;
-  }
-
-  return {
-    inviteId: invite.id,
-    displayName: invite.candidate.name ?? invite.candidate.email ?? "Candidate",
-    email: invite.candidate.email ?? "No email available",
-    login: invite.candidate.giteaIdentity?.login ?? null,
-    status: getCandidateInviteLifecycleStatus({
-      claimedAt: invite.claimedAt,
-      revokedAt: invite.revokedAt,
-      expiresAt: invite.expiresAt,
-    }),
-    expiresAt: invite.expiresAt,
-    createdAt: invite.createdAt,
-    passwordAvailable: Boolean(invite.candidate.giteaIdentity?.initialPassword),
-  };
-}
+export type { CandidateInviteLifecycleStatus };
 
 export async function claimCandidateInvite(token: string) {
   const invite = await getInviteLandingRecord(token);

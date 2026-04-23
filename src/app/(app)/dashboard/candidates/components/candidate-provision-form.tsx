@@ -1,6 +1,8 @@
 "use client";
 
 import { Button, Callout, Flex, Text, TextField } from "@radix-ui/themes";
+import type { Route } from "next";
+import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
@@ -28,18 +30,28 @@ function SubmitButton() {
   );
 }
 
-export function CandidateProvisionForm() {
+export function CandidateProvisionForm({
+  successRedirectPath,
+}: {
+  successRedirectPath?: Route;
+}) {
   const [state, formAction] = useActionState(
     provisionCandidateAction,
     initialProvisionCandidateState,
   );
   const [formKey, setFormKey] = useState(0);
+  const router = useRouter();
 
   useEffect(() => {
     if (state.status === "success") {
+      if (successRedirectPath) {
+        router.replace(successRedirectPath);
+        return;
+      }
+
       setFormKey((k) => k + 1);
     }
-  }, [state.status]);
+  }, [router, state.status, successRedirectPath]);
 
   return (
     <form action={formAction} key={formKey}>

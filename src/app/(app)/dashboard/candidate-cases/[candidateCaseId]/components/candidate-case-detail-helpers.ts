@@ -69,9 +69,15 @@ export function getCandidateCaseNavigation(
 }
 
 export function canOpenCandidateCaseReviewWorkflow(
-  status: CandidateCaseDetail["status"],
+  candidateCase: Pick<
+    CandidateCaseDetail,
+    "status" | "candidateCompletionRequestedAt"
+  >,
 ) {
-  return reviewWorkflowEligibleStatuses.has(status);
+  return (
+    reviewWorkflowEligibleStatuses.has(candidateCase.status) &&
+    candidateCase.candidateCompletionRequestedAt !== null
+  );
 }
 
 export function formatCandidateCaseDate(value: Date | null) {

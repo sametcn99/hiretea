@@ -1,6 +1,7 @@
 import { UserRole } from "@prisma/client";
-import { Grid } from "@radix-ui/themes";
-import { CandidateProvisionForm } from "@/app/(app)/dashboard/candidates/components/candidate-provision-form";
+import { Button, Flex, Grid } from "@radix-ui/themes";
+import type { Route } from "next";
+import Link from "next/link";
 import { CandidateTable } from "@/app/(app)/dashboard/candidates/components/candidate-table";
 import { SectionCard } from "@/components/ui/section-card";
 import { requireRole } from "@/lib/auth/session";
@@ -11,25 +12,19 @@ export default async function CandidatesPage() {
   const candidates = await listCandidates();
 
   return (
-    <Grid
-      columns={{ initial: "1fr", lg: "minmax(320px, 380px) minmax(0, 1fr)" }}
-      gap="4"
-      align="start"
-    >
-      <SectionCard
-        style={{ position: "sticky", top: 28 }}
-        title="Provision a candidate"
-        description="Create the local candidate record and the matching self-hosted Gitea account in one action."
-        eyebrow="Candidate operations"
-      >
-        <CandidateProvisionForm />
-      </SectionCard>
-
+    <Grid columns={{ initial: "1fr" }} gap="4">
       <SectionCard
         title="Provisioned candidates"
         description="This list is backed by local application data, including invite resend history, so the app stays authoritative about the hiring workflow."
         eyebrow="Current roster"
       >
+        <Flex justify="end" mb="4">
+          <Button asChild size="2">
+            <Link href={"/dashboard/candidates/new" as Route}>
+              New candidate
+            </Link>
+          </Button>
+        </Flex>
         <CandidateTable candidates={candidates} />
       </SectionCard>
     </Grid>

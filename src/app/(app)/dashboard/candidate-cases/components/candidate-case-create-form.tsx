@@ -8,6 +8,8 @@ import {
   Select,
   Text,
 } from "@radix-ui/themes";
+import type { Route } from "next";
+import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
@@ -23,6 +25,7 @@ const initialCreateCandidateCaseState: CreateCandidateCaseActionState = {
 
 type CandidateCaseCreateFormProps = {
   assignmentOptions: CandidateCaseAssignmentOptions;
+  successRedirectPath?: Route;
 };
 
 function SubmitButton({ disabled }: { disabled: boolean }) {
@@ -43,6 +46,7 @@ function SubmitButton({ disabled }: { disabled: boolean }) {
 
 export function CandidateCaseCreateForm({
   assignmentOptions,
+  successRedirectPath,
 }: CandidateCaseCreateFormProps) {
   const [state, formAction] = useActionState(
     createCandidateCaseAction,
@@ -51,6 +55,7 @@ export function CandidateCaseCreateForm({
   const [formKey, setFormKey] = useState(0);
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [selectedReviewerIds, setSelectedReviewerIds] = useState<string[]>([]);
+  const router = useRouter();
   const hasRequiredOptions =
     assignmentOptions.candidates.length > 0 &&
     assignmentOptions.templates.length > 0 &&
@@ -66,11 +71,16 @@ export function CandidateCaseCreateForm({
 
   useEffect(() => {
     if (state.status === "success") {
+      if (successRedirectPath) {
+        router.replace(successRedirectPath);
+        return;
+      }
+
       setFormKey((k) => k + 1);
       setSelectedTemplateId("");
       setSelectedReviewerIds([]);
     }
-  }, [state.status]);
+  }, [router, state.status, successRedirectPath]);
 
   return (
     <form action={formAction} key={formKey}>

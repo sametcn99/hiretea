@@ -1,5 +1,6 @@
 import { Flex, Table, Text } from "@radix-ui/themes";
 import { CandidateCredentialCell } from "@/app/(app)/dashboard/candidates/components/candidate-credential-cell";
+import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { CandidateListItem } from "@/lib/candidates/queries";
 import { CandidateActions } from "./candidate-actions";
@@ -16,10 +17,11 @@ const dateFormatter = new Intl.DateTimeFormat("en", {
 export function CandidateTable({ candidates }: CandidateTableProps) {
   if (candidates.length === 0) {
     return (
-      <Text as="p" size="2" color="gray">
-        No candidates are provisioned yet. Start by creating the first candidate
-        account from the form on the left.
-      </Text>
+      <EmptyState
+        eyebrow="Current roster"
+        title="No candidates yet"
+        description="Use New candidate to provision the first workspace account and start assigning cases."
+      />
     );
   }
 

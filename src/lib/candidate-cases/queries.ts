@@ -1,9 +1,11 @@
 import {
+  type CandidateCaseCompletionSource,
   type CandidateCaseDecision,
   type CandidateCaseStatus,
   CandidateCaseStatus as CandidateCaseStatusValue,
   UserRole,
 } from "@prisma/client";
+import { syncExpiredCandidateCompletions } from "@/lib/candidate-cases/candidate-completion";
 import { db } from "@/lib/db";
 import { getGiteaAdminClient } from "@/lib/gitea/client";
 import { getWorkspaceSettings } from "@/lib/workspace-settings/queries";
@@ -21,6 +23,9 @@ export type CandidateCaseListItem = {
   startedAt: Date | null;
   submittedAt: Date | null;
   lastSyncedAt: Date | null;
+  candidateCompletionRequestedAt: Date | null;
+  candidateCompletionLockedAt: Date | null;
+  candidateCompletionSource: CandidateCaseCompletionSource | null;
   createdAt: Date;
   candidateDisplayName: string;
   candidateEmail: string;
@@ -316,6 +321,7 @@ async function getCandidateCaseRepositoryActivity(input: {
 export async function listCandidateCases(
   options: ListCandidateCasesOptions = {},
 ) {
+  await syncExpiredCandidateCompletions();
   const candidateCases = await db.candidateCase.findMany({
     where: options.includeArchived
       ? undefined
@@ -381,6 +387,11 @@ export async function listCandidateCases(
     startedAt: candidateCase.startedAt ?? null,
     submittedAt: candidateCase.submittedAt ?? null,
     lastSyncedAt: candidateCase.lastSyncedAt ?? null,
+    candidateCompletionRequestedAt:
+      candidateCase.candidateCompletionRequestedAt ?? null,
+    candidateCompletionLockedAt:
+      candidateCase.candidateCompletionLockedAt ?? null,
+    candidateCompletionSource: candidateCase.candidateCompletionSource ?? null,
     createdAt: candidateCase.createdAt,
     candidateDisplayName:
       candidateCase.candidate.name ??
@@ -502,6 +513,7 @@ export async function getCandidateCaseAssignmentOptions(): Promise<CandidateCase
 export async function getCandidateCaseById(
   candidateCaseId: string,
 ): Promise<CandidateCaseDetail | null> {
+  await syncExpiredCandidateCompletions();
   const candidateCase = await db.candidateCase.findUnique({
     where: {
       id: candidateCaseId,
@@ -684,6 +696,11 @@ export async function getCandidateCaseById(
     startedAt: candidateCase.startedAt ?? null,
     submittedAt: candidateCase.submittedAt ?? null,
     lastSyncedAt: candidateCase.lastSyncedAt ?? null,
+    candidateCompletionRequestedAt:
+      candidateCase.candidateCompletionRequestedAt ?? null,
+    candidateCompletionLockedAt:
+      candidateCase.candidateCompletionLockedAt ?? null,
+    candidateCompletionSource: candidateCase.candidateCompletionSource ?? null,
     createdAt: candidateCase.createdAt,
     candidateDisplayName:
       candidateCase.candidate.name ??

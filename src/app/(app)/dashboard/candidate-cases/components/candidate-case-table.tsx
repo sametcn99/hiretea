@@ -1,6 +1,7 @@
 import { Button, Flex, Link as RadixLink, Table, Text } from "@radix-ui/themes";
 import type { Route } from "next";
 import Link from "next/link";
+import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type {
   CandidateCaseAssignmentOptions,
@@ -42,11 +43,17 @@ export function CandidateCaseTable({
 }: CandidateCaseTableProps) {
   if (candidateCases.length === 0) {
     return (
-      <Text as="p" size="2" color="gray">
-        {showArchived
-          ? "No candidate cases match the current filter."
-          : "No candidate cases are assigned yet. Use the form on the left to create the first working repository from a template."}
-      </Text>
+      <EmptyState
+        eyebrow="Current workload"
+        title={
+          showArchived ? "No archived cases found" : "No candidate cases yet"
+        }
+        description={
+          showArchived
+            ? "Try adjusting the current filter or switch back to active cases."
+            : "Use New candidate case to generate the first working repository from a template."
+        }
+      />
     );
   }
 
