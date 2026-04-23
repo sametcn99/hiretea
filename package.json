@@ -27,8 +27,8 @@
     "docker:watch": "HIRETEA_APP_BUILD_TARGET=development HIRETEA_APP_MODE=dev docker compose -p hiretea -f docker-compose.yml up --build --watch",
     "lint": "biome lint --write --unsafe",
     "lint:ci": "biome lint .",
-    "check": "biome check --write --unsafe && bun run typecheck",
-    "format": "biome format --write .",
+    "check": "biome check --write --unsafe && prettier --write \"**/*.md\" && bun run typecheck",
+    "format": "biome format --write . && prettier --write \"**/*.md\"",
     "typecheck": "tsc --noEmit",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
@@ -56,6 +56,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "babel-plugin-react-compiler": "1.0.0",
+    "prettier": "^3.8.3",
     "prisma": "^7.8.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5"

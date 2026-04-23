@@ -57,7 +57,7 @@ flowchart TD
 ## Tech Stack
 
 | Layer        | Choice                                                     |
-|--------------|------------------------------------------------------------|
+| ------------ | ---------------------------------------------------------- |
 | Runtime      | Bun (dev/scripts), Node.js (Next.js prod server)           |
 | Framework    | Next.js 16 (App Router, React 19, React Compiler)          |
 | UI           | Radix Themes 3, Radix Icons, dark mode only                |
@@ -412,12 +412,12 @@ Startup performs all of the following automatically:
 
 ## Default Ports
 
-| Service | Default | Purpose |
-| --- | --- | --- |
-| Hiretea HTTP | `http://localhost:3000` | Next.js app |
-| Gitea HTTP | `http://localhost:3001` | Browser-facing Gitea |
-| Gitea SSH | `ssh://git@localhost:2221` | Candidate `git push` |
-| Postgres | `localhost:5432` | Shared by Hiretea + Gitea |
+| Service      | Default                    | Purpose                   |
+| ------------ | -------------------------- | ------------------------- |
+| Hiretea HTTP | `http://localhost:3000`    | Next.js app               |
+| Gitea HTTP   | `http://localhost:3001`    | Browser-facing Gitea      |
+| Gitea SSH    | `ssh://git@localhost:2221` | Candidate `git push`      |
+| Postgres     | `localhost:5432`           | Shared by Hiretea + Gitea |
 
 Internally the app always talks to Gitea at `http://gitea:3000`, while browsers continue to use the published URL. The Gitea SSH listener inside the container is on port `2222` and is published via `GITEA_SSH_PORT`.
 
@@ -425,15 +425,15 @@ Internally the app always talks to Gitea at `http://gitea:3000`, while browsers 
 
 `.env` keys consumed by the stack (see `.env.example` for defaults):
 
-| Group | Keys |
-| --- | --- |
-| App | `APP_HTTP_PORT`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, `BOOTSTRAP_TOKEN`, `hiretea_ADMIN_EMAIL`, `hiretea_ADMIN_NAME`, `hiretea_COMPANY_NAME`, `hiretea_DEFAULT_BRANCH`, `hiretea_MANUAL_INVITE_MODE` |
-| Database | `DB_PORT`, `HT_DB_NAME`, `HT_DB_USER`, `HT_DB_PASSWORD`, `GITEA_DB_NAME`, `GITEA_DB_USER`, `GITEA_DB_PASSWORD` |
-| Gitea network | `GITEA_HTTP_PORT`, `GITEA_SSH_PORT`, `GITEA_PUBLIC_URL`, `GITEA_DOMAIN` |
-| Gitea admin | `GITEA_ADMIN_USERNAME`, `GITEA_ADMIN_EMAIL`, `GITEA_ADMIN_PASSWORD`, `GITEA_ADMIN_BASE_URL`, `GITEA_ORGANIZATION_NAME` |
-| Gitea security | `GITEA_SECRET_KEY`, `GITEA_INTERNAL_TOKEN`, `GITEA_WEBHOOK_SECRET` |
-| OAuth (resolved at runtime) | `AUTH_GITEA_ID`, `AUTH_GITEA_SECRET`, `AUTH_GITEA_ISSUER` |
-| Build modes | `HIRETEA_APP_BUILD_TARGET` (`production` \| `development`), `HIRETEA_APP_MODE` (`prod` \| `dev`) |
+| Group                       | Keys                                                                                                                                                                                               |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| App                         | `APP_HTTP_PORT`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, `BOOTSTRAP_TOKEN`, `hiretea_ADMIN_EMAIL`, `hiretea_ADMIN_NAME`, `hiretea_COMPANY_NAME`, `hiretea_DEFAULT_BRANCH`, `hiretea_MANUAL_INVITE_MODE` |
+| Database                    | `DB_PORT`, `HT_DB_NAME`, `HT_DB_USER`, `HT_DB_PASSWORD`, `GITEA_DB_NAME`, `GITEA_DB_USER`, `GITEA_DB_PASSWORD`                                                                                     |
+| Gitea network               | `GITEA_HTTP_PORT`, `GITEA_SSH_PORT`, `GITEA_PUBLIC_URL`, `GITEA_DOMAIN`                                                                                                                            |
+| Gitea admin                 | `GITEA_ADMIN_USERNAME`, `GITEA_ADMIN_EMAIL`, `GITEA_ADMIN_PASSWORD`, `GITEA_ADMIN_BASE_URL`, `GITEA_ORGANIZATION_NAME`                                                                             |
+| Gitea security              | `GITEA_SECRET_KEY`, `GITEA_INTERNAL_TOKEN`, `GITEA_WEBHOOK_SECRET`                                                                                                                                 |
+| OAuth (resolved at runtime) | `AUTH_GITEA_ID`, `AUTH_GITEA_SECRET`, `AUTH_GITEA_ISSUER`                                                                                                                                          |
+| Build modes                 | `HIRETEA_APP_BUILD_TARGET` (`production` \| `development`), `HIRETEA_APP_MODE` (`prod` \| `dev`)                                                                                                   |
 
 Pinning `NEXTAUTH_SECRET`, `GITEA_SECRET_KEY`, `GITEA_INTERNAL_TOKEN`, `GITEA_WEBHOOK_SECRET`, `BOOTSTRAP_TOKEN`, and `GITEA_ADMIN_PASSWORD` is the recommended path for repeatable environments. Otherwise the `gitea-init` service generates them on first boot and you can read them back from the generated env file (see below).
 
@@ -450,26 +450,26 @@ If `GITEA_ADMIN_PASSWORD`, `NEXTAUTH_SECRET`, or `GITEA_WEBHOOK_SECRET` are set 
 
 ## HTTP Surface
 
-| Route | Method | Auth | Notes |
-| --- | --- | --- | --- |
-| `/` | GET | Public | Marketing landing |
-| `/sign-in` | GET | Public | NextAuth sign-in (Gitea) |
-| `/setup` | GET/POST | Public, gated by bootstrap status | First-run admin + workspace settings seed |
-| `/invite/[token]` | GET/POST | Public | Candidate invite claim |
-| `/team-invite/[token]` | GET/POST | Public | Recruiter invite claim |
-| `/dashboard` | GET | Auth (internal roles) | Live overview |
-| `/dashboard/candidate-cases` | GET | Auth (`ADMIN`/`RECRUITER`) | List + actions |
-| `/dashboard/candidate-cases/[id]` | GET | Auth | Detail (workspace, repo activity, reviews, audit, template guide, quick links) |
-| `/dashboard/candidates` | GET | Auth | Provisioning + invite controls |
-| `/dashboard/case-templates` | GET | Auth | Template list, reviewer guides, rubrics |
-| `/dashboard/reviews` | GET | Auth | Review queue |
-| `/dashboard/reviews/[candidateCaseId]` | GET | Auth | Per-case review workflow |
-| `/dashboard/team` | GET | Auth (`ADMIN`) | Recruiter team + invites |
-| `/dashboard/settings` | GET | Auth (`ADMIN`) | Workspace settings |
-| `/dashboard/audit-trail` | GET | Auth | Recent audit log |
-| `/api/auth/[...nextauth]` | GET/POST | NextAuth | OAuth callback + session |
-| `/api/health` | GET | Public | `{ ok, databaseReady, runtimeReadiness }` |
-| `/api/webhooks/gitea` | POST | HMAC-SHA256 signed | Gitea event sink |
+| Route                                  | Method   | Auth                              | Notes                                                                          |
+| -------------------------------------- | -------- | --------------------------------- | ------------------------------------------------------------------------------ |
+| `/`                                    | GET      | Public                            | Marketing landing                                                              |
+| `/sign-in`                             | GET      | Public                            | NextAuth sign-in (Gitea)                                                       |
+| `/setup`                               | GET/POST | Public, gated by bootstrap status | First-run admin + workspace settings seed                                      |
+| `/invite/[token]`                      | GET/POST | Public                            | Candidate invite claim                                                         |
+| `/team-invite/[token]`                 | GET/POST | Public                            | Recruiter invite claim                                                         |
+| `/dashboard`                           | GET      | Auth (internal roles)             | Live overview                                                                  |
+| `/dashboard/candidate-cases`           | GET      | Auth (`ADMIN`/`RECRUITER`)        | List + actions                                                                 |
+| `/dashboard/candidate-cases/[id]`      | GET      | Auth                              | Detail (workspace, repo activity, reviews, audit, template guide, quick links) |
+| `/dashboard/candidates`                | GET      | Auth                              | Provisioning + invite controls                                                 |
+| `/dashboard/case-templates`            | GET      | Auth                              | Template list, reviewer guides, rubrics                                        |
+| `/dashboard/reviews`                   | GET      | Auth                              | Review queue                                                                   |
+| `/dashboard/reviews/[candidateCaseId]` | GET      | Auth                              | Per-case review workflow                                                       |
+| `/dashboard/team`                      | GET      | Auth (`ADMIN`)                    | Recruiter team + invites                                                       |
+| `/dashboard/settings`                  | GET      | Auth (`ADMIN`)                    | Workspace settings                                                             |
+| `/dashboard/audit-trail`               | GET      | Auth                              | Recent audit log                                                               |
+| `/api/auth/[...nextauth]`              | GET/POST | NextAuth                          | OAuth callback + session                                                       |
+| `/api/health`                          | GET      | Public                            | `{ ok, databaseReady, runtimeReadiness }`                                      |
+| `/api/webhooks/gitea`                  | POST     | HMAC-SHA256 signed                | Gitea event sink                                                               |
 
 ## Useful Commands
 
