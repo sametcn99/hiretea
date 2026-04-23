@@ -28,6 +28,9 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Generate Prisma client
+        run: bun run db:generate
+
       - name: Run lint
         run: bun run lint:ci
 
@@ -52,6 +55,12 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: bun run db:generate
+
+      - name: Provision env file for docker compose
+        run: cp .env.example .env
 
       - name: Run integration tests
         run: bun run test:integration
