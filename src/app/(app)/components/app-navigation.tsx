@@ -16,6 +16,8 @@ import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { useState } from "react";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
 type AppNavigationProps = {
   role: UserRole;
@@ -63,6 +65,7 @@ const adminItems: NavigationItem[] = [
 
 export function AppNavigation({ role, user }: AppNavigationProps) {
   const pathname = usePathname();
+  const [signOutDialogOpen, setSignOutDialogOpen] = useState(false);
 
   function isItemActive(href: string) {
     if (href === "/dashboard") {
@@ -185,7 +188,7 @@ export function AppNavigation({ role, user }: AppNavigationProps) {
             variant="ghost"
             color="gray"
             size="2"
-            onClick={() => signOut({ callbackUrl: "/sign-in" })}
+            onClick={() => setSignOutDialogOpen(true)}
             title="Sign out"
             style={{ flexShrink: 0, cursor: "pointer" }}
           >
@@ -193,6 +196,16 @@ export function AppNavigation({ role, user }: AppNavigationProps) {
           </IconButton>
         </Flex>
       </Box>
+
+      <ConfirmationDialog
+        open={signOutDialogOpen}
+        onOpenChange={setSignOutDialogOpen}
+        title="Sign out"
+        description="Are you sure you want to sign out?"
+        confirmLabel="Sign out"
+        confirmColor="red"
+        onConfirm={() => signOut({ callbackUrl: "/sign-in" })}
+      />
     </Flex>
   );
 }
