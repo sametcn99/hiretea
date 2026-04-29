@@ -1,4 +1,4 @@
-import { Box, Flex, Grid, Heading, Separator, Text } from "@radix-ui/themes";
+import { Flex, Grid, Separator } from "@radix-ui/themes";
 import type { ReactNode } from "react";
 import { AppNavigation } from "@/app/(app)/components/app-navigation";
 import { MobileNav } from "@/app/(app)/components/mobile-nav";
@@ -48,27 +48,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         asChild
         style={{ minWidth: 0, width: "100%" }}
       >
-        <main>
-          <Flex justify="between" gap="4" align="start" wrap="wrap">
-            <Box>
-              <Text
-                size="1"
-                weight="bold"
-                color="blue"
-                style={{
-                  letterSpacing: "0.16em",
-                  textTransform: "uppercase",
-                }}
-              >
-                Workspace
-              </Text>
-              <Heading as="h1" size="7" mt="1">
-                Dashboard
-              </Heading>
-            </Box>
-          </Flex>
-          {children}
-        </main>
+        <main>{children}</main>
       </Flex>
     </Grid>
   );

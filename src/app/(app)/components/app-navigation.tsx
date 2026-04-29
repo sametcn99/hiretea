@@ -129,17 +129,7 @@ export function AppNavigation({ role, user }: AppNavigationProps) {
           marginTop: "auto",
         }}
       >
-        <Flex
-          align="center"
-          justify="between"
-          gap="3"
-          style={{
-            padding: "12px",
-            borderRadius: "var(--radius-3)",
-            backgroundColor: "var(--gray-3)",
-            border: "1px solid var(--gray-5)",
-          }}
-        >
+        <Flex align="center" justify="between" gap="3">
           <Flex gap="3" align="center" style={{ overflow: "hidden" }}>
             <Avatar
               size="2"

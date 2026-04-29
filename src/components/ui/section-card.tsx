@@ -1,4 +1,4 @@
-import { Card, Flex, Heading, Text } from "@radix-ui/themes";
+import { Card, Flex, Heading, Section, Text } from "@radix-ui/themes";
 import type { ReactNode } from "react";
 
 type SectionCardProps = {
@@ -15,12 +15,10 @@ export function SectionCard({
   description,
   eyebrow,
   children,
-  className,
-  style,
 }: SectionCardProps) {
   return (
-    <Card asChild size="3" className={className} style={style}>
-      <section>
+    <Section asChild>
+      <Card size="3" variant="surface">
         {(eyebrow || description) && (
           <Flex direction="column" gap="1" mb="4">
             {eyebrow ? (
@@ -50,7 +48,7 @@ export function SectionCard({
           </Heading>
         ) : null}
         {children}
-      </section>
-    </Card>
+      </Card>
+    </Section>
   );
 }

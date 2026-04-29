@@ -152,6 +152,7 @@ body {
   .ht-app-shell {
     height: 100dvh;
     overflow: hidden;
+    grid-template-rows: 1fr;
   }
 
   .ht-app-sidebar {
@@ -160,7 +161,6 @@ body {
 
   .ht-app-main {
     min-height: 0;
-    height: 100dvh;
     overflow-y: auto;
   }
 }
