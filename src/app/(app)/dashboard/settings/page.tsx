@@ -109,36 +109,131 @@ export default async function SettingsPage() {
             </Flex>
           </Flex>
 
-          <Text size="1" color="gray" mt="2">
-            Gitea base URL: {settings.giteaBaseUrl}
-          </Text>
-          <Text size="1" color="gray">
-            Admin API URL: {settings.giteaAdminBaseUrl ?? settings.giteaBaseUrl}
-          </Text>
-          <Text size="1" color="gray">
-            Organization: {settings.giteaOrganization}
-          </Text>
-          {settings.giteaAuthClientId ? (
-            <Text size="1" color="gray">
-              OAuth client ID: {settings.giteaAuthClientId}
+          <Flex
+            direction="column"
+            gap="2"
+            mt="3"
+            style={{
+              borderTop: "1px solid var(--gray-6)",
+              paddingTop: "var(--gap-3)",
+            }}
+          >
+            <Text size="2" weight="medium" mb="1">
+              Configuration details
             </Text>
-          ) : null}
-          <Text size="1" color="gray">
+            <Flex justify="between" gap="4">
+              <Text size="1" color="gray">
+                Gitea API
+              </Text>
+              <Text
+                size="1"
+                weight="medium"
+                style={{
+                  fontFamily: "monospace",
+                  maxWidth: 280,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+                title={settings.giteaBaseUrl}
+              >
+                {settings.giteaBaseUrl}
+              </Text>
+            </Flex>
+            <Flex justify="between" gap="4">
+              <Text size="1" color="gray">
+                Admin API
+              </Text>
+              <Text
+                size="1"
+                weight="medium"
+                style={{
+                  fontFamily: "monospace",
+                  maxWidth: 280,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+                title={settings.giteaAdminBaseUrl ?? settings.giteaBaseUrl}
+              >
+                {settings.giteaAdminBaseUrl ?? settings.giteaBaseUrl}
+              </Text>
+            </Flex>
+            <Flex justify="between" gap="4">
+              <Text size="1" color="gray">
+                Organization
+              </Text>
+              <Text size="1" weight="medium">
+                {settings.giteaOrganization}
+              </Text>
+            </Flex>
+            {settings.giteaAuthClientId ? (
+              <Flex justify="between" gap="4">
+                <Text size="1" color="gray">
+                  OAuth client
+                </Text>
+                <Text
+                  size="1"
+                  weight="medium"
+                  style={{
+                    fontFamily: "monospace",
+                    maxWidth: 200,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                  title={settings.giteaAuthClientId}
+                >
+                  {settings.giteaAuthClientId}
+                </Text>
+              </Flex>
+            ) : null}
+          </Flex>
+
+          <Flex
+            direction="column"
+            gap="2"
+            mt="3"
+            style={{
+              borderTop: "1px solid var(--gray-6)",
+              paddingTop: "var(--gap-3)",
+            }}
+          >
+            <Text size="2" weight="medium" mb="1">
+              Validation result
+            </Text>
+            <Text
+              size="1"
+              color={giteaValidation.status === "ready" ? "green" : "orange"}
+              style={{ lineHeight: 1.5 }}
+            >
+              {giteaValidation.message}
+            </Text>
+            {giteaValidation.organizationLabel ? (
+              <Flex justify="between" gap="4">
+                <Text size="1" color="gray">
+                  Organization
+                </Text>
+                <Text size="1" weight="medium">
+                  {giteaValidation.organizationLabel}
+                </Text>
+              </Flex>
+            ) : null}
+            {giteaValidation.adminLogin ? (
+              <Flex justify="between" gap="4">
+                <Text size="1" color="gray">
+                  Admin token owner
+                </Text>
+                <Text size="1" weight="medium">
+                  {giteaValidation.adminLogin}
+                </Text>
+              </Flex>
+            ) : null}
+          </Flex>
+
+          <Text size="1" color="gray" mt="3">
             Last updated: {dateFormatter.format(settings.updatedAt)}
           </Text>
-          <Text size="1" color="gray">
-            {giteaValidation.message}
-          </Text>
-          {giteaValidation.organizationLabel ? (
-            <Text size="1" color="gray">
-              Validated organization: {giteaValidation.organizationLabel}
-            </Text>
-          ) : null}
-          {giteaValidation.adminLogin ? (
-            <Text size="1" color="gray">
-              Admin token owner: {giteaValidation.adminLogin}
-            </Text>
-          ) : null}
         </SectionCard>
 
         <SectionCard
