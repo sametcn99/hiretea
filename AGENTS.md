@@ -1,4 +1,4 @@
-# Hiretea Copilot Instructions
+# Hiretea Product Instructions
 
 ## Core Product Rules
 
